@@ -1,0 +1,258 @@
+BBP-0006
+Universal Asset Classes Standard v1.0
+Define as Classes Universais de Ativos do protocolo BBP.
+As Asset Classes fornecem uma taxonomia padronizada para identificar o tipo fundamental de um ativo digital, permitindo que aplicações interpretem automaticamente seu propósito e comportamento.
+Essas classes são utilizadas principalmente em:
+• BBP ID (DNA Standard)
+• Manifest Standard
+• Templates de ativos
+• Indexadores
+• Aplicações e protocolos
+________________________________________
+## 1. Objetivo
+
+O objetivo das Universal Asset Classes é criar um **sistema padronizado de classificação de ativos digitais**.
+
+Isso permite que:
+
+- aplicações entendam automaticamente o tipo de ativo
+- indexadores organizem ativos de forma consistente
+- templates reutilizem categorias padronizadas
+- protocolos interoperem sem integrações específicas
+
+Cada ativo BBP pertence a uma **classe principal**.
+
+---
+
+## 2. Relação com o DNA Standard e Manifest
+
+No **BBP-0001 (DNA Standard)**, o formato do identificador é:
+BBP:id:type:namespace:identifier
+text
+
+O campo **type** representa a classe do ativo.
+
+Exemplo:
+BBP:id:art:fredo:2654
+text
+
+Nesse caso:
+- **type**: art
+- **namespace**: fredo
+- **identifier**: 2654
+
+---
+
+## 3. Relação entre "type" (DNA) e "standard" (Manifest)
+
+É importante entender a hierarquia entre estes dois campos:
+
+| Campo     | Documento | Função | Exemplo |
+|-----------|-----------|--------|---------|
+| `type`    | BBP-0001  | Classe macro do ativo | `art`, `token`, `game_asset` |
+| `standard`| BBP-0002  | Formato específico | `nft`, `fungible_token`, `game_item` |
+
+**Relação hierárquica:**
+
+- ART → pode ser `nft`, `generative_art`, `physical_art`
+- TOKEN → pode ser `fungible_token`, `soulbound_token`
+- GAME_ASSET → pode ser `game_item`, `character`, `skin`
+- RWA → pode ser `rwa_token`, `property_token`
+- TICKET → pode ser `event_ticket`, `season_pass`
+
+Essa separação permite que aplicações façam interpretações em dois níveis:
+1. **Classe macro** (via DNA) para categorização ampla
+2. **Formato específico** (via manifesto) para comportamento detalhado
+
+---
+
+## 4. Lista de Classes Universais
+
+O protocolo define as seguintes classes iniciais.
+
+### ART
+Ativos artísticos digitais.
+
+Exemplos:
+- NFTs artísticos
+- coleções digitais
+- arte generativa
+- arte procedural
+
+DNA: `BBP:id:art:collection:001`
+
+### COLLECTIBLE
+Itens colecionáveis digitais.
+
+Exemplos:
+- cards digitais
+- collectibles raros
+- memorabilia digital
+
+DNA: `BBP:id:collectible:series:045`
+
+### GAME_ASSET
+Itens utilizados em jogos ou mundos virtuais.
+
+Exemplos:
+- armas
+- skins
+- personagens
+- terrenos virtuais
+
+DNA: `BBP:id:game_asset:sword:001`
+
+### TOKEN
+Ativos fungíveis.
+
+Exemplos:
+- tokens financeiros
+- moedas digitais
+- unidades de valor
+
+DNA: `BBP:id:token:protocol:bbp`
+
+### IDENTITY
+Identidades digitais verificáveis.
+
+Exemplos:
+- usuários
+- perfis
+- identidades verificadas
+
+DNA: `BBP:id:identity:user:leo`
+
+### DOMAIN
+Domínios e nomes descentralizados.
+
+Exemplos:
+- nomes web3
+- domínios de aplicativos
+- identificadores legíveis
+
+DNA: `BBP:id:domain:bbp:main`
+
+### DATASET
+Conjuntos de dados digitais.
+
+Exemplos:
+- datasets de IA
+- bases de dados
+- arquivos científicos
+
+DNA: `BBP:id:dataset:climate:2025`
+
+### AI_MODEL
+Modelos de inteligência artificial.
+
+Exemplos:
+- modelos treinados
+- redes neurais
+- agentes de IA
+
+DNA: `BBP:id:ai:model:gpt`
+
+### RWA (Real World Asset)
+Representações digitais de ativos do mundo real.
+
+Exemplos:
+- imóveis
+- commodities
+- instrumentos financeiros
+
+DNA: `BBP:id:rwa:property:001`
+
+### TICKET
+Ingressos digitais verificáveis.
+
+Exemplos:
+- eventos
+- shows
+- conferências
+
+DNA: `BBP:id:ticket:event:2025`
+
+### LICENSE
+Licenças digitais.
+
+Exemplos:
+- licenças de software
+- direitos de uso
+- permissões digitais
+
+DNA: `BBP:id:license:software:001`
+
+### MEMBERSHIP
+Associações e acessos.
+
+Exemplos:
+- clubes
+- comunidades
+- acesso premium
+
+DNA: `BBP:id:membership:club:alpha`
+
+---
+
+## 5. Uso em Manifestos
+
+A classe do ativo é refletida no campo **type** do DNA, enquanto o campo **standard** do Manifest define o formato específico.
+
+Exemplo no manifesto:
+```json
+"identity": "BBP:id:art:fredo:2654",
+"standard": "nft"
+As Asset Classes ajudam aplicações a entender o domínio semântico do ativo.
+________________________________________
+6. Relação com Templates
+Asset Classes servem como base para Templates BBP.
+Estrutura hierárquica:
+text
+Asset Class
+    ↓
+Template
+    ↓
+Manifest
+    ↓
+Asset
+Exemplo:
+text
+GAME_ASSET
+    ↓
+BBP-GAME-SWORD Template
+    ↓
+Manifest
+    ↓
+BBP:id:game_asset:sword:001
+________________________________________
+7. Extensibilidade
+O protocolo permite a criação de novas classes no futuro.
+Essas classes podem ser propostas através de novos documentos BBP.
+Exemplo:
+•	BBP-00XX — Music Asset Class
+•	BBP-00XX — Social Asset Class
+________________________________________
+8. Benefícios
+Universal Asset Classes permitem:
+•	classificação consistente de ativos
+•	interoperabilidade entre aplicações
+•	descoberta automática de tipos de ativos
+•	organização do ecossistema BBP
+•	criação de templates padronizados
+________________________________________
+9. Relação com Outros Padrões BBP
+As Asset Classes funcionam em conjunto com:
+•	BBP-0001 — DNA Standard: define identidade universal com campo type
+•	BBP-0002 — Manifest Standard: define estrutura do ativo com campo standard
+•	BBP-0003 — Registry Standard: define vocabulário baseado nas classes
+•	BBP-0005 — Resolution Format: define endereços de ativos
+________________________________________
+Resultado
+As Universal Asset Classes fornecem uma base semântica universal
+para todos os ativos do protocolo BBP.
+Exemplo completo:
+text
+DNA: BBP:id:game_asset:sword:001
+Classe: GAME_ASSET
+Standard no manifesto: game_item
+

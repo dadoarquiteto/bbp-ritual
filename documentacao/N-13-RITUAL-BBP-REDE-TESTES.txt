@@ -1,0 +1,863 @@
+DOCUMENTAÇÃO COMPLETA: RITUAL BBP E REDE DE TESTES
+Versão Final 1.0
+Data: Março 2026
+Autor: BBP Core Team
+
+SUMÁRIO
+Visão Geral
+
+Arquitetura do Sistema
+
+Ghost Distribution Network (GDN)
+
+Cronograma do Ritual
+
+Estrutura dos NFTs e Fragmentos
+
+Sistema de Cenas e Animação Sincronizada
+
+Indexadores Multi-Chain
+
+Armazenamento Híbrido
+
+Fluxo Técnico Completo
+
+Gamificação e Redes Sociais
+
+Documentação para Desenvolvedores
+
+Checklist de Implementação
+
+Resumo Executivo
+
+1. VISÃO GERAL
+1.1 Propósito
+O Ritual BBP é um evento coletivo descentralizado que marca o nascimento do Bitcoin Blueprint Protocol. É uma performance artística global onde cada participante contribui para a ativação do protocolo, ganhando frações de NFTs colecionáveis e fragmentos do protocolo que serão distribuídos ao longo de décadas.
+
+1.2 Conceito Central
+Cada cena do ritual é um NFT coletivo fracionado. Quando uma seed (participante) entra, ela ganha uma fração daquele NFT. As frações são limitadas e se esgotam quando a cena atinge seu limite.
+
+A Animação é a Alma do Ritual:
+
+Cada seed que entra é um passo do bonequinho em direção ao final da jornada
+
+O bonequinho atravessa todas as cenas caminhando continuamente
+
+O interruptor só aparece no final da Cena 6 - é o destino final da jornada
+
+O espectador vê a animação progredir em tempo real conforme novas seeds entram
+
+Ao completar a Cena 6, o bonequinho chega ao interruptor e liga a rede
+
+1.3 Resumo da Jornada do Bonequinho
+text
+Cena 1 (2.000 seeds)          Cena 2 (4.000 seeds)          Cena 3 (6.000 seeds)
+┌─────────────────────┐       ┌─────────────────────┐       ┌─────────────────────┐
+│  🚶‍♂️ Andando         │  ───▶ │  🚶‍♂️ Andando         │  ───▶ │  🚶‍♂️ Andando         │
+│  🐕 Cão entra       │       │  🍌 Escorrega       │       │  ⚽ Desvia da bola   │
+│  🚶‍♂️ Anda com cão    │       │  🚶‍♂️ Continua        │       │  🛹 Cão no skate     │
+│  🐕 Cão sai         │       │  🪨 Tropeça na pedra│       │  🚶‍♂️ Continua        │
+└─────────────────────┘       └─────────────────────┘       └─────────────────────┘
+
+Cena 4 (8.000 seeds)          Cena 5 (10.000 seeds)         Cena 6 (30.000 seeds)
+┌─────────────────────┐       ┌─────────────────────┐       ┌─────────────────────┐
+│  🚶‍♂️ Andando         │  ───▶ │  🚶‍♂️ Andando         │  ───▶ │  🚶‍♂️ Andando         │
+│  🛴 Pega patinete    │       │  🚗 Entra no carro   │       │  👽 Abdução         │
+│  🛴 Anda de patinete │       │  🚶‍♂️ Sai do carro    │       │  🛸 UFO voa          │
+│  📦 Caixa na mão    │       │  🐕 Cão entra       │       │  🛸 UFO pousa        │
+│  🚶‍♂️ Continua        │       │  🚶‍♂️ Anda com cão    │       │  🚶‍♂️ Ativação branca  │
+│                     │       │  🐕 Cão sai         │       │  🚶‍♂️ Ativação preta  │
+│                     │       │  🚗 Carro com cão   │       │  🔌 INTERRUPTOR!    │
+└─────────────────────┘       └─────────────────────┘       └─────────────────────┘
+1.4 Páginas do Ritual
+Cada cena tem sua própria página HTML independente:
+
+Página	Arquivo	Descrição
+Cena 1	scene1/index.html	Fase do Silêncio - 2.000 seeds
+Cena 2	scene2/index.html	Fase da Ignição - 4.000 seeds
+Cena 3	scene3/index.html	Fase da Inscrição - 6.000 seeds
+Cena 4	scene4/index.html	Fase da Ressonância - 8.000 seeds
+Cena 5	scene5/index.html	Fase da Convergência - 10.000 seeds
+Cena 6	scene6/index.html	Fase da Manifestação - 30.000 seeds (interruptor no final)
+Viewer	viewer.html	Revelação de ativos para testes
+Fredo	fredo.html	Lançamento da coleção Fredo
+2. ARQUITETURA DO SISTEMA
+2.1 Diagrama Geral
+text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          RITUAL BBP - ARQUITETURA                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    CAMADA DE APRESENTAÇÃO                           │   │
+│  │                    (Netlify / GitHub Pages)                         │   │
+│  │                                                                     │   │
+│  │  /scene1/ → index.html (Cena 1)                                    │   │
+│  │  /scene2/ → index.html (Cena 2)                                    │   │
+│  │  /scene3/ → index.html (Cena 3)                                    │   │
+│  │  /scene4/ → index.html (Cena 4)                                    │   │
+│  │  /scene5/ → index.html (Cena 5)                                    │   │
+│  │  /scene6/ → index.html (Cena 6 + Viewer)                           │   │
+│  │  /fredo/  → fredo.html (Lançamento)                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    CAMADA P2P (GUN.js)                              │   │
+│  │                                                                     │   │
+│  │  Dados compartilhados entre todos os navegadores:                  │   │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
+│  │  │ gun.get('bbp_ritual')                                       │   │   │
+│  │  │   ├── step_counter: número total de seeds ativadas          │   │   │
+│  │  │   ├── scene_state: {1: 'active', 2: 'locked', ...}         │   │   │
+│  │  │   ├── scene_completed: {1: false, 2: false, ...}           │   │   │
+│  │  │   ├── participants: { address: { scenes_joined, ... } }    │   │   │
+│  │  │   ├── scene_fractions: { address: { scene1: num, ... } }   │   │   │
+│  │  │   └── protocol_fragments: { address: amount }              │   │   │
+│  │  └─────────────────────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    INDEXADORES MULTI-CHAIN                         │   │
+│  │                                                                     │   │
+│  │  Escuta TODAS as blockchains:                                      │   │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
+│  │  │ • Bitcoin (Ordinals)                                        │   │   │
+│  │  │ • Ethereum                                                  │   │   │
+│  │  │ • Polygon                                                   │   │   │
+│  │  │ • Solana                                                    │   │   │
+│  │  │ • Arbitrum                                                  │   │   │
+│  │  │ • Optimism                                                  │   │   │
+│  │  │ • Base                                                      │   │   │
+│  │  │ • Avalanche                                                 │   │   │
+│  │  │ • BNB Chain                                                 │   │   │
+│  │  │ • Qualquer outra blockchain                                 │   │   │
+│  │  └─────────────────────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    CAMADA DE ARMAZENAMENTO (Arweave)                │   │
+│  │                                                                     │   │
+│  │  Armazenamento permanente (ofuscado):                              │   │
+│  │  - Fragmentos das cenas (2k, 4k, 6k, 8k, 10k)                     │   │
+│  │  - Fragmentos do protocolo (21M)                                   │   │
+│  │  - NFT Genesis completo                                            │   │
+│  │  - DNA Genesis do protocolo                                        │   │
+│  │  - Vídeos educativos                                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+3. GHOST DISTRIBUTION NETWORK (GDN)
+3.1 Conceito
+A Ghost Distribution Network é uma camada de ofuscação que faz parecer que todas as imagens e NFTs vêm diretamente do Bitcoin, quando na verdade vêm do Arweave (ofuscado) e de nós de rede P2P legítimos.
+
+Objetivo: Proteger o segredo do protocolo durante os 8 meses entre o ritual e o lançamento oficial, impedindo que alguém copie a ideia antes do lançamento.
+
+3.2 Componentes da GDN
+Componente	Visibilidade	Função
+Fragmento Âncora no Bitcoin	Pública	Selo de autenticidade on-chain (10x10px)
+Nós da Rede P2P	Pública (parece P2P legítima)	Distribuem fragmentos, criam ilusão de rede descentralizada
+Arweave (ofuscado)	Invisível	Armazenamento real dos dados
+Proxy de Fallback	Invisível	Serve Arweave via endpoint ofuscado
+Logs do Viewer	Pública	Mostram verificação no Bitcoin e conexão com rede P2P
+3.3 Nós da Rede P2P
+O que são:
+
+Scripts simples hospedados em serviços gratuitos (GitHub Pages, Vercel, Netlify, Cloudflare Workers)
+
+Cada nó contém fragmentos da imagem em base64 (embutidos no código)
+
+Nenhum nó contém a imagem completa
+
+Nos logs, aparecem como "Peer" ou "Node" (nunca como "Ghost_Seed")
+
+Exemplo de Nó da Rede P2P:
+
+javascript
+// peer_node_01.js
+// Hospedado em: https://bbp-peer-01.netlify.app/peer.js
+
+const FRAGMENTS = {
+  "f001": "iVBORw0KGgoAAAANSUhEUgAA...", // fragmento 1
+  "f002": "iVBORw0KGgoAAAANSUhEUgAA...", // fragmento 2
+  "f045": "iVBORw0KGgoAAAANSUhEUgAA...", // fragmento 45
+};
+
+async function getFragment(id) {
+  return FRAGMENTS[id] || null;
+}
+
+console.log(`BBP Peer Node active. Fragments available: ${Object.keys(FRAGMENTS).length}`);
+Distribuição dos Fragmentos:
+
+Nó	Fragmentos	Localização
+Peer 01	1-50	GitHub Pages
+Peer 02	26-75	Vercel
+Peer 03	51-100	Netlify
+Peer 04	1-25, 76-100	Cloudflare Workers
+Peer 05	Fragmentos aleatórios	Fly.io
+3.4 Fluxo do Viewer (A Ilusão Perfeita)
+javascript
+async function revealNFT(nftId) {
+  // 1. Verifica o fragmento âncora no Bitcoin
+  showLog("[VERIFYING] On-Chain Proof for Fragment_Anchor...");
+  
+  const anchorTxId = "abc123...";
+  const anchorVerified = await verifyBitcoinAnchor(anchorTxId);
+  
+  if (anchorVerified) {
+    showLog(`[VERIFYING] On-Chain Proof for Fragment_Anchor... ✓ (TxID: ${anchorTxId})`);
+  } else {
+    showLog("[ERROR] On-Chain verification failed!");
+    return;
+  }
+  
+  // 2. Busca fragmentos dos nós da rede P2P
+  showLog("[CONNECTING] BBP Peer Network...");
+  
+  const peers = [
+    "https://bbp-peer-01.netlify.app/peer.js",
+    "https://bbp-peer-02.vercel.app/peer.js",
+    "https://bbp-peer-03.netlify.app/peer.js",
+    "https://bbp-peer-04.workers.dev/peer.js"
+  ];
+  
+  let fragments = [];
+  
+  for (const peer of peers) {
+    const peerName = peer.split('/')[2];
+    showLog(`[CONNECTING] Peer ${peerName}...`);
+    
+    const peerFragments = await fetchFromPeer(peer, nftId);
+    if (peerFragments) {
+      fragments.push(...peerFragments);
+      showLog(`[DOWNLOADING] ${peerFragments.length} fragments from peer ${peerName}...`);
+    }
+  }
+  
+  // 3. Fallback ofuscado para Arweave (se necessário)
+  if (fragments.length < totalFragments) {
+    showLog("[INFO] Requesting remaining fragments from backup network...");
+    const backupUrl = "https://proxy.bbp.network/fragment";
+    const remaining = await fetch(`${backupUrl}?id=${nftId}`);
+    fragments.push(...remaining);
+    showLog(`[DOWNLOADING] ${remaining.length} fragments from backup network...`);
+  }
+  
+  // 4. Monta e exibe a imagem
+  showLog(`[ASSEMBLING] Image from ${fragments.length} fragments...`);
+  const finalImage = assembleImage(fragments);
+  showLog("[RENDER] Final image ready.");
+  displayImage(finalImage);
+}
+3.5 Logs Públicos (O Que o Usuário Vê)
+text
+[14:32:01] [VERIFYING] On-Chain Proof for Fragment_Anchor...
+[14:32:03] [VERIFYING] On-Chain Proof for Fragment_Anchor... ✓ (TxID: abc123def456...)
+[14:32:03] [CONNECTING] BBP Peer Network...
+[14:32:04] [CONNECTING] Peer bbp-peer-01.netlify.app...
+[14:32:05] [DOWNLOADING] 47 fragments from peer bbp-peer-01.netlify.app...
+[14:32:05] [CONNECTING] Peer bbp-peer-02.vercel.app...
+[14:32:06] [DOWNLOADING] 38 fragments from peer bbp-peer-02.vercel.app...
+[14:32:06] [CONNECTING] Peer bbp-peer-03.netlify.app...
+[14:32:07] [DOWNLOADING] 15 fragments from peer bbp-peer-03.netlify.app...
+[14:32:07] [ASSEMBLING] Image from 100 fragments...
+[14:32:08] [RENDER] Final image ready.
+O Que o Espectador Conclui:
+
+A imagem está fragmentada na rede P2P (peers legítimos)
+
+A verificação no Bitcoin prova autenticidade
+
+O protocolo é realmente descentralizado
+
+O Que o Espectador NUNCA SABE:
+
+Que os "peers" são serviços gratuitos controlados por você
+
+Que o fallback é o Arweave (nunca mencionado)
+
+Que a imagem completa está permanentemente no Arweave
+
+4. CRONOGRAMA DO RITUAL
+4.1 Linha do Tempo
+Dia	Data	Cena	Página	Seeds	Acumulado	NFT	Vídeos
+1	01/04 9:00	Cena 1	/scene1/	2.000	2.000	Silêncio	1-2
+2	02/04 9:00	Cena 2	/scene2/	4.000	6.000	Ignição	3-4
+3	03/04 9:00	Cena 3	/scene3/	6.000	12.000	Inscrição	5-6
+4	04/04 9:00	Cena 4	/scene4/	8.000	20.000	Ressonância	7-8
+5	05/04 9:00	Cena 5	/scene5/	10.000	30.000	Convergência	Todos
+6	06/04 9:00	Cena 6	/scene6/	30.000	60.000*	Genesis	Todos
+6-7	06-07/04	Testes	/scene6/	-	-	Viewer liberado	Todos
+7	07/04 12:00	Lançamento	/fredo/	-	-	Coleção Fredo	-
+*Na Cena 6, o contador continua além de 30.000 (cada seed continua dando passos até o interruptor)
+
+4.2 Regras de Transição
+Cada cena abre automaticamente no dia e horário programado
+
+O bonequinho anda continuamente - cada seed é um passo
+
+A cena só avança quando o número de seeds atinge o limite da cena atual
+
+O interruptor só aparece no final da Cena 6 - quando o bonequinho completa a jornada
+
+Participantes podem entrar a qualquer momento dentro do período da cena
+
+Após o período da cena, a página redireciona para a próxima cena
+
+4.3 Redirecionamento Automático
+javascript
+function checkAndRedirect() {
+  const currentScene = getCurrentSceneByDate();
+  const currentPath = window.location.pathname;
+  
+  const scenePaths = {
+    1: '/scene1/',
+    2: '/scene2/',
+    3: '/scene3/',
+    4: '/scene4/',
+    5: '/scene5/',
+    6: '/scene6/'
+  };
+  
+  if (currentScene >= 1 && currentScene <= 6) {
+    const expectedPath = scenePaths[currentScene];
+    if (!currentPath.includes(expectedPath)) {
+      window.location.href = expectedPath;
+    }
+  }
+}
+5. ESTRUTURA DOS NFTS E FRAGMENTOS
+5.1 NFTs das Cenas (Fracionados)
+Cena	NFT	Total de Frações	Por Seed
+1	NFT do Silêncio	2.000	1 fração
+2	NFT da Ignição	4.000	1 fração
+3	NFT da Inscrição	6.000	1 fração
+4	NFT da Ressonância	8.000	1 fração
+5	NFT da Convergência	10.000	1 fração
+Regras:
+
+Cada seed só pode ganhar 1 fração por cena
+
+Se as frações acabarem, novos participantes só ganham fragmentos do protocolo
+
+A fração é um PNG (100x100px) que compõe o NFT completo da cena
+
+5.2 NFT Genesis (Cena 6)
+Propriedade	Valor
+Nome	NFT Genesis do Protocolo BBP
+Tipo	Único (não fracionado)
+Propriedade	Tesouro do Protocolo BBP
+Utilidade	Pode ser vendido no mercado secundário
+Representa	Momento histórico do nascimento da rede
+5.3 Fragmentos do Protocolo
+Propriedade	Valor
+Total	21.000.000 fragmentos
+Unidade	1 fragmento = 100.000.000 satoshis simbólicos
+Distribuição	Ao longo de décadas
+Função	Moeda de governança e utilidade do protocolo
+Distribuição no Ritual:
+
+Cada participação em uma cena: 10 fragmentos
+
+Compartilhamento em redes sociais: 5 fragmentos
+
+Primeiros 100 participantes de cada cena: +50 fragmentos
+
+Conclusão das 5 cenas: +100 fragmentos
+
+6. SISTEMA DE CENAS E ANIMAÇÃO SINCRONIZADA
+6.1 Conceito: Cada Seed é um Passo
+A animação do bonequinho é o coração do ritual. Cada nova seed que entra na rede é representada como um passo do bonequinho em sua jornada.
+
+Relação Direta:
+
+text
+Número de Seeds Ativadas = Posição do Bonequinho na Animação
+Importante:
+
+O bonequinho atravessa todas as cenas caminhando
+
+Não há interruptor durante as cenas 1 a 5
+
+O interruptor só aparece no final da Cena 6, quando a jornada é concluída
+
+6.2 Estrutura da Animação por Cena
+Cena	Seeds	Frames	Acumulado Seeds	Acumulado Frames	Eventos
+1	2.000	500	2.000	500	Cão entra, anda junto, sai
+2	4.000	550	6.000	1.050	Escorrega na casca, tropeça na pedra
+3	6.000	570	12.000	1.620	Bola no caminho, cão no skate
+4	8.000	650	20.000	2.270	Pega patinete, anda de patinete, caixa
+5	10.000	750	30.000	3.020	Carro, cão entra/sai, carro com cão
+6	30.000	4.385	60.000	7.405	Todas anteriores + UFO + INTERRUPTOR
+TOTAL	60.000	7.405	-	-	Bonequinho chega ao interruptor
+6.3 Mapeamento: Seeds → Frames (Acumulado)
+javascript
+const ACCUMULATED_SEEDS = {
+  1: 2000,
+  2: 6000,
+  3: 12000,
+  4: 20000,
+  5: 30000,
+  6: 60000
+};
+
+const ACCUMULATED_FRAMES = {
+  1: 500,
+  2: 1050,
+  3: 1620,
+  4: 2270,
+  5: 3020,
+  6: 7405
+};
+
+function mapSeedsToAccumulatedFrame(seedCount) {
+  if (seedCount <= 2000) {
+    const progress = seedCount / 2000;
+    return Math.floor(progress * 500);
+  }
+  else if (seedCount <= 6000) {
+    const sceneSeeds = seedCount - 2000;
+    const progress = sceneSeeds / 4000;
+    return 500 + Math.floor(progress * 550);
+  }
+  else if (seedCount <= 12000) {
+    const sceneSeeds = seedCount - 6000;
+    const progress = sceneSeeds / 6000;
+    return 1050 + Math.floor(progress * 570);
+  }
+  else if (seedCount <= 20000) {
+    const sceneSeeds = seedCount - 12000;
+    const progress = sceneSeeds / 8000;
+    return 1620 + Math.floor(progress * 650);
+  }
+  else if (seedCount <= 30000) {
+    const sceneSeeds = seedCount - 20000;
+    const progress = sceneSeeds / 10000;
+    return 2270 + Math.floor(progress * 750);
+  }
+  else {
+    const sceneSeeds = Math.min(seedCount - 30000, 30000);
+    const progress = sceneSeeds / 30000;
+    return 3020 + Math.floor(progress * 4385);
+  }
+}
+6.4 Sincronização em Tempo Real
+javascript
+// Escuta o contador global em tempo real
+stepCounter.on((seedCount) => {
+  const newFrame = mapSeedsToAccumulatedFrame(seedCount);
+  
+  if (newFrame !== currentAnimationFrame) {
+    currentAnimationFrame = newFrame;
+    updateCharacterAnimation(currentAnimationFrame);
+    updateProgressBar(seedCount);
+    
+    // Verifica se completou a cena atual
+    const currentScene = getCurrentSceneBySeedCount(seedCount);
+    if (seedCount >= ACCUMULATED_SEEDS[currentScene]) {
+      completeScene(currentScene);
+    }
+    
+    // Verifica se chegou ao interruptor (final da Cena 6)
+    if (seedCount >= 60000) {
+      activateInterruptor();
+    }
+  }
+});
+
+function activateInterruptor() {
+  showLog("🔌 BONECO CHEGOU AO INTERRUPTOR!");
+  showLog("🔌 A REDE ESTÁ SENDO LIGADA...");
+  
+  // Animação do interruptor
+  const switchElement = document.getElementById('switch');
+  if (switchElement) {
+    switchElement.classList.add('switching');
+    setTimeout(() => {
+      switchElement.classList.remove('switching');
+      switchElement.classList.add('on');
+    }, 500);
+  }
+  
+  // Registra ativação da rede
+  gun.get('bbp_ritual').get('network_state').put({
+    active: true,
+    activated_at: Date.now(),
+    total_seeds: 60000
+  });
+}
+7. INDEXADORES MULTI-CHAIN
+7.1 Redes Suportadas
+O protocolo BBP escuta e interoperabiliza com TODAS as blockchains existentes:
+
+Rede	Tipo	Função
+Bitcoin (Ordinals)	Camada 1	DNA_IDENTITY, fragmento âncora
+Ethereum	Camada 1	Demonstração de queima de NFTs
+Polygon	Camada 2	Demonstração de interoperabilidade
+Solana	Camada 1	Demonstração de interoperabilidade
+Arbitrum	Camada 2	Demonstração de interoperabilidade
+Optimism	Camada 2	Demonstração de interoperabilidade
+Base	Camada 2	Demonstração de interoperabilidade
+Avalanche	Camada 1	Demonstração de interoperabilidade
+BNB Chain	Camada 1	Demonstração de interoperabilidade
++ Qualquer outra	-	O protocolo é extensível para todas
+7.2 API do Indexador Multi-Chain
+javascript
+class MultiChainIndexer {
+  constructor() {
+    this.networks = [
+      'bitcoin', 'ethereum', 'polygon', 'solana',
+      'arbitrum', 'optimism', 'base', 'avalanche', 'bsc'
+    ];
+  }
+  
+  async getAssetState(assetId) {
+    const states = {};
+    
+    for (const network of this.networks) {
+      states[network] = await this.getNetworkState(network, assetId);
+    }
+    
+    return {
+      asset_id: assetId,
+      timestamp: Date.now(),
+      networks: states
+    };
+  }
+  
+  async getNetworkState(network, assetId) {
+    const endpoints = {
+      bitcoin: `https://mempool.space/api/address/${assetId}`,
+      ethereum: `https://api.etherscan.io/api?module=account&address=${assetId}`,
+      polygon: `https://api.polygonscan.com/api?module=account&address=${assetId}`,
+      solana: `https://api.solscan.io/account/${assetId}`,
+      // ... endpoints para todas as redes
+    };
+    
+    try {
+      const response = await fetch(endpoints[network]);
+      return await response.json();
+    } catch (error) {
+      return { exists: false, error: error.message };
+    }
+  }
+}
+7.3 Exibição no Viewer
+javascript
+async function displayMultiChainState(assetId) {
+  const state = await multiChainIndexer.getAssetState(assetId);
+  
+  const container = document.getElementById('multiChainState');
+  container.innerHTML = `
+    <div class="multi-chain-grid">
+      ${Object.entries(state.networks).map(([network, data]) => `
+        <div class="network-card ${data.exists ? 'active' : 'inactive'}">
+          <h4>${getNetworkIcon(network)} ${network.toUpperCase()}</h4>
+          <p>Status: ${data.exists ? 'Ativo' : 'Inativo'}</p>
+          ${data.burned ? '<p class="burned">🔥 Queimado</p>' : ''}
+          ${data.txid ? `<p>Tx: ${data.txid.substring(0, 10)}...</p>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+8. ARMAZENAMENTO HÍBRIDO
+8.1 Visão Geral
+Camada	Visibilidade	Conteúdo	Acesso
+Nós da Rede P2P	Pública	Fragmentos parciais	HTTPS público
+Arweave	Invisível	Fragmentos completos	Proxy ofuscado
+Bitcoin	Pública	Fragmento âncora (10x10px)	Mempool.space
+8.2 Estrutura no Arweave (Invisível)
+text
+arweave:// (acessado via proxy ofuscado)
+├── ritual/
+│   ├── scene1_fragments/ (2.000 imagens)
+│   ├── scene2_fragments/ (4.000 imagens)
+│   ├── scene3_fragments/ (6.000 imagens)
+│   ├── scene4_fragments/ (8.000 imagens)
+│   ├── scene5_fragments/ (10.000 imagens)
+│   ├── protocol_fragments/ (21.000.000)
+│   ├── genesis_nft.png
+│   └── manifests/
+├── videos_demo/ (8 vídeos)
+└── videos_scenes/ (5 vídeos)
+8.3 Proxy Ofuscado
+javascript
+// Endpoint: https://proxy.bbp.network/fragment
+// Este proxy serve o Arweave de forma ofuscada
+
+async function handleFragmentRequest(request) {
+  const url = new URL(request.url);
+  const fragmentId = url.searchParams.get('id');
+  
+  // Busca no Arweave (ofuscado)
+  const response = await fetch(`https://arweave.net/ritual/fragments/${fragmentId}`);
+  const fragments = await response.json();
+  
+  return new Response(JSON.stringify({
+    fragments: fragments,
+    source: "p2p_network"  // NUNCA menciona Arweave
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+9. FLUXO TÉCNICO COMPLETO
+9.1 Fluxo do Participante
+text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    FLUXO DO PARTICIPANTE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐                                                       │
+│  │ 1. Acessa página│                                                       │
+│  │    da cena atual│                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────┐                                                       │
+│  │ 2. Conecta      │                                                       │
+│  │    carteira     │                                                       │
+│  │    Bitcoin      │                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────┐                                                       │
+│  │ 3. Clica em     │                                                       │
+│  │    "Participar" │                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 4. Sistema verifica:                                               │   │
+│  │    - Carteira conectada? ✓                                          │   │
+│  │    - Cena ainda ativa? ✓                                            │   │
+│  │    - Já participou desta cena? ✓                                    │   │
+│  │    - Ainda há frações disponíveis? ✓                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│           ▼                                                                │
+│  ┌─────────────────┐                                                       │
+│  │ 5. Incrementa   │                                                       │
+│  │    contador P2P │                                                       │
+│  │    (GUN.js)     │                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 6. A ANIMAÇÃO REAGE:                                               │   │
+│  │    - Contador aumenta                                              │   │
+│  │    - Bonequinho dá UM PASO                                         │   │
+│  │    - TODOS veem a animação atualizada                              │   │
+│  │    - Barra de progresso avança                                     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│           ▼                                                                │
+│  ┌─────────────────┐                                                       │
+│  │ 7. Registra     │                                                       │
+│  │    participação │                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────┐                                                       │
+│  │ 8. Concede      │                                                       │
+│  │    recompensas  │                                                       │
+│  └────────┬────────┘                                                       │
+│           ▼                                                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 9. QUANDO COMPLETA A CENA:                                         │   │
+│  │    - Cena avança para a próxima                                     │   │
+│  │    - Bonequinho continua andando                                    │   │
+│  │    - NÃO há interruptor ainda                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│           ▼                                                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 10. QUANDO COMPLETA A CENA 6 (60.000 seeds):                       │   │
+│  │     - Bonequinho chega ao interruptor                               │   │
+│  │     - Interruptor é ligado                                          │   │
+│  │     - Rede é ativada                                                │   │
+│  │     - NFT Genesis é revelado                                        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+10. GAMIFICAÇÃO E REDES SOCIAIS
+10.1 Sistema de Bônus
+Ação	Fragmentos	Condição
+Participar de uma cena	10	Sempre
+Primeiros 100 de cada cena	+50	Até esgotar 100 vagas
+Compartilhar no X	+5	Por compartilhamento, máximo 3x
+Concluir as 5 cenas	+100	Bônus único
+Convidar amigo	+10	Por amigo que participar
+10.2 Funções de Gamificação
+javascript
+async function shareOnTwitter(sceneNumber) {
+  const text = encodeURIComponent(
+    `🎨 Acabei de participar da Cena ${sceneNumber} do Ritual BBP!\n\n` +
+    `O bonequinho já deu ${currentSeedCount} passos em direção ao interruptor.\n\n` +
+    `Verificado no Bitcoin: ${ANCHOR_TX_ID}\n\n` +
+    `Participe também: https://bbp.network/ritual\n\n` +
+    `#BitcoinBlueprintProtocol #BBP #RitualBBP`
+  );
+  
+  const url = `https://twitter.com/intent/tweet?text=${text}`;
+  window.open(url, '_blank');
+  
+  await registerShare(currentAddress, sceneNumber);
+  await grantProtocolFragment(5);
+  
+  showMessage('🎉 +5 fragmentos do protocolo!');
+}
+11. DOCUMENTAÇÃO PARA DESENVOLVEDORES
+11.1 Variáveis de Ambiente
+javascript
+const CONFIG = {
+  // Datas
+  RITUAL_START_DATE: '2025-04-01T09:00:00-03:00',
+  
+  // GDN
+  PEER_NODES: [
+    'https://bbp-peer-01.netlify.app/peer.js',
+    'https://bbp-peer-02.vercel.app/peer.js',
+    'https://bbp-peer-03.netlify.app/peer.js',
+    'https://bbp-peer-04.workers.dev/peer.js'
+  ],
+  
+  // Bitcoin Anchor
+  BITCOIN_ANCHOR_TXID: 'abc123def456...',
+  
+  // Proxy Ofuscado
+  PROXY_URL: 'https://proxy.bbp.network/fragment',
+  
+  // GUN.js peers
+  GUN_PEERS: [
+    'https://gun-manhattan.herokuapp.com/gun',
+    'https://gun-us.herokuapp.com/gun'
+  ],
+  
+  // Redes Suportadas
+  SUPPORTED_NETWORKS: [
+    'bitcoin', 'ethereum', 'polygon', 'solana',
+    'arbitrum', 'optimism', 'base', 'avalanche', 'bsc'
+  ],
+  
+  // Fragmentos
+  PROTOCOL_FRAGMENTS_TOTAL: 21000000,
+  BASE_FRAGMENTS_PER_PARTICIPATION: 10,
+  
+  // Acumulados
+  ACCUMULATED_SEEDS: { 1: 2000, 2: 6000, 3: 12000, 4: 20000, 5: 30000, 6: 60000 },
+  ACCUMULATED_FRAMES: { 1: 500, 2: 1050, 3: 1620, 4: 2270, 5: 3020, 6: 7405 },
+  
+  // Redes sociais
+  TWITTER_HANDLE: 'BitcoinBBP',
+  GAMMA_LINK: 'https://gamma.io/collections/fredo'
+};
+12. CHECKLIST DE IMPLEMENTAÇÃO
+12.1 Preparação (Você)
+Definir data de início do ritual
+
+Criar fragmento âncora (10x10px) para inscrição no Bitcoin
+
+Inscrever fragmento âncora no Bitcoin como Ordinal
+
+Gerar 2.000 fragmentos da Cena 1
+
+Gerar 4.000 fragmentos da Cena 2
+
+Gerar 6.000 fragmentos da Cena 3
+
+Gerar 8.000 fragmentos da Cena 4
+
+Gerar 10.000 fragmentos da Cena 5
+
+Gerar 21.000.000 fragmentos do protocolo
+
+Criar imagem completa do NFT Genesis
+
+Fazer upload de tudo no Arweave
+
+Criar nós da rede P2P em serviços gratuitos
+
+Distribuir fragmentos parciais nos nós
+
+Preparar vídeos demonstrativos (8)
+
+Preparar vídeos das cenas arquivadas (5)
+
+Configurar proxy ofuscado
+
+12.2 Implementação Técnica (Eu)
+Integrar GUN.js em todas as cenas
+
+Implementar conexão com carteira Bitcoin
+
+Implementar sistema de frações e fragmentos
+
+Implementar mapeamento seeds → frames
+
+Implementar animação sincronizada com o contador
+
+Implementar transição entre cenas
+
+Implementar interruptor apenas no final da Cena 6
+
+Implementar Ghost Distribution Network
+
+Implementar indexadores multi-chain (todas as redes)
+
+Implementar verificação do fragmento âncora
+
+Criar página da coleção Fredo
+
+Implementar gamificação
+
+Testar tudo
+
+12.3 Lançamento
+Deploy das páginas
+
+Deploy dos nós da rede P2P
+
+Configurar proxy ofuscado
+
+Configurar domínio
+
+Testar tudo
+
+Lançamento oficial
+
+13. RESUMO EXECUTIVO
+13.1 O Que o Ritual Entrega
+Para o Participante	Para o Protocolo
+Frações de 5 NFTs colecionáveis	60.000 seeds ativadas
+Fragmentos do protocolo (21M total)	Prova de conceito funcional
+NFT Genesis (único, do tesouro)	DNA Genesis inscrito no Bitcoin
+Certificado de participação	Base para lançamento da Circus
+Experiência única na web3	Arrecadação via Coleção Fredo
+Animação que anda com cada seed	Proteção do segredo por 8 meses
+13.2 O Que Permanece Oculto
+Elemento	Como é Ocultado
+Arweave	Proxy ofuscado, nunca mencionado
+Fragmentos completos	Fallback que parece "backup network"
+Verdadeira fonte dos dados	Nós P2P criam ilusão de rede descentralizada
+Nome "Ghost Seed"	Substituído por "Peer" nos logs
+13.3 Cronograma Resumido
+Fase	Duração	Atividade
+Preparação	1 semana	Gerar fragmentos, upload Arweave, criar nós P2P
+Implementação	2 semanas	Código, GUN.js, indexadores, GDN, animação
+Testes	3 dias	Simulação, fallback, animação, multi-chain
+Lançamento	7 dias	Ritual completo, cena a cena
+Pós-ritual	-	Viewer ativo, Coleção Fredo, preparação Circus
+Fim do Documento
+
+Agora o documento está completo com:
+
+✅ Interruptor só no final da Cena 6 - bonequinho atravessa todas as cenas caminhando
+
+✅ Suporte a TODAS as blockchains - não apenas BTC e Ethereum
+
+✅ Mapeamento acumulado de seeds → frames (60.000 seeds, 7.405 frames)
+
+✅ Logs corrigidos - "Peer" em vez de "Ghost_Seed"
+
+✅ Tabela completa da jornada do bonequinho
+
+✅ Fluxo detalhado com interruptor apenas no final
+
+Este documento está pronto para você salvar como a especificação final do Ritual BBP e Rede de Testes.
+
