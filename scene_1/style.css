@@ -430,14 +430,13 @@ body {
   transition: transform 2s linear;
 }
 
-/* PERSONAGEM */
+/* PERSONAGEM - SEM FLOAT NO CSS (CONTROLADO PELO JS) */
 #character {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   height: 220px;
-  animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
