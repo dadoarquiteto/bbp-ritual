@@ -1,9 +1,9 @@
 // ==================================================
-// CONFIGURAÇÕES
+// CONFIGURAÇÕES DA CENA 1
 // ==================================================
 let currentFrameNumber = 0;
-const totalFrames = 500;
-const totalSeeds = 2000;
+const totalFrames = 500; // Total de frames da Cena 1
+let totalSeeds = 2000; // 2.000 seeds para Cena 1
 const frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
@@ -108,6 +108,7 @@ function scheduleNotification() {
   if (notificationTimeout) {
     clearTimeout(notificationTimeout);
   }
+  
   notificationTimeout = setTimeout(() => {
     showNotification();
   }, 9000);
@@ -157,11 +158,11 @@ function frameToSeedOrganic(frame) {
 // FUNÇÃO PARA REINICIAR CENA EM LOOP ETERNO
 // ==================================================
 function startEternalRitualLoop() {
-  console.log('🔄 Ritual eterno iniciado');
+  console.log('🌙 Ritual do Silêncio eterno iniciado');
   inEternalLoop = true;
   
   if (loreTitle) {
-    loreTitle.textContent = 'O RITUAL É ETERNO';
+    loreTitle.textContent = 'O SILÊNCIO É ETERNO';
     loreTitle.style.color = '#ffaa33';
   }
   
@@ -191,7 +192,7 @@ function startEternalRitualLoop() {
   startAllCountdowns();
   
   if (ritualPhase) {
-    ritualPhase.textContent = '🌀 Cena 1: Ritual Eterno';
+    ritualPhase.textContent = '🌙 Cena 1: Silêncio Bem Sucedido';
   }
   
   currentFrameNumber = 1;
@@ -269,7 +270,7 @@ function startAllCountdowns() {
 }
 
 // ==================================================
-// CARREGAR FRAMES
+// CARREGAR FRAMES (CENA 1)
 // ==================================================
 function loadFrames(path, prefix, start, end) {
   const frames = [];
@@ -280,7 +281,7 @@ function loadFrames(path, prefix, start, end) {
 }
 
 // ==================================================
-// ANIMAÇÕES
+// ANIMAÇÕES DA CENA 1
 // ==================================================
 const ANIMATIONS = {
   walking: loadFrames("character/walking", "walking", 1, 16),
@@ -300,7 +301,7 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
-// CENA
+// CENA 1
 // ==================================================
 const SCENES = [
   {
@@ -323,7 +324,7 @@ const SCENES = [
 function showRitualOverlay() {
   if (overlayShown) return;
   
-  console.log('Mostrando overlay');
+  console.log('🌙 Mostrando overlay da Cena 1');
   overlayShown = true;
   isMoving = false;
   
@@ -363,7 +364,7 @@ function showRitualOverlay() {
 }
 
 // ==================================================
-// LOOP PRINCIPAL OTIMIZADO
+// LOOP PRINCIPAL
 // ==================================================
 function startMainLoop() {
   if (mainInterval) {
@@ -454,6 +455,30 @@ function startMainLoop() {
         }
       }
       
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 1)
+      // ==================================================
+      const characterElement = document.getElementById('character');
+      if (characterElement) {
+        let removeFloat = false;
+        
+        // Remove float durante dog_entering (cão entrando)
+        if (currentStep && currentStep.animation === "dog_entering") {
+          removeFloat = true;
+        }
+        
+        // Remove float durante dog_leaving (cão saindo)
+        if (currentStep && currentStep.animation === "dog_leaving") {
+          removeFloat = true;
+        }
+        
+        if (removeFloat) {
+          characterElement.style.animation = 'none';
+        } else {
+          characterElement.style.animation = 'float 6s ease-in-out infinite';
+        }
+      }
+      
     } catch (error) {
       console.error('Erro no loop principal:', error);
       clearInterval(mainInterval);
@@ -495,7 +520,7 @@ function cleanupIntervals() {
 // INICIALIZAÇÃO
 // ==================================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 BBP Ritual iniciado');
+  console.log('🚀 BBP Ritual - Cena 1 iniciada');
   
   if (overlay) {
     overlay.addEventListener('click', function(event) {
