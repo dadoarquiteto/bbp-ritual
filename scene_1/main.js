@@ -301,6 +301,55 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// Garante que todas as imagens sejam baixadas antes
+// da animação começar — elimina travamento na troca
+// de frames em produção.
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.dog_entering,
+      ...ANIMATIONS.walking_dog,
+      ...ANIMATIONS.dog_leaving
+    ];
+
+    // Também pré-carrega o background
+    const bgImages = ['backgrounds/BG_01.png'];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
+
+// ==================================================
 // CENA 1
 // ==================================================
 const SCENES = [
@@ -462,13 +511,13 @@ function startMainLoop() {
       if (characterElement) {
         let removeFloat = false;
         
-        // Remove float durante os frames onde o boneco está parado
-        // dog_entering: frames 201-216
-        // dog_leaving: frames 409-424
-        if (currentFrameNumber >= 201 && currentFrameNumber <= 216) {
+        // Remove float durante dog_entering (cão entrando)
+        if (currentStep && currentStep.animation === "dog_entering") {
           removeFloat = true;
         }
-        if (currentFrameNumber >= 409 && currentFrameNumber <= 424) {
+        
+        // Remove float durante dog_leaving (cão saindo)
+        if (currentStep && currentStep.animation === "dog_leaving") {
           removeFloat = true;
         }
         
@@ -542,7 +591,10 @@ document.addEventListener('DOMContentLoaded', function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  startMainLoop();
+  // Aguarda preload de todas as imagens antes de iniciar o loop
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
