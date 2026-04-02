@@ -1,0 +1,348 @@
+BBP-0010 — Template Standard
+BBP-0010 — Template Standard
+Status: Draft
+Versão: 1.0
+Autor: BBP Core Team
+Resumo
+O Template Standard define a estrutura e o comportamento dos formulários de criação de ativos no protocolo BBP. Um template é a interface entre o usuário e o protocolo, responsável por:
+•	Coletar dados de forma intuitiva
+•	Gerar os três DNAs (Identity, Attributes, Binding)
+•	Criar o manifesto (BBP-0002) com todos os dados
+•	Preparar o contrato (R$ 15) para registro
+•	Orientar sobre a inscrição no Bitcoin e armazenamento no Arweave
+Templates garantem que qualquer pessoa possa criar ativos digitais padronizados, seguindo a documentação do protocolo, sem precisar entender a complexidade técnica subjacente.
+________________________________________
+1. Visão Geral
+Um template é um formulário inteligente que guia o usuário na criação de um ativo BBP.
+Arquitetura conceitual:
+text
+Página Mestra (templates.html)
+       ↓
+Template Específico (ex: commodity.html)
+       ↓
+Formulário de Preenchimento
+       ↓
+Geração dos 3 DNAs + Manifesto
+       ↓
+Pagamento e Registro
+       ↓
+Ativo Disponível no Viewer
+O template define:
+•	Campos de entrada (dados bonitos)
+•	Regras de validação
+•	Gerador de códigos para DNA_ATTRIBUTES
+•	Estrutura do manifesto
+•	Renderização no viewer
+________________________________________
+2. A Página Mestra (templates.html)
+A página mestra é o ponto de entrada do usuário. Ela lista todas as classes de ativos disponíveis (conforme BBP-0006) e redireciona para o template correspondente.
+Exemplo de estrutura:
+text
+🧬 Escolha o tipo de ativo
+
+🎨 NFT / Arte (ART)
+🌱 Commodity (COMMODITY)
+🏠 Real World Asset (RWA)
+📊 Mercado Preditivo (PREDICTION)
+👤 Identidade Digital (IDENTITY)
+🔑 Membership (MEMBERSHIP)
+🎟️ Ingresso (TICKET)
+📊 Dataset (DATASET)
+🧠 Modelo de IA (AI_MODEL)
+💰 Ativo Financeiro (FINANCE)
+🌐 Domínio (DOMAIN)
+🎵 Mídia (MEDIA)
+Cada card redireciona para o template específico, organizado em pastas:
+text
+templates/
+├── templates.html
+├── nft/
+│   └── nft.html
+├── commodity/
+│   └── commodity.html
+├── rwa/
+│   └── rwa.html
+└── ...
+________________________________________
+3. Estrutura de um Template
+Um template BBP segue esta estrutura declarativa:
+yaml
+template:
+  name: "Commodity Template"
+  version: "1.0"
+  class: "COMMODITY"              # BBP-0006
+  standard: "coffee"               # Subtipo (ex: café, ouro, petróleo)
+  description: "Criar lote de café"
+
+form:
+  sections:
+    - name: "Identificação"
+      fields:
+        - name: "namespace"
+          label: "Produtor / Fazenda"
+          type: "text"
+          required: true
+          help: "Ex: Fazenda Santa Rita"
+
+        - name: "identifier"
+          label: "Identificador do Lote"
+          type: "text"
+          required: true
+          help: "Ex: lote_001_2026"
+
+    - name: "Características"
+      fields:
+        - name: "origin"
+          label: "Origem"
+          type: "select"
+          options: ["Brasil", "Colômbia", "Etiópia"]
+          required: true
+
+        - name: "species"
+          label: "Espécie"
+          type: "select"
+          options: ["Arábica", "Robusta"]
+          required: true
+
+        - name: "grade"
+          label: "Pontuação (0-100)"
+          type: "number"
+          min: 0
+          max: 100
+          required: true
+
+    - name: "Documentos"
+      fields:
+        - name: "certificate"
+          label: "Certificado (PDF)"
+          type: "file"
+          accept: ".pdf"
+
+        - name: "image"
+          label: "Imagem do Produto"
+          type: "file"
+          accept: "image/*"
+
+code_generator:
+  # Define como transformar dados bonitos em códigos
+  origin:
+    type: "mapping"
+    map:
+      "Brasil": "br"
+      "Colômbia": "co"
+      "Etiópia": "et"
+
+  species:
+    type: "mapping"
+    map:
+      "Arábica": "a01"
+      "Robusta": "r01"
+
+  grade:
+    type: "direct"      # Usa o próprio valor como código
+
+dna_structure:
+  identity: "BBP:id:commodity:{namespace}:{identifier}"
+  attributes:
+    - "origin/{origin_code}"
+    - "species/{species_code}"
+    - "grade/{grade}"
+  binding: "BBP:bind:arweave:{manifest_hash}"
+
+manifest_template:
+  bbp_version: "1.2"
+  identity: "{dna_identity}"
+  standard: "{standard}"
+  attributes:
+    producer: "{namespace}"
+    lot: "{identifier}"
+    origin: "{origin}"
+    species: "{species}"
+    grade: "{grade}"
+    certificates: "{certificates}"
+  assets:
+    image: "{image_ipfs_hash}"
+    certificate: "{certificate_arweave_hash}"
+  render:
+    type: "certificate"
+    template: "coffee_certificate"
+________________________________________
+4. O Gerador de Códigos
+O gerador de códigos é um dos componentes mais importantes do template. Ele transforma os valores preenchidos pelo usuário (dados bonitos) em códigos padronizados que farão parte do DNA_ATTRIBUTES.
+Por que isso é necessário?
+•	NFTs: os códigos são os nomes dos arquivos (ex: background/07 = sétimo arquivo da pasta)
+•	Commodities: não há arquivos; precisamos de um código que represente "Brasil" ou "Arábica"
+•	Imóveis: "apartamento" vira type/apt, "150m²" vira area/150
+Tipos de gerador:
+Tipo	Descrição	Exemplo
+mapping	Mapa de valores → código	"Brasil" → "br"
+direct	Usa o próprio valor	"86" → "86"
+auto	Gera código sequencial	"Arábica" → "s01"
+file	Usa nome do arquivo	"foto.jpg" → "foto"
+Resolver Map
+O template mantém um resolver_map que permite ao viewer traduzir os códigos de volta para valores legíveis:
+json
+{
+  "origin": {
+    "br": "Brasil",
+    "co": "Colômbia",
+    "et": "Etiópia"
+  },
+  "species": {
+    "a01": "Arábica",
+    "r01": "Robusta"
+  }
+}
+No caso dos NFTs, esse mapa é gerado automaticamente a partir da pasta de layers:
+json
+{
+  "background": {
+    "01": "bg_sunset.png",
+    "02": "bg_ocean.png"
+  },
+  "accessories": {
+    "03": "crucifix_chain.png"
+  }
+}
+________________________________________
+5. Fluxo Completo do Usuário
+text
+┌─────────────────────────────────────┐
+│  ENTRADA: templates.html            │
+│  Usuário escolhe o tipo de ativo    │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  TEMPLATE ESPECÍFICO                 │
+│  Ex: commodity/commodity.html        │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  PASSO 1: PREENCHIMENTO              │
+│  • Dados básicos (namespace, ident) │
+│  • Atributos (origem, espécie, etc) │
+│  • Upload de documentos              │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  PASSO 2: GERAÇÃO DOS DNAs           │
+│  • DNA_IDENTITY gerado               │
+│  • DNA_ATTRIBUTES com códigos        │
+│  • DNA_BINDING (placeholder)         │
+│  • Manifesto completo criado         │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  PASSO 3: PREVIEW E CONTRATO         │
+│  • Mostra os 3 DNAs                  │
+│  • Mostra preview do manifesto       │
+│  • Valor: R$ 15,00                   │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  PASSO 4: PAGAMENTO                  │
+│  • Usuário paga R$ 15                │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  PASSO 5: REGISTRO                    │
+│  • DNA_IDENTITY → Bitcoin (inscrição)│
+│  • Manifesto → Arweave               │
+│  • Imagens/docs → IPFS/Arweave       │
+│  • DNA_BINDING atualizado com hash   │
+└─────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  SAÍDA: DNA_BINDING final            │
+│  "BBP:bind:arweave:xyz..."           │
+│  Usuário digita no viewer            │
+└─────────────────────────────────────┘
+________________________________________
+6. O Papel de Cada DNA
+DNA	Onde fica	Função
+IDENTITY	Bitcoin (inscrição)	Identificador imutável do ativo
+ATTRIBUTES	Resolver / Indexador	Códigos das características
+BINDING	O que usuário digita	Aponta para o manifesto no Arweave
+Fluxo no viewer:
+1.	Usuário digita DNA_BINDING
+2.	Viewer busca DNA_IDENTITY no Bitcoin
+3.	Através dele, localiza o manifesto no Arweave
+4.	Lê os DNA_ATTRIBUTES e os dados completos
+5.	Renderiza conforme o campo standard
+________________________________________
+7. Renderização no Viewer
+O viewer deve ser capaz de interpretar o campo standard do manifesto e renderizar o ativo de forma apropriada.
+Exemplos:
+standard	Renderização
+nft	Composição de imagens (layers)
+coffee	Certificado com dados do café
+gold	Ficha técnica do ouro
+realestate	Galeria de fotos + escritura
+identity	Perfil com avatar e bio
+ticket	QR Code + informações do evento
+Estrutura do campo render no manifesto:
+json
+"render": {
+  "type": "certificate",
+  "template": "coffee_certificate",
+  "fields": ["origin", "species", "grade", "cupping"],
+  "assets": {
+    "image": "ipfs:Qm...",
+    "certificate": "arweave:Tx..."
+  }
+}
+________________________________________
+8. Exemplo Completo: Template de Café
+Template: commodity/commodity.html (tipo = coffee)
+Entrada do usuário:
+Campo	Valor
+Produtor	Fazenda Santa Rita
+Lote	lote_001_2026
+Origem	Brasil
+Espécie	Arábica
+Pontuação	86
+Certificado	[upload PDF]
+Imagem	[upload JPG]
+Geração de códigos:
+Dado	Código
+Brasil	br
+Arábica	a01
+86	86
+DNAs gerados:
+text
+IDENTITY:  BBP:id:commodity:fazenda_santa_rita:lote_001_2026
+ATTRIBUTES: ["origin/br", "species/a01", "grade/86"]
+BINDING:   BBP:bind:arweave:Tx123... (após registro)
+Manifesto (BBP-0002):
+json
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:commodity:fazenda_santa_rita:lote_001_2026",
+  "standard": "coffee",
+  "attributes": {
+    "producer": "Fazenda Santa Rita",
+    "lot": "lote_001_2026",
+    "origin": "Brasil",
+    "species": "Arábica",
+    "grade": 86,
+    "cupping_score": 86,
+    "certifications": []
+  },
+  "assets": {
+    "image": "ipfs:QmImagem123",
+    "certificate": "arweave:TxCertificado456"
+  },
+  "render": {
+    "type": "certificate",
+    "template": "coffee_certificate",
+    "fields": ["origin", "species", "grade", "cupping"]
+  }
+}
+________________________________________
+9. Benefícios do Template Standard
+•	Universalidade: qualquer ativo pode ser criado com a mesma estrutura
+•	Simplicidade: usuário não precisa entender a complexidade do protocolo
+•	Padronização: todos os ativos seguem BBP-0001, BBP-0002, BBP-0011
+•	Interoperabilidade: templates podem ser reutilizados por diferentes projetos
+•	Extensibilidade: novos tipos de ativo podem ser adicionados facilmente
+

@@ -1,0 +1,163 @@
+BBP-0008 — Network Adapters
+Status
+Draft
+Título
+Adaptadores de Rede do Protocolo BBP
+Resumo
+Network Adapters são componentes responsáveis por permitir que resolvers BBP consultem dados em diferentes redes blockchain.
+Cada blockchain possui estruturas de dados, APIs e modelos de estado distintos. Os Network Adapters traduzem as consultas genéricas definidas pelo protocolo BBP em chamadas específicas para cada rede.
+Esses adaptadores permitem que o protocolo suporte múltiplas blockchains sem alterar a arquitetura principal do resolver.
+Resolvers utilizam Network Adapters para consultar dados através de:
+•	indexadores públicos
+•	endpoints RPC
+•	gateways de rede
+________________________________________
+1. Visão Geral
+O protocolo BBP é projetado para ser compatível com múltiplas redes blockchain.
+No entanto, cada rede possui formas diferentes de consultar dados.
+Network Adapters resolvem essa diferença traduzindo consultas do protocolo BBP em chamadas específicas para cada rede.
+Arquitetura simplificada:
+Resolver
+↓
+Network Adapter
+↓
+Blockchain API / Indexer
+↓
+Blockchain
+Cada rede suportada possui um adaptador específico.
+________________________________________
+2. Função dos Network Adapters
+Um Network Adapter executa as seguintes funções:
+1.	Interpretar consultas do resolver
+2.	Traduzir consultas para APIs específicas da rede
+3.	Consultar dados em indexadores ou RPCs
+4.	Normalizar respostas para o formato BBP
+Isso permite que o resolver permaneça independente da lógica de cada blockchain.
+________________________________________
+3. Estrutura de um Network Adapter
+Cada adaptador deve implementar um conjunto básico de operações.
+Estrutura conceitual:
+adapter:
+  network: <blockchain name>
+
+  functions:
+    getAssetState
+    getOwnership
+    getEvents
+Essas funções permitem recuperar informações essenciais sobre um ativo.
+________________________________________
+4. Mapeamento de Consultas
+O resolver interpreta o manifesto do ativo e gera consultas genéricas.
+Exemplo:
+event: Transfer
+O Network Adapter traduz essa consulta para o formato da rede específica.
+Exemplo conceitual:
+BBP query:
+event = Transfer
+
+Ethereum query:
+ERC721 Transfer event logs
+
+Bitcoin query:
+UTXO ownership lookup
+Esse processo permite que o mesmo manifesto funcione em diferentes blockchains.
+________________________________________
+5. Integração com Indexadores
+Network Adapters normalmente consultam dados através de indexadores públicos.
+Exemplos de infraestrutura pública incluem serviços equivalentes a:
+•	Mempool.space
+•	Infura
+•	Alchemy
+Adapters podem utilizar múltiplas fontes para aumentar a confiabilidade.
+Exemplo de fallback:
+provider_1
+provider_2
+provider_3
+________________________________________
+6. Adapters para Redes Específicas
+Cada blockchain requer um adaptador próprio.
+6.1 Bitcoin Adapter
+Funções típicas:
+getUTXO
+getTransaction
+getAddressBalance
+Consultas podem utilizar:
+•	indexadores de UTXO
+•	APIs públicas
+•	nós RPC
+________________________________________
+6.2 Ethereum Adapter
+Funções típicas:
+getTokenOwner
+getContractEvents
+getAccountBalance
+Consultas podem utilizar:
+•	RPC endpoints
+•	indexadores de eventos
+•	APIs de infraestrutura Web3
+________________________________________
+6.3 Arweave Adapter
+Arweave é utilizado principalmente para armazenamento de dados permanentes.
+Funções típicas:
+getTransaction
+getData
+queryGraphQL
+Esse adaptador permite recuperar manifestos e outros dados persistentes.
+________________________________________
+7. Normalização de Dados
+Blockchains retornam dados em formatos diferentes.
+Network Adapters são responsáveis por normalizar essas respostas para o formato BBP.
+Exemplo:
+network response
+↓
+adapter processing
+↓
+normalized BBP data
+Essa normalização permite que resolvers produzam respostas consistentes.
+________________________________________
+8. Estratégias de Confiabilidade
+Implementações de Network Adapters podem incluir mecanismos como:
+•	múltiplos provedores de dados
+•	fallback automático
+•	verificação de respostas
+•	limites de consulta
+Essas estratégias ajudam a reduzir problemas causados por:
+•	falhas de indexadores
+•	limites de API
+•	inconsistências temporárias de rede
+________________________________________
+9. Independência do Protocolo
+O protocolo BBP não exige o uso de serviços específicos.
+Qualquer implementação pode utilizar:
+•	indexadores públicos
+•	nós RPC próprios
+•	infraestrutura descentralizada
+Isso permite que diferentes implementações adaptem a infraestrutura conforme necessário.
+________________________________________
+10. Papel na Arquitetura BBP
+Network Adapters conectam o resolver às redes blockchain suportadas.
+Arquitetura completa:
+DNA
+↓
+Registry
+↓
+Manifest
+↓
+Resolver
+↓
+Resolver Nodes
+↓
+Network Adapters
+↓
+Blockchains
+Essa camada torna possível que o protocolo BBP opere de forma multi-chain.
+________________________________________
+Conclusão
+Network Adapters permitem que o protocolo BBP interaja com múltiplas blockchains de maneira consistente.
+Principais características:
+•	abstração de rede
+•	compatibilidade multi-chain
+•	flexibilidade de implementação
+•	integração com infraestrutura pública
+Essa arquitetura garante que o protocolo BBP possa evoluir e suportar novas redes sem alterar sua estrutura fundamental.
+________________________________________

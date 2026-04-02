@@ -1,0 +1,157 @@
+BBP-0005
+Resolution Format Standard v1.0
+Define o formato padrão de resolução de endereços BBP, permitindo que ativos identificados por BBP ID sejam acessados diretamente por aplicações, viewers, wallets e navegadores.
+O Resolution Format estabelece uma forma universal de:
+• acessar ativos BBP
+• transformar endereços legíveis em BBP IDs
+• permitir integração direta com resolvers do protocolo
+Esse padrão permite que ativos BBP sejam tratados como endereços universais de ativos digitais.
+________________________________________
+1. Objetivo
+O objetivo do Resolution Format é permitir que qualquer aplicação ou usuário possa abrir um ativo BBP utilizando um endereço padronizado.
+Esse endereço pode ser resolvido por:
+• viewers
+• wallets
+• explorers
+• aplicações
+• gateways web
+O resolver converte o endereço em um BBP ID e executa o fluxo de resolução do protocolo.
+Fluxo geral:
+BBP Address
+↓
+Resolver
+↓
+BBP ID
+↓
+Manifest
+↓
+Networks
+↓
+Indexers
+↓
+Estado do ativo
+________________________________________
+2. Formato de Endereço
+O protocolo define o seguinte formato de URI:
+bbp://<type>/<namespace>/<identifier>
+Onde:
+Campo	Descrição
+type	classe do ativo
+namespace	domínio ou coleção
+identifier	identificador único
+________________________________________
+3. Conversão para BBP ID
+O endereço resolvido é convertido para o formato definido no BBP-0001 (DNA Standard).
+Regra de conversão:
+bbp://type/namespace/identifier
+↓
+BBP:id:type:namespace:identifier
+Exemplo:
+Endereço:
+bbp://art/fredo/2654
+Resultado:
+BBP:id:art:fredo:2654
+Esse BBP ID é então processado pelo Resolver BBP.
+________________________________________
+4. Suporte a URLs Web
+Aplicações web podem expor um gateway de resolução utilizando o formato HTTP.
+Exemplo:
+https://bbp.id/art/fredo/2654
+Fluxo de resolução:
+URL
+↓
+Gateway ou Viewer
+↓
+Converter para BBP ID
+↓
+Resolver protocolo
+↓
+Exibir ativo
+Gateways web são opcionais e podem ser implementados por:
+• viewers
+• wallets
+• exploradores
+• indexadores
+O protocolo não exige um gateway centralizado.
+________________________________________
+5. Resolução no Viewer
+Viewers BBP podem implementar resolução direta de endereços.
+Exemplo de uso:
+viewer.bbp/#/art/fredo/2654
+ou
+viewer.bbp/#/BBP:id:art:fredo:2654
+O viewer executa os seguintes passos:
+1.	interpretar o endereço
+2.	converter para BBP ID
+3.	localizar manifesto
+4.	resolver redes e eventos
+5.	exibir o estado do ativo
+Essa abordagem permite que resolvers funcionem dentro de aplicações P2P, sem dependência de servidores centrais.
+________________________________________
+6. Compatibilidade com Aplicações
+Qualquer aplicação pode implementar suporte ao Resolution Format.
+Exemplos de aplicações compatíveis:
+• viewers
+• wallets
+• marketplaces
+• jogos
+• exploradores de ativos
+• indexadores
+A resolução sempre segue o mesmo fluxo:
+BBP Address
+↓
+BBP ID
+↓
+Manifest
+↓
+Resolver
+↓
+Estado do ativo
+________________________________________
+7. Benefícios
+O Resolution Format permite:
+• endereços universais de ativos
+• compartilhamento simples de ativos BBP
+• integração direta com aplicações
+• independência de blockchain
+• compatibilidade com resolvers P2P
+Ele transforma o BBP ID em um endereço navegável de ativo digital.
+________________________________________
+8. Exemplo Completo
+Endereço do ativo:
+bbp://art/fredo/2654
+Conversão:
+BBP:id:art:fredo:2654
+Fluxo de resolução:
+bbp://art/fredo/2654
+↓
+Resolver
+↓
+buscar manifesto
+↓
+ler redes
+↓
+consultar indexadores
+↓
+determinar estado
+↓
+exibir ativo
+________________________________________
+9. Relação com Outros Padrões BBP
+O Resolution Format opera sobre os padrões fundamentais do protocolo:
+BBP-0001 — DNA Standard
+define a identidade universal do ativo.
+BBP-0002 — Manifest Standard
+define a estrutura do ativo.
+BBP-0003 — Registry Standard
+define onde manifestos são registrados.
+BBP-0004 — Resolver Architecture
+define como o ativo é resolvido.
+________________________________________
+Resultado
+Com o Resolution Format, ativos BBP passam a possuir endereços universais, independentes de blockchain e compatíveis com aplicações descentralizadas.
+Exemplo final de endereço de ativo:
+bbp://art/fredo/2654
+________________________________________
+✅ BBP-0005 está fechado.
+

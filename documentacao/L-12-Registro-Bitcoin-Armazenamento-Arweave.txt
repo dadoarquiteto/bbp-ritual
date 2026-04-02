@@ -1,0 +1,108 @@
+BBP-0012 - Registro no Bitcoin e Armazenamento no Arweave
+Status: Draft
+Versão: 1.0
+Título: Padrão de Registro de Ativos BBP
+Resumo
+Define o processo de registro definitivo de um ativo BBP, ancorando sua identidade no Bitcoin através de Ordinal Inscriptions e armazenando seus dados permanentes no Arweave. Este documento estabelece o fluxo de criação do DNA_BINDING, que conecta as duas camadas e permite a resolução universal do ativo.
+________________________________________
+1. Introdução
+O protocolo BBP separa a identidade (imutável, armazenada no Bitcoin) do conteúdo (permanente, armazenado no Arweave). Este documento define como essa separação é realizada na prática, garantindo:
+•	Imutabilidade: O DNA_IDENTITY não pode ser alterado após a confirmação no Bitcoin.
+•	Permanência: Os assets e o manifesto são armazenados para sempre no Arweave.
+•	Verificabilidade: A assinatura digital do contract_hash vincula a identidade no Bitcoin ao conteúdo no Arweave.
+•	Interoperabilidade: O DNA_BINDING fornece uma referência única para qualquer resolver encontrar o ativo.
+________________________________________
+2. Registro no Bitcoin (DNA_IDENTITY)
+2.1 Formato da Inscrição Ordinal
+A inscrição que contém o DNA_IDENTITY deve seguir o formato JSON abaixo:
+json
+{
+  "p": "bbp",
+  "op": "identity",
+  "id": "BBP:id:art:fredo:2654",
+  "timestamp": 1700000000,
+  "creator": "bc1qxyz...",
+  "signature": "base64_signature",
+  "binding": "BBP:bind:arweave:abc123"
+}
+Campos:
+•	p: Protocolo, fixo como "bbp".
+•	op: Operação, fixo como "identity".
+•	id: O DNA_IDENTITY gerado pelo template.
+•	timestamp: Unix timestamp da criação.
+•	creator: Endereço Bitcoin do criador (derivado da assinatura ou fornecido).
+•	signature: Assinatura do contract_hash (do manifesto) usando a chave do criador.
+•	binding: O DNA_BINDING (opcional na inscrição, pode estar apenas no manifesto).
+Nota: Se o binding não estiver na inscrição, ele será obtido do manifesto no Arweave. A vantagem de incluí-lo na inscrição é que o resolver pode encontrar o manifesto diretamente sem precisar interpretar o manifesto primeiro.
+2.2 Processo de Inscrição
+1.	Gerar Manifesto: O template cria o bbp_manifest_signed.json.
+2.	Assinar: O criador assina o contract_hash do manifesto.
+3.	Criar JSON da Inscrição: Monta o JSON conforme a estrutura acima.
+4.	Criar Inscrição Ordinal: Usa uma ferramenta (como ord) para criar uma inscrição com o conteúdo JSON.
+5.	Transmitir: Envia a transação para a rede Bitcoin.
+2.3 Validação
+Qualquer resolver pode validar a inscrição:
+•	Verificar se a signature corresponde ao contract_hash usando a chave pública derivada do creator.
+•	Verificar se o id está no formato correto (BBP:id:...).
+•	Opcionalmente, verificar se o binding aponta para um manifesto válido no Arweave.
+________________________________________
+3. Armazenamento no Arweave (Manifesto e Assets)
+3.1 Estrutura de Armazenamento
+Cada arquivo é armazenado como uma transação separada no Arweave. O manifesto referencia os assets pelos seus IDs de transação.
+Exemplo de manifesto (bbp_manifest_signed.json):
+json
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:art:fredo:2654",
+  "assets": {
+    "image": "arweave:def456",
+    "model": "arweave:ghi789"
+  },
+  "dna_binding": "BBP:bind:arweave:abc123",
+  ...
+}
+Convenção:
+•	O ID da transação do manifesto (abc123) é usado no DNA_BINDING.
+•	O manifesto contém os IDs dos assets.
+3.2 Processo de Upload
+1.	Upload dos Assets: Enviar cada asset (imagem, documento) para o Arweave, coletando seus IDs.
+2.	Atualizar Manifesto: Inserir os IDs dos assets no campo assets do manifesto.
+3.	Upload do Manifesto: Enviar o manifesto final para o Arweave, coletando seu ID (abc123).
+4.	Criar DNA_BINDING: Gerar o binding: BBP:bind:arweave:abc123.
+3.3 Ferramentas Recomendadas
+•	Arweave Bundlr: Para simplificar o pagamento e o upload.
+•	Arweave CLI: Para controle total.
+•	Integração via Irys (ex-Bundlr): Para usar tokens como SOL ou ETH para pagar o armazenamento.
+________________________________________
+4. O DNA_BINDING como Ponte
+O DNA_BINDING é a chave que conecta a identidade no Bitcoin ao conteúdo no Arweave.
+Formato: BBP:bind:arweave:<tx_id>
+Onde:
+•	<tx_id> é o ID da transação do manifesto no Arweave.
+Exemplo:
+text
+BBP:bind:arweave:abc123
+Resolução:
+1.	O resolver encontra o binding (na inscrição do Bitcoin ou no manifesto).
+2.	Extrai arweave:abc123.
+3.	Consulta o gateway do Arweave (https://arweave.net/abc123) para obter o manifesto.
+4.	Usa o manifesto para localizar os assets e renderizar o ativo.
+________________________________________
+5. Fluxo Completo de Registro (Passo a Passo)
+Passo	Ação	Responsável	Tecnologia
+1	Coletar dados do ativo via template	Usuário	HTML/JS
+2	Gerar bbp_manifest_unsigned.json	Template	JS
+3	Calcular contract_hash	Template	JS (Web Crypto)
+4	Assinar contract_hash com carteira Bitcoin	Usuário	Wallet (Unisat/Xverse)
+5	Gerar bbp_manifest_signed.json	Template	JS
+6	Upload dos assets (imagens, docs) para Arweave	Usuário/Ferramenta	Arweave (Bundlr)
+7	Atualizar manifesto com IDs dos assets	Ferramenta	JS
+8	Upload do manifesto final para Arweave	Ferramenta	Arweave (Bundlr)
+9	Obter tx_id do manifesto (abc123)	Ferramenta	Arweave
+10	Criar DNA_BINDING = BBP:bind:arweave:abc123	Ferramenta	-
+11	Criar JSON da inscrição no Bitcoin	Ferramenta	-
+12	Inserir JSON no Bitcoin via Ordinal	Ferramenta	Bitcoin/Ord
+13	Obter inscription_id	Ferramenta	Bitcoin/Ord
+14	Atualizar DNA_BINDING para incluir o inscription_id (opcional)	Ferramenta	-
+15	Registrar o DNA_BINDING no viewer	Usuário	Viewer BBP
+

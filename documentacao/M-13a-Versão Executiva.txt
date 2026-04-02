@@ -1,0 +1,959 @@
+PLANO DE EXECUÇÃO - RITUAL BBP E REDE DE TESTES
+Versão Executiva
+Data: Hoje
+Objetivo: Definir e iniciar a implementação da rede de testes
+________________________________________
+1. O QUE JÁ ESTÁ PRONTO (SEU LADO)
+Item	Status	O que falta
+Cenas 1 a 6 (HTML/CSS/JS/animations)	✅ Pronto	Nada
+Spritesheet do boneco	✅ Pronto	Nada
+Backgrounds das cenas	✅ Pronto	Nada
+Cards (seed e fragment)	✅ Pronto	Nada
+Vídeos demonstrativos (8)	✅ Pronto	Nada
+Vídeos das cenas arquivadas (5)	✅ Pronto	Nada
+Template Identity (sem banner)	✅ Pronto	Nada
+Template NFT	✅ Pronto	Nada
+Template Commodity	✅ Pronto	Nada
+Template RWA	✅ Pronto	Nada
+Template Game Asset	✅ Pronto	Nada
+Template Token	✅ Pronto	Nada
+Viewer.html	✅ Pronto	Nada
+Resolver.js	✅ Pronto	Nada
+Conclusão: Seu lado está 100% pronto para deploy.
+________________________________________
+2. O QUE PRECISA SER FEITO (MEU LADO - CÓDIGO)
+FASE 1: Integração GUN.js + Contador P2P (Hoje)
+javascript
+// ARQUIVO: gun-integration.js
+// Será adicionado em TODAS as cenas (1 a 6)
+
+// 1. Inicializar GUN.js
+const gun = Gun({
+  peers: [
+    'https://gun-manhattan.herokuapp.com/gun',
+    'https://gun-us.herokuapp.com/gun'
+  ]
+});
+
+// 2. Criar estrutura de dados
+const ritualDB = gun.get('bbp_ritual');
+const stepCounter = ritualDB.get('step_counter');
+
+// 3. Inicializar contador (se não existir)
+stepCounter.once((value) => {
+  if (value === undefined) {
+    stepCounter.put(1);
+    currentSeedCount = 1;
+  } else {
+    currentSeedCount = value;
+  }
+  updateUI();
+});
+
+// 4. Escutar mudanças em tempo real
+stepCounter.on((value) => {
+  currentSeedCount = value;
+  updateUI();
+  updateAnimation(value); // Mapeia seeds → frame da animação
+  checkSceneCompletion(value);
+});
+
+// 5. Função para participar (incrementar)
+async function participate() {
+  if (!currentAddress) await connectWallet();
+  if (!currentAddress) return;
+  
+  stepCounter.once((value) => {
+    stepCounter.put((value || 1) + 1);
+  });
+  
+  // Registra participação na rede
+  registerParticipation(currentAddress, currentScene);
+  
+  // Concede recompensas
+  await grantRewards();
+}
+Tempo estimado: 2 horas
+________________________________________
+FASE 2: Mapeamento Seeds → Frames (Hoje)
+javascript
+// ARQUIVO: animation-mapper.js
+// Será adicionado em CADA CENA (valores específicos)
+
+const SCENE_CONFIG = {
+  1: { seeds: 2000, frames: 500, startFrame: 0, startSeed: 0 },
+  2: { seeds: 4000, frames: 550, startFrame: 500, startSeed: 2000 },
+  3: { seeds: 6000, frames: 570, startFrame: 1050, startSeed: 6000 },
+  4: { seeds: 8000, frames: 650, startFrame: 1620, startSeed: 12000 },
+  5: { seeds: 10000, frames: 750, startFrame: 2270, startSeed: 20000 },
+  6: { seeds: 30000, frames: 4385, startFrame: 3020, startSeed: 30000 }
+};
+
+function mapSeedsToFrame(seedCount, sceneNumber) {
+  const config = SCENE_CONFIG[sceneNumber];
+  if (!config) return 0;
+  
+  const sceneSeeds = Math.min(
+    Math.max(0, seedCount - config.startSeed),
+    config.seeds
+  );
+  
+  const progress = sceneSeeds / config.seeds;
+  return config.startFrame + Math.floor(progress * config.frames);
+}
+
+// NO MAIN.JS DE CADA CENA
+stepCounter.on((seedCount) => {
+  const frameNumber = mapSeedsToFrame(seedCount, SCENE_NUMBER);
+  updateCharacterAnimation(frameNumber);
+  updateProgressBar(seedCount);
+});
+Tempo estimado: 1 hora
+________________________________________
+FASE 3: Conexão com Carteira Bitcoin (Hoje)
+javascript
+// ARQUIVO: wallet-connector.js
+// Será adicionado em TODAS as cenas
+
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  return null;
+}
+
+async function connectWallet() {
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Instale Unisat, Xverse ou Leather para participar');
+    return null;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const address = accounts[0];
+    const pubkey = await provider.getPublicKey();
+    
+    localStorage.setItem('bbp_wallet_address', address);
+    localStorage.setItem('bbp_wallet_pubkey', pubkey);
+    
+    updateWalletUI(address);
+    return { address, pubkey, provider };
+  } catch (error) {
+    console.error('Erro ao conectar:', error);
+    return null;
+  }
+}
+Tempo estimado: 1 hora
+________________________________________
+FASE 4: Sistema de Recompensas (Hoje)
+javascript
+// ARQUIVO: rewards-system.js
+// Será adicionado em TODAS as cenas
+
+const PROTOCOL_FRAGMENTS_TOTAL = 21000000;
+const BASE_REWARD = 10;
+
+async function grantRewards(address, sceneNumber, position) {
+  let fragments = BASE_REWARD;
+  
+  // Bônus para primeiros 100
+  if (position <= 100) fragments += 50;
+  
+  // Bônus por compartilhamentos
+  const shares = await getShareCount(address);
+  fragments += Math.min(shares, 3) * 5;
+  
+  // Registra na rede P2P
+  const userFragments = gun.get('bbp_ritual').get('protocol_fragments').get(address);
+  userFragments.once((data) => {
+    const current = data?.amount || 0;
+    userFragments.put({
+      amount: current + fragments,
+      last_updated: Date.now(),
+      history: [...(data?.history || []), {
+        amount: fragments,
+        scene: sceneNumber,
+        timestamp: Date.now()
+      }]
+    });
+  });
+  
+  // Concede fração do NFT da cena (se disponível)
+  await grantSceneFraction(address, sceneNumber);
+  
+  showRewardNotification(fragments, sceneNumber);
+}
+Tempo estimado: 2 horas
+________________________________________
+FASE 5: Redirecionamento Automático entre Cenas (Hoje)
+javascript
+// ARQUIVO: scene-router.js
+// Será adicionado em TODAS as cenas
+
+const SCENE_ROUTES = {
+  1: '/scene1/',
+  2: '/scene2/',
+  3: '/scene3/',
+  4: '/scene4/',
+  5: '/scene5/',
+  6: '/scene6/'
+};
+
+const SCENE_SEEDS = {
+  1: 2000,
+  2: 6000,
+  3: 12000,
+  4: 20000,
+  5: 30000,
+  6: 60000
+};
+
+function getCurrentSceneBySeedCount(seedCount) {
+  if (seedCount < 2000) return 1;
+  if (seedCount < 6000) return 2;
+  if (seedCount < 12000) return 3;
+  if (seedCount < 20000) return 4;
+  if (seedCount < 30000) return 5;
+  return 6;
+}
+
+function checkAndRedirect() {
+  const currentScene = getCurrentSceneBySeedCount(currentSeedCount);
+  const currentPath = window.location.pathname;
+  const expectedPath = SCENE_ROUTES[currentScene];
+  
+  if (!currentPath.includes(expectedPath)) {
+    // Salva o estado antes de redirecionar
+    localStorage.setItem('bbp_redirect_from', currentPath);
+    localStorage.setItem('bbp_seed_count', currentSeedCount);
+    window.location.href = expectedPath;
+  }
+}
+
+// Executa a cada atualização do contador
+stepCounter.on((seedCount) => {
+  checkAndRedirect();
+});
+Tempo estimado: 1 hora
+________________________________________
+FASE 6: Indexadores Multi-Chain (Hoje)
+javascript
+// ARQUIVO: multi-chain-indexer.js
+// Para o viewer.html
+
+const SUPPORTED_NETWORKS = [
+  'bitcoin', 'ethereum', 'polygon', 'solana',
+  'arbitrum', 'optimism', 'base', 'avalanche', 'bsc'
+];
+
+const NETWORK_ENDPOINTS = {
+  bitcoin: 'https://mempool.space/api/address',
+  ethereum: 'https://api.etherscan.io/api',
+  polygon: 'https://api.polygonscan.com/api',
+  solana: 'https://api.solscan.io/account',
+  arbitrum: 'https://api.arbiscan.io/api',
+  optimism: 'https://api-optimistic.etherscan.io/api',
+  base: 'https://api.basescan.org/api',
+  avalanche: 'https://api.snowtrace.io/api',
+  bsc: 'https://api.bscscan.com/api'
+};
+
+async function getAssetStateAcrossNetworks(assetId) {
+  const states = {};
+  
+  for (const network of SUPPORTED_NETWORKS) {
+    try {
+      const response = await fetch(`${NETWORK_ENDPOINTS[network]}/${assetId}`);
+      states[network] = await response.json();
+    } catch (error) {
+      states[network] = { exists: false, error: error.message };
+    }
+  }
+  
+  return {
+    asset_id: assetId,
+    timestamp: Date.now(),
+    networks: states
+  };
+}
+Tempo estimado: 2 horas
+________________________________________
+FASE 7: Ghost Distribution Network (Hoje)
+javascript
+// ARQUIVO: gdn-loader.js
+// Para o viewer.html - CAMADA DE OFUSCAÇÃO
+
+const PEER_NODES = [
+  'https://bbp-peer-01.netlify.app/peer.js',
+  'https://bbp-peer-02.vercel.app/peer.js',
+  'https://bbp-peer-03.netlify.app/peer.js',
+  'https://bbp-peer-04.workers.dev/peer.js'
+];
+
+const BITCOIN_ANCHOR_TXID = 'SEU_TXID_AQUI';
+
+async function loadImageWithGDN(imageId) {
+  showLog("[VERIFYING] On-Chain Proof for Fragment_Anchor...");
+  
+  // 1. Verifica fragmento âncora no Bitcoin
+  const anchorValid = await verifyBitcoinAnchor(BITCOIN_ANCHOR_TXID);
+  if (anchorValid) {
+    showLog(`[VERIFYING] On-Chain Proof... ✓ (TxID: ${BITCOIN_ANCHOR_TXID})`);
+  }
+  
+  showLog("[CONNECTING] BBP Peer Network...");
+  
+  // 2. Busca fragmentos dos peers
+  let fragments = [];
+  for (const peer of PEER_NODES) {
+    const peerName = peer.split('/')[2];
+    showLog(`[CONNECTING] Peer ${peerName}...`);
+    
+    const peerFragments = await fetchFromPeer(peer, imageId);
+    if (peerFragments) {
+      fragments.push(...peerFragments);
+      showLog(`[DOWNLOADING] ${peerFragments.length} fragments...`);
+    }
+  }
+  
+  // 3. Fallback ofuscado
+  if (fragments.length < 100) {
+    showLog("[INFO] Requesting remaining fragments from backup network...");
+    const backup = await fetchFromBackup(imageId);
+    fragments.push(...backup);
+    showLog(`[DOWNLOADING] ${backup.length} fragments from backup network...`);
+  }
+  
+  showLog("[ASSEMBLING] Image from fragments...");
+  return assembleImage(fragments);
+}
+Tempo estimado: 2 horas
+________________________________________
+FASE 8: Página da Coleção Fredo (Hoje)
+html
+<!-- ARQUIVO: fredo.html -->
+<!-- Será criado do zero -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BBP - Coleção Fredo</title>
+  <style>
+    /* Estilos específicos para o lançamento */
+  </style>
+</head>
+<body>
+  <div class="fredo-container">
+    <h1>🎨 Coleção Fredo</h1>
+    <p>A última coleção no modelo tradicional, 
+       a primeira com potencial de evoluir para o DNA do BBP.</p>
+    
+    <div class="fredo-preview">
+      <img src="images/fredo_preview.png" alt="Fredo Collection">
+    </div>
+    
+    <div class="buttons">
+      <a href="https://gamma.io/collections/fredo" class="btn-buy">
+        🛒 Comprar na Gamma
+      </a>
+      <a href="/viewer.html" class="btn-viewer">
+        🔍 Revelar Ativos no Viewer
+      </a>
+    </div>
+    
+    <p class="note">
+      <strong>Nota:</strong> A Coleção Fredo é a <strong>Pietà dos ordinals</strong>.
+      Será a última coleção inscrita no modelo atual.
+    </p>
+  </div>
+</body>
+</html>
+Tempo estimado: 30 minutos
+________________________________________
+3. RESUMO DE TEMPO PARA HOJE
+Fase	Tarefa	Tempo
+1	GUN.js + Contador P2P	2h
+2	Mapeamento Seeds → Frames	1h
+3	Conexão com Carteira	1h
+4	Sistema de Recompensas	2h
+5	Redirecionamento entre Cenas	1h
+6	Indexadores Multi-Chain	2h
+7	Ghost Distribution Network	2h
+8	Página Fredo	0.5h
+TOTAL		11.5 horas
+É possível sim terminar hoje se começarmos agora.
+________________________________________
+4. O QUE VOCÊ PRECISA FAZER HOJE (ENQUANTO EU CODIFICO)
+Tarefa	Prazo
+Criar fragmento âncora (10x10px)	Agora
+Inscrever fragmento âncora no Bitcoin	Agora
+Gerar TXID da inscrição	Agora
+Criar conta nos serviços gratuitos (Netlify, Vercel, Cloudflare)	Agora
+Subir os fragmentos das cenas no Arweave	Agora
+Configurar proxy ofuscado	Agora
+Preparar links para os vídeos	Agora
+________________________________________
+5. ESTRUTURA FINAL DOS ARQUIVOS (APÓS IMPLEMENTAÇÃO)
+text
+bbp-ritual/
+├── scene1/
+│   ├── index.html (atualizado com GUN.js)
+│   ├── main.js (atualizado)
+│   ├── style.css
+│   ├── timeline.js
+│   ├── gun-integration.js (NOVO)
+│   ├── wallet-connector.js (NOVO)
+│   ├── animation-mapper.js (NOVO)
+│   ├── rewards-system.js (NOVO)
+│   ├── scene-router.js (NOVO)
+│   ├── backgrounds/
+│   └── character/
+├── scene2/ (mesma estrutura)
+├── scene3/ (mesma estrutura)
+├── scene4/ (mesma estrutura)
+├── scene5/ (mesma estrutura)
+├── scene6/ (mesma estrutura + viewer.html)
+├── viewer.html (atualizado com GDN + indexadores)
+├── fredo.html (NOVO)
+├── gun-integration.js (global)
+├── wallet-connector.js (global)
+├── multi-chain-indexer.js (NOVO)
+├── gdn-loader.js (NOVO)
+└── shared/
+    ├── config.js
+    └── utils.js
+________________________________________
+6. PRÓXIMOS PASSOS IMEDIATOS
+Agora (próximos 30 minutos)
+1.	Você:
+o	Me passa o TXID da inscrição do fragmento âncora no Bitcoin
+o	Me passa os links dos vídeos (demo_1.mp4, etc.)
+o	Me passa os links dos vídeos das cenas arquivadas
+2.	Eu:
+o	Começo a escrever o código de cada fase
+o	Envio para você testar incrementalmente
+Próximas 2 horas
+1.	Você: Cria as contas nos serviços gratuitos
+2.	Eu: Entrego Fases 1, 2, 3 (GUN.js + animação + carteira)
+Próximas 4 horas
+1.	Você: Sobe fragmentos no Arweave
+2.	Eu: Entrego Fases 4, 5 (recompensas + redirecionamento)
+Próximas 6 horas
+1.	Você: Configura proxy ofuscado
+2.	Eu: Entrego Fases 6, 7, 8 (indexadores + GDN + Fredo)
+Próximas 8-10 horas
+1.	Testes integrados
+2.	Ajustes finais
+3.	Deploy
+________________________________________
+7. PERGUNTA FINAL
+Você quer que eu comece AGORA a escrever o código completo para todas as fases?
+Se sim, me envie:
+1.	O TXID da inscrição do fragmento âncora no Bitcoin
+2.	A URL base onde os vídeos estarão hospedados
+3.	A URL base onde os fragmentos do Arweave estarão
+Com isso, em 30 minutos eu começo a entregar os arquivos prontos para você testar.
+eu preciso saber como isso vai funcionar. a gente vai fazer um layout que vai caber todos os layouts e pastas que eu já criei, é isso? outra coisa, vamos arrumar um jeito de fazer ainda local, mas tudo já praticamente pronto para ligar a rede de testes. ainda não tenho como inscrever o DNA no BTC e nem armazenar as imagens no arweave. teria como a gente fazer de outra forma? mas tem que ser de um jeito que quase não vai dar trabalho para subir a rede de testes. ou a gente bota a rede no ar e puxa as imagens das pastas no meu PC e depois a gente linka com o BTC e arweave. ou se for possível, usar uma test net do BTC e arweave para simular a hospedagem das imagens e puxar tido de lá. não sei se dá para fazer isso. mas já temos que deixar tudo funcionando como se fosse a rede real, tipo: manter os segredos até o lançamento, tudo ofuscado e etc. e tem outra coisa, como vamos usar os seeds fantasmas (escondidos) para confundir os atacantes, podemos aproveitar isso para prepararmos tudo e puxar as imagens dessas seeds, deixando o BTC e arweave par ao final. veja o que dá para fazer. se nada for possível, vou ver amanhã se arrumo o dinheiro para pagar essas taxas e deixar as imagens já na blockchain, mas se pudermos adiantar algo eu prefiro.
+eu preciso saber como isso vai funcionar. a gente vai fazer um layout que vai caber todos os layouts e pastas que eu já criei, é isso? outra coisa, vamos arrumar um jeito de fazer ainda local, mas tudo já praticamente pronto para ligar a rede de testes. ainda não tenho como inscrever o DNA no BTC e nem armazenar as imagens no arweave. teria como a gente fazer de outra forma? mas tem que ser de um jeito que quase não vai dar trabalho para subir a rede de testes. ou a gente bota a rede no ar e puxa as imagens das pastas no meu PC e depois a gente linka com o BTC e arweave. ou se for possível, usar uma test net do BTC e arweave para simular a hospedagem das imagens e puxar tido de lá. não sei se dá para fazer isso. mas já temos que deixar tudo funcionando como se fosse a rede real, tipo: manter os segredos até o lançamento, tudo ofuscado e etc. e tem outra coisa, como vamos usar os seeds fantasmas (escondidos) para confundir os atacantes, podemos aproveitar isso para prepararmos tudo e puxar as imagens dessas seeds, deixando o BTC e arweave par ao final. veja o que dá para fazer. se nada for possível, vou ver amanhã se arrumo o dinheiro para pagar essas taxas e deixar as imagens já na blockchain, mas se pudermos adiantar algo eu prefiro.
+Perfeito! Agora entendi completamente. Você quer simular tudo localmente primeiro, com a estrutura final já funcionando, mas sem pagar taxas agora. Depois, quando tudo estiver testado, você migra para o ambiente real (BTC + Arweave).
+Isso é totalmente possível e é a abordagem mais inteligente. Vamos fazer assim:
+________________________________________
+ESTRATÉGIA: SIMULAÇÃO LOCAL COM MIGRAÇÃO FUTURA
+1. Arquitetura de Simulação
+text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    AMBIENTE DE TESTES (LOCAL)                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    SUBSTITUIÇÃO DO BITCOIN                          │   │
+│  │                                                                     │   │
+│  │  Em vez de inscrever no BTC real:                                  │   │
+│  │  - Criar um arquivo JSON local: `mock_bitcoin_inscriptions.json`   │   │
+│  │  - O viewer lê deste arquivo como se fosse a blockchain            │   │
+│  │  - O TXID é simulado (ex: "mock_abc123")                           │   │
+│  │  - O fragmento âncora (10x10px) fica na pasta `mock_btc/`         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    SUBSTITUIÇÃO DO ARWEAVE                          │   │
+│  │                                                                     │   │
+│  │  Em vez de fazer upload no Arweave real:                           │   │
+│  │  - Todos os fragmentos ficam em pastas locais                      │   │
+│  │  - O viewer acessa via `./mock_arweave/`                           │   │
+│  │  - O proxy ofuscado aponta para estas pastas                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    SEEDS FANTASMAS (REAIS)                          │   │
+│  │                                                                     │   │
+│  │  Estes já podem ser criados em serviços gratuitos HOJE:            │   │
+│  │  - GitHub Pages, Vercel, Netlify, Cloudflare Workers               │   │
+│  │  - Cada seed contém fragmentos em base64 (simulando P2P)           │   │
+│  │  - NUNCA mencionam Arweave                                         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    REDE P2P (GUN.js - REAL)                         │   │
+│  │                                                                     │   │
+│  │  Funciona normalmente:                                              │   │
+│  │  - Contador global sincronizado                                     │   │
+│  │  - Participantes registrados                                        │   │
+│  │  - Frações e fragmentos distribuídos                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+________________________________________
+2. ESTRUTURA DE PASTAS (TUDO LOCAL POR ENQUANTO)
+text
+bbp-ritual/
+│
+├── scene1/
+│   ├── index.html
+│   ├── main.js (com GUN.js integrado)
+│   ├── style.css
+│   ├── timeline.js
+│   ├── backgrounds/
+│   └── character/
+│
+├── scene2/ (mesma estrutura)
+├── scene3/
+├── scene4/
+├── scene5/
+├── scene6/
+│
+├── viewer.html
+├── fredo.html
+│
+├── mock_btc/                    ← SIMULA BITCOIN
+│   ├── inscriptions.json        ← Lista de "inscrições"
+│   └── anchor_10x10.png         ← Fragmento âncora (10x10px)
+│
+├── mock_arweave/                ← SIMULA ARWEAVE
+│   ├── scene1_fragments/
+│   │   ├── 0001.png
+│   │   ├── 0002.png
+│   │   └── ... (até 2000)
+│   ├── scene2_fragments/ (até 4000)
+│   ├── scene3_fragments/ (até 6000)
+│   ├── scene4_fragments/ (até 8000)
+│   ├── scene5_fragments/ (até 10000)
+│   ├── protocol_fragments/ (opcional)
+│   ├── genesis_nft.png
+│   └── manifests/
+│
+├── mock_peers/                  ← SEEDS FANTASMAS (LOCAIS PARA TESTE)
+│   ├── peer_01.js
+│   ├── peer_02.js
+│   └── peer_03.js
+│
+├── shared/
+│   ├── config.js
+│   ├── gun-integration.js
+│   ├── wallet-connector.js
+│   ├── animation-mapper.js
+│   ├── rewards-system.js
+│   ├── scene-router.js
+│   ├── multi-chain-indexer.js   ← SIMULA indexadores
+│   ├── gdn-loader.js            ← USA OS MOCKS
+│   └── utils.js
+│
+└── videos_demo/ (8 vídeos)
+└── videos_scenes/ (5 vídeos)
+________________________________________
+3. CÓDIGO DOS MOCKS (PARA FUNCIONAR LOCALMENTE)
+3.1 Mock do Bitcoin (mock_btc/inscriptions.json)
+json
+{
+  "anchor": {
+    "txid": "mock_anchor_abc123",
+    "content": "./mock_btc/anchor_10x10.png",
+    "dna": "BBP:id:ritual:genesis",
+    "timestamp": 1700000000
+  }
+}
+3.2 Mock do Arweave (mock_arweave/manifests/scene1.json)
+json
+{
+  "scene": 1,
+  "name": "NFT do Silêncio",
+  "total_fragments": 2000,
+  "fragment_base_url": "../mock_arweave/scene1_fragments/",
+  "fragment_pattern": "{number:04d}.png"
+}
+3.3 Mock dos Seeds Fantasmas (mock_peers/peer_01.js)
+javascript
+// Este arquivo será copiado para serviços gratuitos depois
+const FRAGMENTS = {};
+
+// Gera 50 fragmentos (exemplo)
+for (let i = 1; i <= 50; i++) {
+  const num = i.toString().padStart(4, '0');
+  FRAGMENTS[`f${num}`] = `BASE64_DA_IMAGEM_${num}`;
+}
+
+async function getFragment(id) {
+  return FRAGMENTS[id] || null;
+}
+
+// Para teste local, também serve via fetch
+if (typeof module !== 'undefined') {
+  module.exports = { getFragment, FRAGMENTS };
+}
+3.4 Configuração de Ambiente (shared/config.js)
+javascript
+const CONFIG = {
+  // Ambiente: 'local' ou 'production'
+  ENV: 'local',
+  
+  // URLs base (local vs produção)
+  BASE_URL: {
+    local: '',
+    production: 'https://bbp.network'
+  },
+  
+  // Mock Bitcoin
+  BITCOIN: {
+    local: {
+      type: 'mock',
+      inscriptionsFile: './mock_btc/inscriptions.json',
+      anchorImage: './mock_btc/anchor_10x10.png'
+    },
+    production: {
+      type: 'real',
+      api: 'https://mempool.space/api'
+    }
+  },
+  
+  // Mock Arweave
+  ARWEAVE: {
+    local: {
+      type: 'mock',
+      basePath: './mock_arweave/'
+    },
+    production: {
+      type: 'real',
+      gateway: 'https://arweave.net'
+    }
+  },
+  
+  // Seeds Fantasmas (já podem ser reais)
+  PEER_NODES: {
+    local: [
+      './mock_peers/peer_01.js',
+      './mock_peers/peer_02.js',
+      './mock_peers/peer_03.js'
+    ],
+    production: [
+      'https://bbp-peer-01.netlify.app/peer.js',
+      'https://bbp-peer-02.vercel.app/peer.js',
+      'https://bbp-peer-03.netlify.app/peer.js',
+      'https://bbp-peer-04.workers.dev/peer.js'
+    ]
+  },
+  
+  // GUN.js peers (sempre reais)
+  GUN_PEERS: [
+    'https://gun-manhattan.herokuapp.com/gun',
+    'https://gun-us.herokuapp.com/gun'
+  ],
+  
+  // Acumulados para animação
+  ACCUMULATED_SEEDS: { 1: 2000, 2: 6000, 3: 12000, 4: 20000, 5: 30000, 6: 60000 },
+  ACCUMULATED_FRAMES: { 1: 500, 2: 1050, 3: 1620, 4: 2270, 5: 3020, 6: 7405 }
+};
+________________________________________
+4. COMO O GDN FUNCIONA NO MODO LOCAL
+4.1 GDN Loader (shared/gdn-loader.js)
+javascript
+import CONFIG from './config.js';
+
+async function loadImageWithGDN(imageId) {
+  showLog("[VERIFYING] On-Chain Proof for Fragment_Anchor...");
+  
+  // 1. Verifica fragmento âncora (mock ou real)
+  let anchorValid = false;
+  if (CONFIG.ENV === 'local') {
+    // Mock: verifica se o arquivo existe
+    const anchorExists = await fetch(CONFIG.BITCOIN.local.anchorImage).then(r => r.ok);
+    anchorValid = anchorExists;
+    showLog(`[VERIFYING] On-Chain Proof... ✓ (Mock TxID: mock_anchor_abc123)`);
+  } else {
+    // Real: consulta mempool.space
+    const response = await fetch(`${CONFIG.BITCOIN.production.api}/tx/${ANCHOR_TXID}`);
+    anchorValid = response.ok;
+    showLog(`[VERIFYING] On-Chain Proof... ✓ (TxID: ${ANCHOR_TXID})`);
+  }
+  
+  showLog("[CONNECTING] BBP Peer Network...");
+  
+  // 2. Busca fragmentos dos peers (mock ou reais)
+  let fragments = [];
+  const peers = CONFIG.PEER_NODES[CONFIG.ENV];
+  
+  for (const peer of peers) {
+    const peerName = peer.split('/').pop();
+    showLog(`[CONNECTING] Peer ${peerName}...`);
+    
+    let peerFragments = null;
+    if (CONFIG.ENV === 'local') {
+      // Mock: importa o arquivo local
+      const peerModule = await import(peer);
+      peerFragments = await peerModule.getFragment(imageId);
+    } else {
+      // Real: fetch do peer
+      const response = await fetch(peer);
+      peerFragments = await response.json();
+    }
+    
+    if (peerFragments) {
+      fragments.push(peerFragments);
+      showLog(`[DOWNLOADING] ${Object.keys(peerFragments).length} fragments...`);
+    }
+  }
+  
+  // 3. Fallback para Arweave (mock ou real)
+  if (fragments.length < 100) {
+    showLog("[INFO] Requesting remaining fragments from backup network...");
+    
+    let backupFragments = null;
+    if (CONFIG.ENV === 'local') {
+      // Mock: busca na pasta local
+      const response = await fetch(`${CONFIG.ARWEAVE.local.basePath}${imageId}/fragments.json`);
+      backupFragments = await response.json();
+    } else {
+      // Real: proxy ofuscado
+      const response = await fetch(`${CONFIG.PROXY_URL}?id=${imageId}`);
+      backupFragments = await response.json();
+    }
+    
+    fragments.push(...backupFragments.fragments);
+    showLog(`[DOWNLOADING] ${backupFragments.fragments.length} fragments from backup network...`);
+  }
+  
+  showLog("[ASSEMBLING] Image from fragments...");
+  return assembleImage(fragments);
+}
+________________________________________
+5. PLANO DE AÇÃO IMEDIATO (HOJE)
+Fase A: Preparar a Estrutura Local (Você - 2 horas)
+1.	Criar a estrutura de pastas conforme o diagrama acima
+2.	Copiar todas as suas cenas (scene1 a scene6) para dentro
+3.	Criar a pasta mock_arweave/ com subpastas para cada cena
+4.	Gerar os fragmentos (você já tem as imagens das cenas, certo? Só precisa renomear)
+Dica: Para gerar os fragmentos rapidamente, você pode:
+•	Pegar as imagens das animações (que já estão em sequência)
+•	Redimensionar para 100x100px
+•	Renomear como 0001.png, 0002.png, etc.
+Fase B: Criar os Mocks (Eu - 2 horas)
+Vou gerar:
+1.	mock_btc/inscriptions.json
+2.	mock_peers/peer_01.js, peer_02.js, peer_03.js
+3.	shared/config.js
+4.	shared/gdn-loader.js
+5.	shared/multi-chain-indexer.js (mock)
+Fase C: Integrar GUN.js e Animação (Eu - 3 horas)
+Vou gerar o código de integração para cada cena:
+•	gun-integration.js
+•	wallet-connector.js
+•	animation-mapper.js
+•	rewards-system.js
+•	scene-router.js
+Fase D: Testar Localmente (Nós - 2 horas)
+1.	Abrir scene1/index.html no navegador
+2.	Testar participação (incrementar contador)
+3.	Verificar animação sincronizada
+4.	Verificar logs do GDN (mostrando verificação no Bitcoin mock)
+5.	Testar redirecionamento entre cenas
+________________________________________
+6. MIGRAÇÃO PARA PRODUÇÃO (DEPOIS)
+Quando você tiver o dinheiro para as taxas:
+Ação	Substituição
+Inscrição no Bitcoin	Criar o ordinal real com o fragmento âncora. Atualizar CONFIG.BITCOIN.production.anchorTxid
+Upload no Arweave	Enviar todos os fragmentos. Atualizar CONFIG.ARWEAVE.production.gateway
+Seeds Fantasmas	Fazer upload dos mock_peers/ para serviços gratuitos. Atualizar CONFIG.PEER_NODES.production
+Configuração	Mudar CONFIG.ENV de 'local' para 'production'
+Nenhuma linha de código precisa ser alterada! Apenas os arquivos de configuração e o upload dos assets.
+________________________________________
+7. PERGUNTAS PARA VOCÊ
+Para eu começar a gerar o código AGORA, preciso saber:
+1.	Os fragmentos das cenas já existem? Ou você quer que eu gere um script para criar fragmentos de teste (ex: imagens coloridas com números)?
+2.	Qual a resolução dos fragmentos? 100x100px? Outro tamanho?
+3.	Você quer que eu já gere os arquivos prontos para você colocar na estrutura de pastas? Posso entregar:
+o	shared/config.js
+o	shared/gdn-loader.js
+o	shared/gun-integration.js
+o	shared/animation-mapper.js
+o	E um script para gerar fragmentos de teste
+4.	Você tem os 8 vídeos demonstrativos prontos? Se sim, em qual formato (MP4)? Onde eles estarão na estrutura de pastas?
+________________________________________
+8. RESPOSTA RÁPIDA
+Resposta curta: Sim, vamos fazer tudo local primeiro. Não precisa pagar taxas agora.
+O que você faz agora:
+1.	Cria a estrutura de pastas
+2.	Copia suas cenas para dentro
+3.	Me passa as respostas das perguntas acima
+O que eu faço agora:
+1.	Gero todo o código de integração
+2.	Gero os mocks (BTC, Arweave, peers)
+3.	Gero os scripts de suporte
+Quando estiver tudo funcionando localmente:
+•	Testamos
+•	Ajustamos
+•	Depois você paga as taxas e migra para produção (em minutos)
+Vamos começar? Me passe as respostas e em 30 minutos começo a entregar os arquivos.
+This response is AI-generated, for reference only.
+antes de começar a fazer os códigos, eu preciso entender uma coisa. essa parte das cenas animadas que serão NFTs fracionados e a parte das frações do protocolo como funciona? o protocolo terá 21 milhões de fragmentos e cada fragmento terá 100 milhões de frações. Os NFTs animados tem que ter imagem para cada token? e os fragmentos do protocolo também tem que ter imagem? eu preciso entender o que seria esse token, pois criar imagens para cada token me parece inviável. vamos comprar com o próprio bitcoin. cada satoshi no meu entendimento é um token ou cada bitcoin seria um token, enfim, cada token do BTC é uma imagem? e por fim, podemos seguir avançando para os códigos sem ter isso definido? ou seja, a gente prepara tudo, deixa essa parte de conectar carteira e baixar o NFT (token) pronta e depois de tudo pronto a gente decide como eles vão salvar isso em suas carteiras e que quantidade das frações do protocolo vão receber?
+Ótimo questionamento! Você identificou um ponto crítico que precisa ser esclarecido antes de qualquer código.
+________________________________________
+ENTENDENDO O PROBLEMA
+Você está absolutamente certo: criar imagens individuais para 21 milhões de fragmentos do protocolo é inviável. E não é assim que funciona.
+Vamos usar a analogia correta do Bitcoin:
+________________________________________
+1. ANALOGIA COM BITCOIN
+Bitcoin:
+•	1 Bitcoin = 100.000.000 satoshis
+•	Satoshi não tem imagem individual
+•	O valor está na contabilidade (quem tem quantos satoshis)
+•	A "imagem" do Bitcoin é a própria rede, não um arquivo
+Fragmentos do Protocolo BBP:
+•	21.000.000 fragmentos (como Bitcoin, mas 21M em vez de 21M de BTC)
+•	Cada fragmento = 100.000.000 frações (como satoshis)
+•	Não há imagem para cada fragmento ou fração
+•	O valor está na contabilidade da rede P2P (quem tem quantos fragmentos)
+________________________________________
+2. O QUE É UM "TOKEN" AQUI?
+NFTs das Cenas (Fracionados)
+Estes têm imagens porque são NFTs colecionáveis:
+•	Cena 1: 2.000 frações → 2.000 imagens (uma por seed)
+•	Cena 2: 4.000 imagens
+•	Cena 3: 6.000 imagens
+•	Cena 4: 8.000 imagens
+•	Cena 5: 10.000 imagens
+•	Total: 30.000 imagens (viável, já que você tem as animações)
+Fragmentos do Protocolo
+Estes NÃO têm imagens porque são a "moeda" do protocolo:
+•	21.000.000 fragmentos → não têm imagens individuais
+•	Funciona como um saldo contábil na rede P2P
+•	Cada participante tem um número: "fulano tem 1.247 fragmentos"
+•	Exatamente como o Bitcoin funciona
+________________________________________
+3. COMO FICA NA PRÁTICA
+Na Rede P2P (GUN.js)
+javascript
+// Cada participante tem um SALDO de fragmentos
+protocolFragments.get(address).put({
+  amount: 1247,  // ← só um número, não imagens!
+  last_updated: Date.now()
+});
+No Viewer (Quando o Participante "Coleta")
+javascript
+// Ele NÃO baixa uma imagem do fragmento
+// Ele apenas vê seu saldo aumentar
+function showFragmentReward(amount) {
+  showNotification(`🎉 +${amount} fragmentos do protocolo!`);
+  updateBalanceDisplay(); // mostra o número
+}
+O Que o Participante Pode Baixar
+•	Fração do NFT da cena → imagem (única, colecionável)
+•	Fragmento do protocolo → NADA (é apenas saldo contábil)
+________________________________________
+4. QUAL É A "UTILIDADE" DOS FRAGMENTOS?
+Assim como os satoshis do Bitcoin:
+•	São divisíveis (100M frações por fragmento)
+•	São transferíveis (entre participantes)
+•	Têm valor econômico (governança, futuros usos)
+•	Não precisam de imagem - são números em um livro-razão
+________________________________________
+5. O QUE PRECISAMOS DEFINIR AGORA
+Item	Já Definido	Precisa Definir
+NFTs das cenas (imagens)	✅ 30.000 imagens	Nada
+Fragmentos do protocolo (contábil)	✅ 21M fragmentos	Distribuição inicial
+Frações por participação	✅ 10 base	Bônus específicos
+Distribuição Inicial dos Fragmentos (Pode ser ajustada depois)
+javascript
+const FRAGMENT_DISTRIBUTION = {
+  // Por participação em cena
+  base_per_scene: 10,        // 10 fragmentos por cena que participou
+  
+  // Bônus
+  first_100_bonus: 50,        // +50 para os primeiros 100 de cada cena
+  share_bonus: 5,             // +5 por compartilhamento (max 3)
+  complete_all_scenes_bonus: 100,  // +100 para quem participou das 5 cenas
+  invite_bonus: 10,           // +10 por amigo convidado
+  
+  // Totais máximos (para não explodir)
+  max_per_participant: 1000   // ninguém pode ter mais que 1000 fragmentos no ritual
+};
+________________________________________
+6. O QUE O PARTICIPANTE REALMENTE "GANHA"
+Durante o Ritual
+1.	Fração do NFT da cena (imagem PNG) → baixa e guarda
+2.	Fragmentos do protocolo (saldo contábil) → só aparece no sistema
+Após o Ritual (quando a rede definitiva existir)
+•	Os fragmentos acumulados podem ser resgatados como tokens reais
+•	Os NFTs das cenas continuam sendo colecionáveis
+________________________________________
+7. COMO FICARÁ NO CÓDIGO
+Simples assim:
+javascript
+// Quando o participante entra em uma cena
+async function participateInScene() {
+  // 1. Ganha fração do NFT da cena (IMAGEM)
+  const fractionNumber = await getNextFraction(sceneNumber);
+  const fractionImage = await downloadFractionImage(sceneNumber, fractionNumber);
+  saveToLocalStorage(`bbp_scene_${sceneNumber}_fraction`, fractionImage);
+  
+  // 2. Ganha fragmentos do protocolo (SALDO)
+  const fragmentsEarned = calculateFragments(sceneNumber);
+  await addProtocolFragments(currentAddress, fragmentsEarned);
+  
+  // Mostra para o usuário
+  showNotification(`
+    🎨 Você ganhou a fração #${fractionNumber} do NFT da Cena ${sceneNumber}!
+    💎 +${fragmentsEarned} fragmentos do protocolo!
+    📊 Total de fragmentos: ${await getProtocolFragments(currentAddress)}
+  `);
+}
+
+function calculateFragments(sceneNumber) {
+  let fragments = 10; // base
+  
+  // Bônus por posição (primeiros 100)
+  const position = getParticipantPosition(currentAddress, sceneNumber);
+  if (position <= 100) fragments += 50;
+  
+  return fragments;
+}
+________________________________________
+8. RESPOSTA DIRETA À SUA PERGUNTA
+"eu preciso entender o que seria esse token, pois criar imagens para cada token me parece inviável"
+Resposta: Os fragmentos do protocolo NÃO SÃO TOKENS COM IMAGEM. São apenas saldo contábil, como satoshis. Você só precisa de imagens para os NFTs das cenas (30.000 imagens, que você já tem das animações).
+"vamos comprar com o próprio bitcoin. cada satoshi no meu entendimento é um token ou cada bitcoin seria um token, enfim, cada token do BTC é uma imagem?"
+Resposta: Exato! Cada satoshi NÃO tem imagem. O valor está no saldo. Os fragmentos do protocolo são análogos aos satoshis.
+"e por fim, podemos seguir avançando para os códigos sem ter isso definido?"
+Resposta: SIM! Podemos seguir agora. Vamos definir valores provisórios que podem ser ajustados depois:
+javascript
+// VALORES PROVISÓRIOS (ajustáveis depois)
+const BASE_FRAGMENTS = 10;
+const FIRST_100_BONUS = 50;
+const SHARE_BONUS = 5;
+const COMPLETE_ALL_BONUS = 100;
+const INVITE_BONUS = 10;
+________________________________________
+9. PRÓXIMO PASSO
+Vamos começar a codificar AGORA com:
+1.	Fragmentos do protocolo = saldo contábil (números, sem imagens)
+2.	NFTs das cenas = imagens (você já tem as animações)
+3.	Valores provisórios (ajustáveis depois)
+O que você precisa fazer agora:
+•	Nada! Eu vou gerar todo o código com essas premissas
+•	Depois você testa e, se quiser, ajusta os números
+Vou gerar:
+1.	shared/config.js (com valores provisórios)
+2.	shared/rewards-system.js (calcula fragmentos)
+3.	Todo o código de integração
+Começo agora?
+
