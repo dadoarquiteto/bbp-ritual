@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>BBP Ritual – Cena 3: Fase da Inscrição</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- GUN.js -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gun/lib/webrtc.js"></script>
+</head>
+
+<body>
+
+  <!-- HUD FIXO -->
+  <div id="hud">
+    <span class="ritual-phase">Cena 3: Fase da Inscrição </span>
+    
+    <span class="seed-counter">
+      ACTIVE SEEDS: <span id="seedCount">4</span> / 6000
+    </span>
+    
+    <span class="timeline-separator">|</span>
+    
+    <!-- TIMELINE -->
+    <div class="timeline-container">
+      <div class="timeline">
+        <div class="timeline-line"></div>
+        <div class="timeline-progress"></div>
+        <div class="timeline-dots" id="timelineDots"></div>
+      </div>
+      <div class="timeline-tooltip" id="timelineTooltip"></div>
+    </div>
+    
+    <!-- Links e botão no canto direito -->
+    <div class="hud-right-links">
+      <a href="https://x.com/BitcoinBBP" target="_blank" class="hud-link" title="Siga o BBP no X">
+        <svg class="x-icon" viewBox="0 0 24 24">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+        Siga BBP
+      </a>
+      
+      <a href="javascript:void(0)" onclick="showBBPInfo()" class="hud-link hud-info" title="Saiba mais sobre o BBP">
+        <span class="info-icon">ⓘ</span>
+        Sobre o BBP
+      </a>
+      
+      <span id="walletStatus"></span>
+      <button id="connectWalletBtn">🔑 Conectar</button>
+    </div>
+  </div>
+
+  <!-- CENA -->
+  <div id="scene">
+    <div id="background"></div>
+    <img id="character" src="" alt="">
+    <canvas id="particles"></canvas>
+  </div>
+
+  <!-- TABELAS -->
+  <div class="tables">
+
+    <!-- CARD SEED -->
+    <div class="table voucher-left">
+      <div class="card-container">
+        <img src="cards/card_seed_3.png"
+             alt="Card Seed"
+             class="card-image seed-image"
+             onclick="downloadCard('cards/card_seed_3.png','BBP-Ritual-NFT-Seed-Cena3.png')">
+      </div>
+      <div class="text-side">
+        <h3>SEMENTE DO RITUAL</h3>
+        
+        <div id="seedBeforeOverlay">
+          <p>Garante sua fração do NFT no lançamento da rede</p>
+          <button onclick="downloadCard('cards/card_seed_3.png','BBP-Ritual-NFT-Seed-Cena3.png')">
+            Baixar Card Seed
+          </button>
+        </div>
+        
+        <div id="nftStatus" class="card-status" style="display: none;">
+          <span class="status-badge sold-out">LIMITE ATINGIDO</span>
+          <p class="status-info">Próxima cena em: <span class="countdown-timer" id="nftCountdown">23:59:47</span></p>
+          <p class="status-note">6.000 sementes ativadas • Aguarde Cena 4</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA CENTRAL (LORE) -->
+    <div class="table lore-central">
+      <h3 id="loreTitle">ALINHAMENTO DOS FRAGMENTOS</h3>
+      
+      <div id="loreContainer" class="lore-container">
+        <div id="loreText1" class="lore-text active">
+          Fragmentos emergem.<br><br>
+          Cada parte carrega um traço do todo.<br><br>
+          O padrão ainda não é visível, mas já está inscrito.
+        </div>
+        
+        <div id="loreText2" class="lore-text">
+          O protocolo inscreve.<br><br>
+          <strong>6.000 novas sementes</strong> alinham-se ao padrão.<br><br>
+          Cada fragmento encontra seu lugar no código.
+        </div>
+        
+        <div id="loreText3" class="lore-text">
+          A escrita não é linear.<br><br>
+          Cada inscrição é um vértice na malha emergente.
+        </div>
+        
+        <div id="loreText4" class="lore-text">
+          O alinhamento precede a manifestação.<br><br>
+          Os fragmentos agora respiram em uníssono.
+        </div>
+      </div>
+      
+      <div id="eternalRitualMsg" class="eternal-ritual-msg" style="display:none;">
+        <em>O ritual da inscrição agora é eterno. Testemunhe o alinhamento contínuo.</em>
+      </div>
+    </div>
+
+    <!-- CARD FRAGMENT -->
+    <div class="table voucher-right">
+      <div class="card-container">
+        <img src="cards/card_fragment.png"
+             alt="Card Fragment"
+             class="card-image fragment-image"
+             onclick="downloadCard('cards/card_fragment.png','BBP-Network-Fragment-Cena3.png')">
+      </div>
+      <div class="text-side">
+        <h3>FRAGMENTO DA REDE</h3>
+        
+        <div id="fragmentBeforeOverlay">
+          <p>Garante um fragmento da rede no lançamento</p>
+          <button onclick="downloadCard('cards/card_fragment.png','BBP-Network-Fragment-Cena3.png')">
+            Baixar Card Fragment
+          </button>
+        </div>
+        
+        <div id="fragmentStatus" class="card-status" style="display: none;">
+          <span class="status-badge available">DISPONÍVEL</span>
+          <p class="status-info">Próxima cena em: <span class="countdown-timer" id="fragmentCountdown">23:59:47</span></p>
+          <p class="status-note">Clique na imagem para coletar antes da cena 4</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- OVERLAY RITUALÍSTICO -->
+  <div id="sceneOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>📜 CENA 3 CONCLUÍDA</h2>
+        <div class="ritual-seal">⚡</div>
+      </div>
+      
+      <div class="overlay-message">
+        <p class="main-text">
+          A Inscrição foi consolidada.<br>
+          <strong>6.000 sementes</strong> foram alinhadas nesta cena.
+        </p>
+        
+        <div class="status-box">
+          <div class="status-item">
+            <span class="status-label">SEMENTES DA INSCRIÇÃO:</span>
+            <span class="status-value sold-out">LIMITE ATINGIDO</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">FRAGMENTOS DA INSCRIÇÃO:</span>
+            <span class="status-value available">DISPONÍVEL</span>
+          </div>
+        </div>
+        
+        <p class="instruction">
+          Você ainda pode coletar um <strong>Fragmento da Inscrição</strong>.<br>
+          A Cena 4 será liberada <strong>amanhã às 9:00</strong>.
+        </p>
+        
+        <div class="countdown">
+          ⏳ Próxima cena em: <span id="countdownTimer">23:59:47</span>
+        </div>
+        
+        <div class="overlay-buttons">
+          <button onclick="closeOverlay()" class="btn-close">
+            Testemunhar o Ritual Eterno
+          </button>
+          <a href="https://x.com/BitcoinBBP" target="_blank" class="btn-notify">
+            <svg class="x-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 8px;">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Siga o BBP no X
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY "SOBRE O BBP" -->
+  <div id="bbpInfoOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content bbp-info-content">
+      <div class="overlay-header">
+        <h2>ⓘ BITCOIN BLUEPRINT PROTOCOL</h2>
+        <div class="ritual-seal">🔥</div>
+      </div>
+      
+      <div class="overlay-message">
+        <div class="bbp-info-sections">
+          <div class="bbp-section">
+            <h4>O QUE É O BITCOIN BLUEPRINT PROTOCOL</h4>
+            <p>O Bitcoin Blueprint Protocol (BBP) redefine o que a tecnologia NFT significa no Bitcoin.</p>
+            <p>No BBP, um NFT não é carregado, transferido ou armazenado.</p>
+            <p><strong>Ele acontece.</strong></p>
+            <p>Cada NFT é a execução de um DNA computacional mínimo, inscrito no Bitcoin, que define como aquele ativo pode ser composto, verificado e reproduzido ao longo do tempo.</p>
+            <p>O peso do ativo não está na blockchain.</p>
+            <p><strong>O estado está.</strong></p>
+            <p>O BBP transforma o Bitcoin de um simples repositório de dados em um protocolo nativo de criação, verificação e propriedade digital.</p>
+            <p>Ao reduzir ativos complexos a DNA verificável, o BBP elimina a principal barreira da tokenização em escala global.</p>
+            <p>Isso permite que qualquer tipo de ativo — físico ou digital, perecível ou não, tangível ou intangível — seja representado como estado verificável no Bitcoin, sem sobrecarregar a rede.</p>
+            <p>O BBP não cria novos tipos de ativos.</p>
+            <p>Ele cria um modelo universal de representação, capaz de ancorar a tokenização de praticamente tudo no Bitcoin.</p>
+          </div>
+          
+          <div class="bbp-section">
+            <h4>PRINCÍPIOS FUNDAMENTAIS DO BBP</h4>
+            
+            <div class="principle">
+              <h5>1. Execução, não Armazenamento</h5>
+              <p>No BBP, o NFT não existe como um objeto estático.</p>
+              <p>Ele só existe no instante em que seu DNA é executado, seguindo regras públicas e determinísticas.</p>
+              <p>Não há upload de imagens completas.</p>
+              <p>Não há dependência de servidores centrais.</p>
+              <p>Há apenas código, lógica verificável e execução reproduzível.</p>
+              <p>O NFT deixa de ser um arquivo.</p>
+              <p><strong>Passa a ser um evento computacional verificável.</strong></p>
+            </div>
+            
+            <div class="principle">
+              <h5>2. DNA como Verdade Única</h5>
+              <p>O DNA inscrito no Bitcoin é a única fonte de verdade do NFT.</p>
+              <p>Ele define:</p>
+              <ul>
+                <li>as camadas disponíveis</li>
+                <li>as combinações possíveis</li>
+                <li>os estados válidos</li>
+                <li>a identidade única de cada token</li>
+              </ul>
+              <p>Tudo o que é visual é consequência.</p>
+              <p><strong>Tudo o que importa está no DNA.</strong></p>
+            </div>
+            
+            <div class="principle">
+              <h5>3. Eficiência Radical como Fundamento</h5>
+              <p>O BBP reduz coleções inteiras a poucos bytes de informação genética.</p>
+              <p>Isso torna possível:</p>
+              <ul>
+                <li>lançar coleções massivas a custo marginal</li>
+                <li>escalar para milhões de NFTs sem impactar a rede Bitcoin</li>
+                <li>preservar o Bitcoin como infraestrutura global de longo prazo</li>
+              </ul>
+              <p>Eficiência aqui não é otimização técnica.</p>
+              <p><strong>É condição de existência.</strong></p>
+            </div>
+            
+            <div class="principle">
+              <h5>4. Correção Histórica do Mercado de NFTs</h5>
+              <p>O mercado de NFTs nasceu de um erro estrutural:</p>
+              <p>tratar blockchains como servidores de arquivos.</p>
+              <p>O BBP corrige esse desvio na origem.</p>
+              <p>Ele separa:</p>
+              <ul>
+                <li>propriedade de representação</li>
+                <li>estado de visualização</li>
+                <li>verdade de interface</li>
+              </ul>
+              <p>Isso não substitui o mercado existente.</p>
+              <p><strong>Ele o restaura.</strong></p>
+              <p>Coleções já mintadas em qualquer rede podem ser reinterpretadas, recombinadas e reativadas sob o modelo de DNA, criando novas camadas de valor sobre ativos hoje estagnados.</p>
+            </div>
+            
+            <div class="principle">
+              <h5>5. Expansão do Mercado, não Canibalização</h5>
+              <p>O BBP não compete com NFTs existentes.</p>
+              <p>Ele expande o espaço econômico do setor.</p>
+              <p>Cada NFT legado pode:</p>
+              <ul>
+                <li>ganhar versões modulares</li>
+                <li>desbloquear novos estados</li>
+                <li>participar de mercados de camadas, upgrades e fusões</li>
+              </ul>
+              <p>Isso transforma centenas de milhões de NFTs já existentes em matéria-prima para novos mercados, agora ancorados no Bitcoin.</p>
+            </div>
+            
+            <div class="principle">
+              <h5>6. Bitcoin como Infraestrutura de Adoção Cultural</h5>
+              <p>Ao reduzir drasticamente custos e complexidade, o BBP torna o Bitcoin viável como camada base para o mercado global de NFTs, arte digital e ativos criativos.</p>
+              <p>Mais criação.</p>
+              <p>Mais negociação.</p>
+              <p>Mais fluxo econômico em BTC.</p>
+              <p>O BBP não promete valorização.</p>
+              <p><strong>Ele cria demanda estrutural.</strong></p>
+              <p>E demanda real fortalece redes monetárias.</p>
+            </div>
+            
+            <div class="principle">
+              <h5>7. Um Protocolo para o Próximo Ciclo</h5>
+              <p>O BBP não foi criado para corrigir o passado.</p>
+              <p>Foi criado para sustentar o próximo ciclo de adoção.</p>
+              <p>Ele é:</p>
+              <ul>
+                <li>modular</li>
+                <li>extensível</li>
+                <li>compatível com IA, jogos e metaverso</li>
+                <li>independente de plataformas</li>
+              </ul>
+              <p>Enquanto o mercado atual esgota imagens,</p>
+              <p>o BBP ativa sistemas de criação.</p>
+            </div>
+            
+            <div class="key-points">
+              <p><strong>• O NFT não é carregado. Ele acontece.</strong></p>
+              <p><strong>• O BBP não armazena arquivos. Ele executa lógica.</strong></p>
+              <p><strong>• Bitcoin não é um HD. É a base da tecnologia NFT.</strong></p>
+              <p><strong>• Não criamos novos NFTs. Reativamos o mercado inteiro.</strong></p>
+              <p><strong>• Se tudo pode ser descrito em DNA. Tudo pode ser tokenizado.</strong></p>
+              <p><strong>• Menos bytes. Mais valor.</strong></p>
+            </div>
+          </div>
+          
+          <div class="bbp-section">
+            <h4>ESTE RITUAL (CENA 3)</h4>
+            <p>Você está testemunhando a <strong>Fase da Inscrição</strong> - o alinhamento de 6.000 fragmentos que inscrevem o protocolo no código.</p>
+          </div>
+        </div>
+        
+        <div class="overlay-buttons">
+          <button onclick="closeBBPInfo()" class="btn-close">
+            Voltar ao Ritual
+          </button>
+          <button onclick="showVideosDemo()" class="btn-notify">
+            📹 Vídeos
+          </button>
+          <button onclick="showTechnicalDocs()" class="btn-notify">
+            📚 Documentação
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE DEMONSTRAÇÕES VÍDEO -->
+  <div id="videosDemoOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content videos-demo-content">
+      <button class="close-videos-demo" onclick="closeVideosDemo()">×</button>
+      
+      <div class="overlay-header">
+        <h2>📹 VÍDEOS DO PROTOCOLO</h2>
+        <div class="ritual-seal">🎬</div>
+      </div>
+      
+      <div class="overlay-message">
+        <div class="demo-intro">
+          <p>Os vídeos abaixo demonstram a evolução do protocolo. Eles são liberados progressivamente conforme o ritual avança.</p>
+          <p><strong>Disponíveis hoje:</strong> <span id="availableVideosCount">4</span> de 8 vídeos</p>
+        </div>
+        
+        <div class="demo-grid" id="demoGrid"></div>
+        
+        <div class="unlock-info">
+          <p>⏰ <strong>Próximo vídeo liberado:</strong> <span id="nextUnlockTime">amanhã às 9:00</span></p>
+          <p class="small-note">Novos vídeos são desbloqueados automaticamente a cada dia às 9:00</p>
+        </div>
+        
+        <div class="overlay-buttons">
+          <button onclick="closeVideosDemo()" class="btn-close">
+            ← Voltar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE NOTIFICAÇÃO -->
+  <div id="notificationOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content notification-overlay">
+      <button class="close-notification" onclick="closeNotification()">×</button>
+      
+      <div class="notification-header">
+        <div class="notification-icon">⚠️</div>
+        <h3>NÃO FIQUE PARA TRÁS</h3>
+      </div>
+      
+      <div class="notification-body">
+        <p class="notification-text">
+          <strong>Garanta sua vantagem na Cena 4!</strong><br>
+          Siga o BBP no X para receber notificações exclusivas e assegurar seu NFT antes dos outros.
+        </p>
+        
+        <div class="notification-tip">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">
+            Para saber mais sobre o protocolo, clique em <strong>"Sobre o BBP"</strong> na barra superior,
+            onde novos vídeos são desbloqueados todos os dias.
+          </span>
+        </div>
+      </div>
+      
+      <div class="notification-buttons">
+        <a href="https://x.com/BitcoinBBP" target="_blank" class="btn-notify notification-btn">
+          <svg class="x-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 8px;">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Seguir no X Agora
+        </a>
+        <button onclick="closeNotification()" class="btn-close notification-btn">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DOCUMENTAÇÃO TÉCNICA -->
+  <div id="techDocsOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content tech-docs-content">
+      <div class="overlay-header">
+        <h2>📚 DOCUMENTAÇÃO TÉCNICA</h2>
+        <div class="ritual-seal">🔧</div>
+      </div>
+      
+      <div class="overlay-message">
+        <div class="docs-container">
+          <p>Documentação técnica completa em desenvolvimento.</p>
+          <p>Para acesso antecipado aos whitepapers e especificações:</p>
+          
+          <div class="docs-links">
+            <a href="https://x.com/BitcoinBBP" target="_blank" class="doc-link">
+              <svg class="x-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px; margin-right: 6px;">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              Acompanhe no X para atualizações
+            </a>
+            <a href="https://github.com/bitcoinbbp" target="_blank" class="doc-link">
+              <span style="margin-right: 6px;">📂</span>
+              Repositório GitHub (em breve)
+            </a>
+          </div>
+          
+          <div class="docs-note">
+            <p><strong>Nota:</strong> A documentação completa será disponibilizada após a conclusão da rede de teste.</p>
+          </div>
+        </div>
+        
+        <div class="overlay-buttons">
+          <button onclick="closeTechDocs()" class="btn-close">
+            Voltar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY PARA CENAS ARQUIVADAS -->
+  <div id="archivedSceneOverlay" class="overlay" style="display:none;">
+    <div class="overlay-content archived-overlay">
+      <button class="close-archived" onclick="closeArchivedScene()">×</button>
+      
+      <div class="overlay-header">
+        <h2>📜 CENA ARQUIVADA</h2>
+        <div class="ritual-seal">⏪</div>
+      </div>
+      
+      <div class="overlay-message">
+        <div class="archived-info">
+          <div class="archived-item">
+            <span class="archived-label">Cena:</span>
+            <span class="archived-value" id="archivedSceneTitle">Cena 1: Fase do Silêncio</span>
+          </div>
+          <div class="archived-item">
+            <span class="archived-label">Status:</span>
+            <span class="archived-value completed">CONCLUÍDA</span>
+          </div>
+          <div class="archived-item">
+            <span class="archived-label">Seeds Ativadas:</span>
+            <span class="archived-value" id="archivedSeedsCount">2.000/2.000</span>
+          </div>
+        </div>
+        
+        <div class="archived-scene-container" id="archivedSceneContainer">
+          <div class="video-placeholder">
+            <div class="video-placeholder-icon">🎬</div>
+            <p>Vídeo da cena em produção</p>
+            <small>O vídeo desta cena será disponibilizado em breve</small>
+          </div>
+        </div>
+        
+        <div class="overlay-buttons">
+          <button onclick="closeArchivedScene()" class="btn-close">
+            ← Voltar à Cena Atual
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script src="timeline.js"></script>
+  <script src="p2p.js"></script>
+
+  <script>
+    const VIDEOS_CONFIG = {
+      totalVideos: 8,
+      unlockStartDate: '2025-01-01',
+      unlockTime: '09:00:00',
+      videosPerDay: 2,
+      baseVideos: 2
+    };
+    
+    const VIDEO_TITLES = [
+      "Time-lock Ritual - Fundamentos",
+      "Fragmentação de NFTs BBP",
+      "DNA Computacional em Ação",
+      "Execução Determinística",
+      "Verificação On-Chain",
+      "Recombinação de Camadas",
+      "Integração com Bitcoin",
+      "Protocolo Completo em Funcionamento"
+    ];
+    
+    const CURRENT_SCENE = 3;
+    
+    function downloadCard(filePath, fileName) {
+      const link = document.createElement('a');
+      link.href = filePath;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    function showBBPInfo() {
+      document.getElementById('bbpInfoOverlay').style.display = 'flex';
+    }
+    
+    function closeBBPInfo() {
+      document.getElementById('bbpInfoOverlay').style.display = 'none';
+    }
+    
+    function showVideosDemo() {
+      document.getElementById('bbpInfoOverlay').style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('videosDemoOverlay').style.display = 'flex';
+        loadVideosGrid();
+      }, 300);
+    }
+    
+    function closeVideosDemo() {
+      document.getElementById('videosDemoOverlay').style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('bbpInfoOverlay').style.display = 'flex';
+      }, 300);
+    }
+    
+    function showTechnicalDocs() {
+      document.getElementById('bbpInfoOverlay').style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('techDocsOverlay').style.display = 'flex';
+      }, 300);
+    }
+    
+    function closeTechDocs() {
+      document.getElementById('techDocsOverlay').style.display = 'none';
+    }
+    
+    function closeNotification() {
+      document.getElementById('notificationOverlay').style.display = 'none';
+    }
+    
+    function closeArchivedScene() {
+      const overlay = document.getElementById('archivedSceneOverlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+      
+      const video = document.getElementById('archivedSceneVideo');
+      if (video) {
+        video.pause();
+      }
+      
+      const container = document.getElementById('archivedSceneContainer');
+      if (container) {
+        container.innerHTML = `
+          <div class="video-placeholder">
+            <div class="video-placeholder-icon">🎬</div>
+            <p>Vídeo da cena em produção</p>
+            <small>O vídeo desta cena será disponibilizado em breve</small>
+          </div>
+        `;
+      }
+      
+      if (typeof isMoving !== 'undefined') {
+        isMoving = true;
+      }
+    }
+    
+    function disableSeedImageClick() {
+      const seedImage = document.querySelector('.seed-image');
+      if (seedImage) {
+        seedImage.style.cursor = 'default';
+        seedImage.style.opacity = '0.6';
+        seedImage.style.filter = 'grayscale(70%)';
+        seedImage.onclick = null;
+        seedImage.title = 'Limite de seeds atingido';
+        seedImage.style.boxShadow = '0 0 8px rgba(255, 68, 68, 0.5)';
+        seedImage.style.borderColor = '#ff4444';
+      }
+    }
+    
+    function calculateAvailableVideos() {
+      const now = new Date();
+      const todayUnlockTime = new Date();
+      todayUnlockTime.setHours(9, 0, 0, 0);
+      
+      let effectiveScene = CURRENT_SCENE;
+      if (now < todayUnlockTime) {
+        effectiveScene = Math.max(1, CURRENT_SCENE - 1);
+      }
+      
+      let available = 2 + ((effectiveScene - 1) * 2);
+      available = Math.min(available, VIDEOS_CONFIG.totalVideos);
+      available = Math.max(available, 2);
+      
+      return available;
+    }
+    
+    function calculateNextUnlock() {
+      const now = new Date();
+      const availableVideos = calculateAvailableVideos();
+      
+      if (availableVideos >= VIDEOS_CONFIG.totalVideos) {
+        return null;
+      }
+      
+      const nextUnlock = new Date();
+      const todayUnlockTime = new Date();
+      todayUnlockTime.setHours(9, 0, 0, 0);
+      
+      if (now >= todayUnlockTime) {
+        nextUnlock.setDate(nextUnlock.getDate() + 1);
+      }
+      
+      nextUnlock.setHours(9, 0, 0, 0);
+      
+      return nextUnlock;
+    }
+    
+    function loadVideosGrid() {
+      const grid = document.getElementById('demoGrid');
+      if (!grid) return;
+      
+      const availableVideos = calculateAvailableVideos();
+      const nextUnlock = calculateNextUnlock();
+      
+      const countElement = document.getElementById('availableVideosCount');
+      if (countElement) {
+        countElement.textContent = availableVideos;
+      }
+      
+      const nextUnlockElement = document.getElementById('nextUnlockTime');
+      if (nextUnlockElement) {
+        if (availableVideos >= VIDEOS_CONFIG.totalVideos) {
+          nextUnlockElement.textContent = "Todos os vídeos já estão disponíveis";
+        } else if (nextUnlock) {
+          const now = new Date();
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          
+          if (nextUnlock.toDateString() === now.toDateString()) {
+            const hours = nextUnlock.getHours().toString().padStart(2, '0');
+            const minutes = nextUnlock.getMinutes().toString().padStart(2, '0');
+            nextUnlockElement.textContent = `hoje às ${hours}:${minutes}`;
+          } else if (nextUnlock.toDateString() === tomorrow.toDateString()) {
+            const hours = nextUnlock.getHours().toString().padStart(2, '0');
+            const minutes = nextUnlock.getMinutes().toString().padStart(2, '0');
+            nextUnlockElement.textContent = `amanhã às ${hours}:${minutes}`;
+          } else {
+            const day = nextUnlock.getDate();
+            const month = nextUnlock.getMonth() + 1;
+            const hours = nextUnlock.getHours().toString().padStart(2, '0');
+            const minutes = nextUnlock.getMinutes().toString().padStart(2, '0');
+            nextUnlockElement.textContent = `${day}/${month} às ${hours}:${minutes}`;
+          }
+        } else {
+          nextUnlockElement.textContent = "em breve";
+        }
+      }
+      
+      grid.innerHTML = '';
+      
+      for (let i = 1; i <= VIDEOS_CONFIG.totalVideos; i++) {
+        const isAvailable = i <= availableVideos;
+        const videoElement = createVideoElement(i, isAvailable);
+        grid.appendChild(videoElement);
+      }
+    }
+    
+    function createVideoElement(videoNumber, isAvailable) {
+      const videoDiv = document.createElement('div');
+      videoDiv.className = 'demo-video-item';
+      
+      const unlockScene = Math.ceil(videoNumber / VIDEOS_CONFIG.videosPerDay);
+      
+      if (isAvailable) {
+        videoDiv.innerHTML = `
+          <div class="video-container available">
+            <video class="demo-video" controls playsinline preload="metadata">
+              <source src="../videos_demo/demo_${videoNumber}.mp4" type="video/mp4">
+              Seu navegador não suporta vídeo HTML5.
+            </video>
+          </div>
+          <div class="video-info">
+            <span class="video-number">${videoNumber}.</span>
+            <span class="video-title">${VIDEO_TITLES[videoNumber - 1] || `Vídeo ${videoNumber}`}</span>
+          </div>
+          <div class="video-status available-status">✅ Disponível</div>
+        `;
+        
+        const videoContainer = videoDiv.querySelector('.video-container');
+        if (videoContainer) {
+          videoContainer.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'VIDEO') {
+              const video = this.querySelector('video');
+              if (video) {
+                if (video.paused) {
+                  video.play();
+                } else {
+                  video.pause();
+                }
+              }
+            }
+          });
+        }
+      } else {
+        let unlockText = "";
+        
+        if (unlockScene === CURRENT_SCENE) {
+          unlockText = "hoje às 9:00";
+        } else if (unlockScene === CURRENT_SCENE + 1) {
+          unlockText = "amanhã às 9:00";
+        } else {
+          unlockText = `Cena ${unlockScene} (dia ${unlockScene})`;
+        }
+        
+        videoDiv.innerHTML = `
+          <div class="video-container locked">
+            <div class="lock-overlay">
+              <div class="lock-icon">🔒</div>
+              <div class="unlock-time">Disponível ${unlockText}</div>
+              <div class="unlock-info">Vídeo ${videoNumber} de ${VIDEOS_CONFIG.totalVideos}</div>
+              <div class="video-preview-placeholder">
+                <div class="preview-icon">🎬</div>
+                <div class="preview-text">Conteúdo bloqueado</div>
+              </div>
+            </div>
+          </div>
+          <div class="video-info">
+            <span class="video-number">${videoNumber}.</span>
+            <span class="video-title">${VIDEO_TITLES[videoNumber - 1] || `Vídeo ${videoNumber}`}</span>
+          </div>
+          <div class="video-status locked-status">🔒 Bloqueado</div>
+        `;
+        
+        const videoContainer = videoDiv.querySelector('.video-container');
+        if (videoContainer) {
+          videoContainer.style.cursor = 'not-allowed';
+          videoContainer.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const tooltip = document.createElement('div');
+            tooltip.className = 'video-lock-tooltip';
+            tooltip.textContent = `Este vídeo será liberado na ${unlockText}`;
+            tooltip.style.cssText = `
+              position: absolute;
+              background: rgba(0,0,0,0.9);
+              color: #ff4444;
+              padding: 8px 12px;
+              border-radius: 4px;
+              font-size: 12px;
+              white-space: nowrap;
+              z-index: 1000;
+              border: 1px solid #ff4444;
+              top: -40px;
+              left: 50%;
+              transform: translateX(-50%);
+            `;
+            
+            this.appendChild(tooltip);
+            
+            setTimeout(() => {
+              if (tooltip.parentNode) {
+                tooltip.parentNode.removeChild(tooltip);
+              }
+            }, 2000);
+          });
+        }
+      }
+      
+      return videoDiv;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      loadVideosGrid();
+      
+      const overlays = [
+        { id: 'bbpInfoOverlay', closeFn: closeBBPInfo },
+        { id: 'videosDemoOverlay', closeFn: closeVideosDemo },
+        { id: 'notificationOverlay', closeFn: closeNotification },
+        { id: 'techDocsOverlay', closeFn: closeTechDocs },
+        { id: 'archivedSceneOverlay', closeFn: closeArchivedScene }
+      ];
+      
+      overlays.forEach(overlay => {
+        const element = document.getElementById(overlay.id);
+        if (element) {
+          element.addEventListener('click', function(e) {
+            if (e.target === this) {
+              overlay.closeFn();
+            }
+          });
+        }
+      });
+      
+      setInterval(loadVideosGrid, 60000);
+    });
+  </script>
+
+</body>
+</html>

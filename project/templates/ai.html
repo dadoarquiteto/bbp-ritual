@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Modelo de IA</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .attribute-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .attribute-item input:first-child { flex: 1; min-width: 150px; }
+  .attribute-item input:nth-child(2) { flex: 2; }
+  .training-item { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .training-item input { flex: 1; }
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Modelo de IA</h1>
+  <p class="small">Registre um modelo de inteligência artificial no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="aiForm">
+
+    <div class="card section">
+      <h2>Informações Básicas</h2>
+      <label>Nome do Modelo *</label>
+      <input id="modelName" placeholder="Ex: BBP-GPT, Stable Diffusion v2" />
+      <label>Versão</label>
+      <input id="version" placeholder="Ex: 1.0, 2.1" value="1.0" />
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição do modelo, capacidades e aplicações"></textarea>
+      <label>Criador / Organização</label>
+      <input id="creator" placeholder="Ex: BBP AI Lab, OpenAI" />
+    </div>
+
+    <div class="card section">
+      <h2>Arquitetura</h2>
+      <div class="stats-grid">
+        <div><label>Tipo de Modelo</label><select id="modelType"><option value="llm">LLM (Large Language Model)</option><option value="diffusion">Diffusion Model</option><option value="embedding">Embedding Model</option><option value="vision">Vision Model</option><option value="agent">AI Agent</option><option value="classifier">Classifier</option></select></div>
+        <div><label>Arquitetura</label><select id="architecture"><option value="transformer">Transformer</option><option value="cnn">CNN</option><option value="rnn">RNN</option><option value="gan">GAN</option><option value="diffusion">Diffusion</option></select></div>
+      </div>
+      <label>Número de Parâmetros</label>
+      <input type="text" id="parameters" placeholder="Ex: 70B, 1.5B, 7B" />
+      <label>Context Length (tokens)</label>
+      <input type="number" id="contextLength" placeholder="Ex: 8192" />
+    </div>
+
+    <div class="card section">
+      <h2>Treinamento</h2>
+      <label>Dataset(s) de Treinamento</label>
+      <div id="trainingDataContainer"><div class="training-item"><input placeholder="Nome do dataset / referência" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addTrainingData()">+ Adicionar dataset</button>
+      
+      <div class="stats-grid">
+        <div><label>Custo de Treinamento (USD)</label><input type="number" id="trainingCost" step="0.01" placeholder="Ex: 2500000" /></div>
+        <div><label>GPU Horas</label><input type="number" id="gpuHours" placeholder="Ex: 500000" /></div>
+      </div>
+      <label>Modelo Base (se fine-tuned)</label>
+      <input id="baseModel" placeholder="Ex: Llama 2, GPT-4, Stable Diffusion" />
+    </div>
+
+    <div class="card section">
+      <h2>Inferência</h2>
+      <div class="stats-grid">
+        <div><label>Custo por 1K tokens (USD)</label><input type="number" id="inferenceCost" step="0.0001" placeholder="Ex: 0.002" /></div>
+        <div><label>Quantização</label><select id="quantization"><option value="fp16">FP16</option><option value="int8">INT8</option><option value="int4">INT4</option><option value="none">None</option></select></div>
+      </div>
+      <label>Requisitos de Hardware</label>
+      <div class="stats-grid">
+        <div><label>RAM Mínima (GB)</label><input type="number" id="minRam" placeholder="Ex: 32" /></div>
+        <div><label>GPU Recomendada</label><input id="recommendedGpu" placeholder="Ex: A100 80GB" /></div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Licença e Métricas</h2>
+      <label>Licença</label>
+      <select id="license"><option value="mit">MIT</option><option value="apache">Apache 2.0</option><option value="gpl">GPL</option><option value="cc-by-nc">CC BY-NC</option><option value="proprietary">Proprietário</option></select>
+      
+      <label>Métricas de Performance</label>
+      <div id="metricsContainer"><div class="attribute-item"><input placeholder="Métrica (ex: MMLU, HumanEval)" /><input placeholder="Valor (ex: 0.85)" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addMetric()">+ Adicionar métrica</button>
+      
+      <label>Arquivo do Modelo</label>
+      <div class="upload-area" onclick="document.getElementById('modelFile').click()">
+        🧠 Clique para selecionar arquivo do modelo
+      </div>
+      <input type="file" id="modelFile" accept=".gguf,.bin,.pt,.onnx" style="display: none;" onchange="handleModelUpload(this)" />
+      <div id="modelPreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Atributos Personalizados</h2>
+      <div id="attributesContainer"></div>
+      <button onclick="addAttributeRow()">+ Adicionar atributo</button>
+    </div>
+
+    <div class="card section">
+      <h2>Links e redes sociais</h2>
+      <label>Website / Hub</label><input id="website" placeholder="https://" />
+      <label>GitHub</label><input id="github" placeholder="https://github.com/..." />
+      <label>Hugging Face</label><input id="huggingface" placeholder="https://huggingface.co/..." />
+      <label>Paper / Artigo</label><input id="paper" placeholder="https://arxiv.org/..." />
+    </div>
+
+    <div class="card section">
+      <h2>Configurações</h2>
+      
+      <label>Endereço de pagamento (creator wallet)</label>
+      <input id="paymentAddress" placeholder="bc1... ou 1..." />
+
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color:#64748b;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section"><button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button></div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;"><div class="modal-overlay" onclick="closeAddNetworkModal(event)"><div class="modal-content"><h3>Adicionar representação em rede</h3><label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option></select><label>Tipo</label><select id="modalType"><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select><label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." /><div style="display:flex; gap:12px; margin-top:20px;"><button class="small" onclick="closeAddNetworkModal()">Cancelar</button><button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button></div></div></div></div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'ai') document.getElementById('aiForm').classList.remove('hidden');
+
+let modelFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleModelUpload(input) { const file = input.files[0]; if(file){ modelFile = file; document.getElementById('modelPreviewContainer').innerHTML = `<div class="file-item"><span>🧠 ${file.name}</span><button class="small danger" onclick="removeModel()">×</button></div>`; } }
+function removeModel() { modelFile = null; document.getElementById('modelPreviewContainer').innerHTML = ''; document.getElementById('modelFile').value = ''; }
+
+function addTrainingData() { const container = document.getElementById('trainingDataContainer'); const row = document.createElement('div'); row.className = 'training-item'; row.innerHTML = `<input placeholder="Nome do dataset / referência" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+function addMetric() { const container = document.getElementById('metricsContainer'); const row = document.createElement('div'); row.className = 'attribute-item'; row.innerHTML = `<input placeholder="Métrica" /><input placeholder="Valor" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+function addAttributeRow() { const container = document.getElementById('attributesContainer'); const row = document.createElement('div'); row.className = 'attribute-item'; row.innerHTML = `<input placeholder="Atributo" /><input placeholder="Valor" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  window.networks[network].push({ type, identifier });
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'ai';
+  const modelName = document.getElementById('modelName')?.value || "Modelo de IA";
+  const identifier = document.getElementById('modelName')?.value?.toLowerCase().replace(/\s+/g, '_') || 'modelo_ia';
+  
+  const trainingData = []; document.querySelectorAll('#trainingDataContainer .training-item input').forEach(inp => { if(inp.value.trim()) trainingData.push(inp.value.trim()); });
+  const metrics = {}; document.querySelectorAll('#metricsContainer .attribute-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) metrics[inputs[0].value.trim()] = inputs[1].value.trim(); });
+  const customAttributes = {}; document.querySelectorAll('#attributesContainer .attribute-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) customAttributes[inputs[0].value.trim()] = inputs[1].value.trim(); });
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:name:${modelName.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('version').value) dnaAttributes.push(`BBP:attr:${namespace}:version:${document.getElementById('version').value}`);
+  if(document.getElementById('creator').value) dnaAttributes.push(`BBP:attr:${namespace}:creator:${document.getElementById('creator').value.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:type:${document.getElementById('modelType').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:architecture:${document.getElementById('architecture').value}`);
+  if(document.getElementById('parameters').value) dnaAttributes.push(`BBP:attr:${namespace}:parameters:${document.getElementById('parameters').value}`);
+  if(document.getElementById('contextLength').value) dnaAttributes.push(`BBP:attr:${namespace}:context_length:${document.getElementById('contextLength').value}`);
+  trainingData.forEach((d,i) => dnaAttributes.push(`BBP:attr:${namespace}:training_data_${i+1}:${d.toLowerCase().replace(/\s+/g, '_')}`));
+  if(document.getElementById('trainingCost').value) dnaAttributes.push(`BBP:attr:${namespace}:training_cost_usd:${document.getElementById('trainingCost').value}`);
+  if(document.getElementById('gpuHours').value) dnaAttributes.push(`BBP:attr:${namespace}:gpu_hours:${document.getElementById('gpuHours').value}`);
+  if(document.getElementById('baseModel').value) dnaAttributes.push(`BBP:attr:${namespace}:base_model:${document.getElementById('baseModel').value.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('inferenceCost').value) dnaAttributes.push(`BBP:attr:${namespace}:inference_cost_usd_per_1k:${document.getElementById('inferenceCost').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:quantization:${document.getElementById('quantization').value}`);
+  if(document.getElementById('minRam').value) dnaAttributes.push(`BBP:attr:${namespace}:min_ram_gb:${document.getElementById('minRam').value}`);
+  if(document.getElementById('recommendedGpu').value) dnaAttributes.push(`BBP:attr:${namespace}:recommended_gpu:${document.getElementById('recommendedGpu').value.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:license:${document.getElementById('license').value}`);
+  for (const [k,v] of Object.entries(metrics)) dnaAttributes.push(`BBP:attr:${namespace}:metric_${k}:${v}`);
+  for (const [k,v] of Object.entries(customAttributes)) dnaAttributes.push(`BBP:attr:${namespace}:${k}:${v.toLowerCase().replace(/\s+/g, '_')}`);
+  
+  const assets = modelFile ? { model: `./assets/models/${modelFile.name}` } : {};
+  const social = { website: document.getElementById('website')?.value, github: document.getElementById('github')?.value, huggingface: document.getElementById('huggingface')?.value, paper: document.getElementById('paper')?.value };
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:${namespace}:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "ai_model",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: modelName,
+      description: document.getElementById('description')?.value,
+      creator: document.getElementById('creator').value || root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "AI Model"
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      name: modelName,
+      version: document.getElementById('version').value || "1.0",
+      creator: document.getElementById('creator').value,
+      type: document.getElementById('modelType').value,
+      architecture: document.getElementById('architecture').value,
+      parameters: document.getElementById('parameters').value,
+      context_length: document.getElementById('contextLength').value ? parseInt(document.getElementById('contextLength').value) : null,
+      training_data: trainingData.length ? trainingData : null,
+      training_cost_usd: document.getElementById('trainingCost').value ? parseFloat(document.getElementById('trainingCost').value) : null,
+      gpu_hours: document.getElementById('gpuHours').value ? parseInt(document.getElementById('gpuHours').value) : null,
+      base_model: document.getElementById('baseModel').value,
+      inference_cost_usd_per_1k: document.getElementById('inferenceCost').value ? parseFloat(document.getElementById('inferenceCost').value) : null,
+      quantization: document.getElementById('quantization').value,
+      hardware_requirements: {
+        min_ram_gb: document.getElementById('minRam').value ? parseInt(document.getElementById('minRam').value) : null,
+        recommended_gpu: document.getElementById('recommendedGpu').value
+      },
+      license: document.getElementById('license').value,
+      metrics: Object.keys(metrics).length ? metrics : null,
+      ...customAttributes
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    social,
+    capabilities: ["ai_model", "inference", "machine_learning"],
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${modelName} v${document.getElementById('version').value} | ${document.getElementById('parameters').value || 'Parâmetros não especificados'}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type: "application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  if(modelFile) alert(`⚠️ Salve o modelo em: ./assets/models/${modelFile.name}`);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+addTrainingData();
+addMetric();
+refreshNetworksList();
+</script>
+</body>
+</html>

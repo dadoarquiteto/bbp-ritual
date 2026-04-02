@@ -1,0 +1,102 @@
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:game_asset:weapon_asset:dragonslayer_sword",
+  "standard": "game_item",
+  "origin": {
+    "network": "bitcoin",
+    "protocol": "ordinals",
+    "timestamp": "2026-03-27T22:55:38.764Z"
+  },
+  "collection": {
+    "name": "Espada do Dragão",
+    "description": "Espada forjada com escamas de dragão",
+    "creator": "BBP Game Asset",
+    "creator_address": "tb1pj0qx3l2rstg0nemw475h4devn5rxrp4awgphlz9fydrx5tm83y9qw5layr",
+    "namespace": "weapon_asset",
+    "identifier": "espada_do_dragão",
+    "supply": 1,
+    "blockchain": "Bitcoin (Ordinals)",
+    "category": "Game Asset"
+  },
+  "royalties": {
+    "on_primary": [
+      {
+        "address": "Royalties Primários",
+        "bps": 1000
+      }
+    ],
+    "on_secondary": [
+      {
+        "address": "Royalties Secundários",
+        "bps": 1000
+      }
+    ]
+  },
+  "payout_rules": {
+    "precision": 10000,
+    "minimum_payout_sats": 546
+  },
+  "dna_binding": "BBP:bind:bbp:weapon_asset:espada_do_dragão",
+  "attributes": {
+    "name": "Espada do Dragão",
+    "type": "weapon",
+    "game": "Medieval Quest",
+    "rarity": "legendary",
+    "level": 50,
+    "stats": {
+      "attack": "250",
+      "defense": "50",
+      "speed": "1.2",
+      "critical": "15"
+    },
+    "effects": [
+      {
+        "effect": "fogo",
+        "value": "+50 dano por 3s"
+      },
+      {
+        "effect": "Life Steal",
+        "value": "5%"
+      }
+    ],
+    "requirements": null,
+    "tradeable": true,
+    "soulbound": false,
+    "upgradeable": true,
+    "stackable": false
+  },
+  "dna_attributes": [
+    "BBP:attr:weapon_asset:name:espada_do_dragão",
+    "BBP:attr:weapon_asset:type:weapon",
+    "BBP:attr:weapon_asset:game:medieval_quest",
+    "BBP:attr:weapon_asset:rarity:legendary",
+    "BBP:attr:weapon_asset:level:50",
+    "BBP:attr:weapon_asset:attack:250",
+    "BBP:attr:weapon_asset:defense:50",
+    "BBP:attr:weapon_asset:speed:1.2",
+    "BBP:attr:weapon_asset:critical:15",
+    "BBP:attr:weapon_asset:effect_1:fogo_+50 dano por 3s",
+    "BBP:attr:weapon_asset:effect_2:life_steal_5%",
+    "BBP:attr:weapon_asset:tradeable:true",
+    "BBP:attr:weapon_asset:soulbound:false",
+    "BBP:attr:weapon_asset:upgradeable:true",
+    "BBP:attr:weapon_asset:stackable:false"
+  ],
+  "assets": {
+    "image": "./assets/images/dragonslayer_sword.png"
+  },
+  "capabilities": [
+    "game_asset",
+    "tradeable"
+  ],
+  "history": [
+    {
+      "event": "manifest_created",
+      "timestamp": "2026-03-27T22:55:38.764Z"
+    }
+  ],
+  "contract_hash": "3ef3166a9d8a4bc8b8bca2a3545f7ce3dec4f07c8e483ba7c31b429facc4eb92",
+  "creator_pubkey": "022afb7ffff3f12bdf971a2cdb81ca5ed63ce0ee070b818116e3ab991a23ca9e1b",
+  "signature": "IEQYkPteeOK6Q3E8m9ASntKVeG0gHCRWC0j/jis6rgj+frCTQIbT/Ay//CyyLLMSqMBb8nqUTTxF6/KPy/gz1ag=",
+  "signed_at": "2026-03-27T22:57:54.240Z"
+}

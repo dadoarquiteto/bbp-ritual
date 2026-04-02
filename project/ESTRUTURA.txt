@@ -1,0 +1,50 @@
+project/
+├── page1.html
+├── viewer.html
+├── generate.py
+├── resolver.js
+│
+├── ativos/
+│   ├── art/
+│   │   └── mannequin/
+│   │       ├── bbp_manifest.json
+│   │       ├── layers/
+│   │       │   ├── background/
+│   │       │   ├── body/
+│   │       │   └── ...
+│   │       └── output/                    ← gerado pelo generate.py
+│   │           ├── images/
+│   │           ├── json/
+│   │           └── _metadata.json
+│   │
+│   ├── commodity/
+│   │   ├── coffee/
+│   │   │   ├── bbp_manifest.json
+│   │   │   └── assets/
+│   │   │       ├── images/
+│   │   │       └── documents/
+│   │   └── gold/
+│   │       ├── bbp_manifest.json
+│   │       └── assets/
+│   │
+│   ├── token/
+│   │   └── bbp_token/
+│   │       ├── bbp_manifest.json
+│   │       └── assets/
+│   │
+│   ├── identity/
+│   │   └── satoshi/
+│   │       ├── bbp_manifest.json
+│   │       └── assets/
+│   │
+│   ├── collectible/
+│   │   └── dragon_card/
+│   │       ├── bbp_manifest.json
+│   │       └── assets/
+│   │
+│   └── ... (outros tipos vazios)
+│
+└── templates/                             ← todos os templates
+    ├── nft.html
+    ├── commodity.html
+    └── ... (15 templates)

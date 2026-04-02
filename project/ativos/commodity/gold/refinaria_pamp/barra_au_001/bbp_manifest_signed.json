@@ -1,0 +1,80 @@
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:commodity:refinaria_pamp:barra_au_001",
+  "standard": "commodity",
+  "origin": {
+    "network": "bitcoin",
+    "protocol": "ordinals",
+    "timestamp": "2026-03-27T19:15:48.247Z"
+  },
+  "collection": {
+    "name": "Barra AU-001 - 1000g",
+    "description": "Barra de ouro LBMA, pureza 999.9",
+    "creator": "Refinaria Pamp",
+    "creator_address": "tb1pj0qx3l2rstg0nemw475h4devn5rxrp4awgphlz9fydrx5tm83y9qw5layr",
+    "namespace": "refinaria_pamp",
+    "identifier": "barra_au-001_-_1000g",
+    "supply": 1,
+    "explicit_content": false,
+    "blockchain": "Bitcoin (Ordinals)",
+    "category": "Commodity"
+  },
+  "payout_rules": {
+    "precision": 10000,
+    "minimum_payout_sats": 546
+  },
+  "dna_binding": "BBP:bind:bbp:refinaria_pamp:barra_au-001_-_1000g",
+  "attributes": {
+    "commodity_type": "gold",
+    "lot": "Barra AU-001 - 1000g",
+    "quantity": 1,
+    "unit": "gram",
+    "certifications": [
+      "Certificado de Autenticidade",
+      "Certificado Refinaria"
+    ],
+    "purity": "999.9",
+    "weight": "1000",
+    "form": "bar",
+    "refinery": "PAMP"
+  },
+  "dna_attributes": [
+    "BBP:attr:refinaria_pamp:type:gold",
+    "BBP:attr:refinaria_pamp:lot:barra_au-001_-_1000g",
+    "BBP:attr:refinaria_pamp:quantity:1",
+    "BBP:attr:refinaria_pamp:unit:kg",
+    "BBP:attr:refinaria_pamp:purity:999.9",
+    "BBP:attr:refinaria_pamp:weight:1000",
+    "BBP:attr:refinaria_pamp:unit:gram",
+    "BBP:attr:refinaria_pamp:form:bar",
+    "BBP:attr:refinaria_pamp:refinery:pamp",
+    "BBP:attr:refinaria_pamp:certification:certificado_de_autenticidade",
+    "BBP:attr:refinaria_pamp:certification:certificado_refinaria"
+  ],
+  "assets": {
+    "image": "./assets/images/gold_bar.png",
+    "documents": [
+      "./assets/documents/certificado_autenticidade.pdf",
+      "./assets/documents/certificado_refinaria.pdf"
+    ]
+  },
+  "social": {
+    "website": "www.pamp.com",
+    "twitter": "@pamp",
+    "instagram": "@pamp"
+  },
+  "capabilities": [
+    "tradeable",
+    "commodity"
+  ],
+  "history": [
+    {
+      "event": "manifest_created",
+      "timestamp": "2026-03-27T19:15:48.247Z"
+    }
+  ],
+  "contract_hash": "10f1394460511b308151f0fc1c4b349887ca3c907f36c5d70cf3711aec2aa888",
+  "creator_pubkey": "022afb7ffff3f12bdf971a2cdb81ca5ed63ce0ee070b818116e3ab991a23ca9e1b",
+  "signature": "Hy2TDd7okpxbsWXmHyFTMRqGefo4LP27TgUDHBdJdAkBYyeHtQYM2ZIEPZX9YiIoQhIj/Pn92p6M1bPfxgqIQhA=",
+  "signed_at": "2026-03-27T19:16:02.309Z"
+}

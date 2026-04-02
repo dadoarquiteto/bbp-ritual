@@ -1,0 +1,82 @@
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:identity:satoshi:nakamoto",
+  "standard": "identity",
+  "origin": {
+    "network": "bitcoin",
+    "protocol": "ordinals",
+    "timestamp": "2026-03-28T18:49:15.398Z"
+  },
+  "collection": {
+    "name": "satoshi",
+    "description": "Criador do Bitcoin. Interessado em criptografia.",
+    "creator": "Satoshi Nakamoto",
+    "creator_address": "tb1pj0qx3l2rstg0nemw475h4devn5rxrp4awgphlz9fydrx5tm83y9qw5layr",
+    "namespace": "satoshi",
+    "identifier": "satoshi",
+    "supply": 1,
+    "blockchain": "Bitcoin (Ordinals)",
+    "category": "Identity"
+  },
+  "dna_binding": "BBP:bind:bbp:identity:satoshi",
+  "attributes": {
+    "username": "satoshi",
+    "display_name": "Satoshi Nakamoto",
+    "bio": "Criador do Bitcoin. Interessado em criptografia.",
+    "public": true,
+    "verified": false,
+    "organization": false,
+    "verification_level": "none",
+    "social": {
+      "twitter": "@satoshi",
+      "github": "satoshi",
+      "linkedin": null,
+      "instagram": null,
+      "discord": null,
+      "telegram": null,
+      "website": "https://bitcoin.org",
+      "warpcast": null
+    },
+    "verifications": null
+  },
+  "dna_attributes": [
+    "BBP:attr:satoshi:username:satoshi",
+    "BBP:attr:satoshi:display_name:satoshi_nakamoto",
+    "BBP:attr:satoshi:bio:Criador do Bitcoin. Interessado em criptografia.",
+    "BBP:attr:satoshi:public:true",
+    "BBP:attr:satoshi:verified:false",
+    "BBP:attr:satoshi:organization:false",
+    "BBP:attr:satoshi:verification_level:none",
+    "BBP:attr:satoshi:twitter:@satoshi",
+    "BBP:attr:satoshi:github:satoshi",
+    "BBP:attr:satoshi:website:https://bitcoin.org"
+  ],
+  "assets": {
+    "image": "./assets/images/avatar.png"
+  },
+  "social": {
+    "twitter": "@satoshi",
+    "github": "satoshi",
+    "linkedin": null,
+    "instagram": null,
+    "discord": null,
+    "telegram": null,
+    "website": "https://bitcoin.org",
+    "warpcast": null
+  },
+  "capabilities": [
+    "identity",
+    "verifiable",
+    "public"
+  ],
+  "history": [
+    {
+      "event": "manifest_created",
+      "timestamp": "2026-03-28T18:49:15.398Z"
+    }
+  ],
+  "contract_hash": "a43d8dfa85f501c84e048f4809ba88e82bf7781bebad0eacf108722dd359ae7c",
+  "creator_pubkey": "022afb7ffff3f12bdf971a2cdb81ca5ed63ce0ee070b818116e3ab991a23ca9e1b",
+  "signature": "HzhM2pl/XwK2o6+KZA5LRQiFe3hl1dL2jU0GVVwuip6aWa4tzEJfPy1LPcpwFvmQ+2oHc3f4BU53riaMMPKSSkg=",
+  "signed_at": "2026-03-28T18:49:36.703Z"
+}

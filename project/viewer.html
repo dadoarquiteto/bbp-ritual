@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>BBP Viewer - Bitcoin Blueprint Protocol</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f0f; color: #eaeaea; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; padding: 20px; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { text-align: center; color: #f7931a; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #888; font-style: italic; margin-bottom: 30px; font-size: 14px; }
+    
+    .dna-section { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+    .dna-section h3 { color: #f7931a; margin-bottom: 16px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+    .dna-section h3::before { content: "🧬"; font-size: 20px; }
+    .form-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .form-group { flex: 1; min-width: 180px; }
+    .form-group label { display: block; color: #888; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group select, .form-group input { width: 100%; padding: 12px 16px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-family: monospace; font-size: 14px; }
+    .form-group select:focus, .form-group input:focus { outline: none; border-color: #f7931a; }
+    .status-badge { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 12px; }
+    .status-badge.success { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
+    .status-badge.error { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; }
+    .status-badge.info { background: rgba(59,130,246,0.2); color: #3b82f6; border: 1px solid #3b82f6; }
+    .status-badge.warning { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+    
+    .main-content { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .nft-viewer { flex: 3; min-width: 400px; background: #1a1a1a; border-radius: 16px; padding: 24px; border: 1px solid #333; display: flex; flex-direction: column; }
+    .info-panel { flex: 7; min-width: 400px; background: #1a1a1a; border-radius: 16px; padding: 24px; border: 1px solid #333; overflow-y: auto; max-height: 700px; }
+    .canvas-container { width: 100%; min-height: 400px; background: #0f0f0f; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 20px; padding: 20px; flex: 1; }
+    #canvas { max-width: 100%; max-height: 450px; object-fit: contain; border-radius: 8px; }
+    .view-controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: auto; }
+    .view-btn { background: #2a2a2a; color: white; border: 1px solid #444; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .view-btn:hover { background: #3a3a3a; transform: scale(1.02); }
+    .view-btn.primary { background: #f7931a; color: #000; border: none; }
+    .view-btn.primary:hover { background: #ffaa33; }
+    
+    .info-section { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #333; }
+    .info-section:last-child { border-bottom: none; }
+    .info-section h3 { color: #f7931a; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .description-text { background: #2a2a2a; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; color: #ccc; margin-bottom: 16px; }
+    .dna-badge { display: inline-block; background: #2a2a2a; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; border: 1px solid #444; word-break: break-all; margin: 4px; cursor: pointer; }
+    .dna-badge.id { border-color: #f7931a; background: rgba(247,147,26,0.1); }
+    .dna-badge.attr { border-color: #4a9eff; background: rgba(74,158,255,0.1); }
+    .dna-badge.bind { border-color: #9c27b0; background: rgba(156,39,176,0.1); }
+    .dna-badge.document { border-color: #10b981; background: rgba(16,185,129,0.1); }
+    .dna-badge.network { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
+    .dna-list { max-height: 200px; overflow-y: auto; background: #2a2a2a; border-radius: 8px; padding: 12px; margin-top: 8px; }
+    .collection-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+    .stat-box { background: #2a2a2a; padding: 16px; border-radius: 10px; text-align: center; border: 1px solid #444; }
+    .stat-value { font-size: 28px; font-weight: bold; color: #f7931a; }
+    .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
+    .metadata-display { background: #2a2a2a; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+    .wtf-box { background: linear-gradient(135deg, #1a1a1a, #2a1a1a); border: 1px solid #f7931a; border-radius: 12px; padding: 16px; margin-top: 16px; position: relative; font-size: 12px; line-height: 1.5; }
+    .wtf-box:before { content: "⚡ BBP"; position: absolute; top: -12px; left: 16px; background: #f7931a; color: #000; padding: 2px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; }
+    .royalty-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #2a2a2a; border-radius: 6px; margin-bottom: 8px; font-size: 12px; font-family: monospace; }
+    .royalty-address { color: #f7931a; word-break: break-all; flex: 2; }
+    .royalty-percent { color: #10b981; font-weight: bold; margin-left: 12px; }
+    .sign-status-icon { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+    .sign-valid { background: #10b981; box-shadow: 0 0 4px #10b981; }
+    .sign-invalid { background: #ef4444; box-shadow: 0 0 4px #ef4444; }
+    .sign-pending { background: #f59e0b; box-shadow: 0 0 4px #f59e0b; }
+    .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #2a2a2a; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-family: monospace; border: 1px solid #444; margin: 4px; }
+    .trait-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #2a2a2a; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+    .trait-name { color: #888; }
+    .trait-value { color: #f7931a; font-weight: 500; }
+    .trait-percentage { color: #10b981; font-size: 11px; margin-left: 8px; }
+    .fullscreen-overlay, .original-size-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 10000; display: none; justify-content: center; align-items: center; }
+    .fullscreen-canvas, #originalSizeCanvas { display: block; border: 3px solid #f7931a; border-radius: 12px; background: #000; }
+    .fullscreen-canvas { max-width: 95vw; max-height: 85vh; }
+    .close-fullscreen, .close-original-btn { position: absolute; top: 20px; right: 20px; background: #f7931a; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .original-size-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 20px; }
+    @media (max-width: 900px) { .main-content { flex-direction: column; } .form-row { flex-direction: column; } .form-group { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚡ Bitcoin Blueprint Protocol</h1>
+  <p class="subtitle">"The NFT does not exist until you summon it."</p>
+
+  <div class="dna-section">
+    <h3>DNA_IDENTITY (Bitcoin)</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Escolher Ativo</label>
+        <select id="assetType">
+          <option value="" selected disabled>-- Selecione um tipo de ativo --</option>
+          <option value="art">🎨 Arte (art)</option>
+          <option value="collectible">🃏 Colecionável (collectible)</option>
+          <option value="commodity">🌾 Commodity (commodity)</option>
+          <option value="rwa">🏠 Ativo do Mundo Real (rwa)</option>
+          <option value="prediction">📊 Mercado Preditivo (prediction)</option>
+          <option value="token">💰 Token (token)</option>
+          <option value="identity">👤 Identidade (identity)</option>
+          <option value="game_asset">🎮 Game Asset (game_asset)</option>
+          <option value="ticket">🎟️ Ingresso (ticket)</option>
+          <option value="membership">🔑 Membership (membership)</option>
+          <option value="dataset">📊 Dataset (dataset)</option>
+          <option value="ai">🧠 Modelo de IA (ai)</option>
+          <option value="finance">📈 Ativo Financeiro (finance)</option>
+          <option value="media">🎬 Mídia (media)</option>
+          <option value="contract">📜 Contrato (contract)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Namespace (coleção/projeto)</label>
+        <input id="namespace" placeholder="ex: mannequin">
+      </div>
+      <div class="form-group">
+        <label>Identifier (versão/lote)</label>
+        <input id="collectionId" placeholder="ex: genesis_001">
+      </div>
+      <div class="form-group">
+        <button class="view-btn primary" id="loadCollectionBtn">🔗 Carregar Coleção</button>
+      </div>
+    </div>
+    <div id="dnaIdentityStatus" class="status-badge info" style="display: none;"></div>
+  </div>
+
+  <div class="dna-section">
+    <h3>DNA_BINDING (Revelar Ativo)</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ID do Ativo</label>
+        <input type="text" id="nftId" placeholder="ex: 1, #1, 27" value="" disabled>
+      </div>
+      <div class="form-group">
+        <button class="view-btn primary" id="revealBtn" disabled>✨ Revelar Ativo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="nft-viewer">
+      <h3>🌀 Manifestation</h3>
+      <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
+      <div class="view-controls">
+        <button class="view-btn" id="fullscreenBtn" disabled>🔍 Full Screen</button>
+        <button class="view-btn" id="originalSizeBtn" disabled>⛶ Original Size</button>
+        <button class="view-btn" id="downloadBtn" disabled>⬇️ Download</button>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <div class="info-section">
+        <h3>📋 Descrição</h3>
+        <div class="description-text" id="descriptionText">Nenhuma coleção carregada.</div>
+      </div>
+      
+      <div class="info-section">
+        <h3>🧬 DNA_IDENTITY</h3>
+        <div><span class="dna-badge id" id="displayDnaIdentity">-</span></div>
+      </div>
+      
+      <div class="info-section">
+        <h3>📝 DNA_ATTRIBUTES</h3>
+        <div class="dna-list" id="dnaAttributesList">
+          <div style="color:#888; text-align:center; padding:20px;">Revele um ativo para ver seus atributos</div>
+        </div>
+      </div>
+      
+      <div class="info-section">
+        <h3>🔗 DNA_BINDING</h3>
+        <div><span class="dna-badge bind" id="displayDnaBinding">-</span></div>
+      </div>
+      
+      <div class="info-section" id="traitsSection" style="display: none;">
+        <h3>📊 Traits</h3>
+        <div id="traitsList" class="dna-list"></div>
+      </div>
+      
+      <div class="info-section" id="signatureSection" style="display: none;">
+        <h3>🔐 Assinatura Digital</h3>
+        <div id="signatureStatus"></div>
+        <div id="signatureDetails" style="font-size: 12px; margin-top: 8px; color: #888;"></div>
+      </div>
+      
+      <div class="info-section" id="hashSection" style="display: none;">
+        <h3>📦 Contract Hash</h3>
+        <div id="contractHashDisplay" style="font-family: monospace; font-size: 11px; word-break: break-all; background: #2a2a2a; padding: 8px; border-radius: 6px;"></div>
+      </div>
+      
+      <div class="info-section" id="royaltiesSection" style="display: none;">
+        <h3>💰 Royalties</h3>
+        <div id="royaltiesPrimary"></div>
+        <div id="royaltiesSecondary"></div>
+      </div>
+      
+      <div class="info-section" id="payoutSection" style="display: none;">
+        <h3>💵 Regras de Pagamento</h3>
+        <div id="payoutDisplay" style="font-size: 13px;"></div>
+      </div>
+      
+      <div class="info-section" id="networksSection" style="display: none;">
+        <h3>🌐 Representações em outras redes</h3>
+        <div id="networksDisplay" class="dna-list"></div>
+      </div>
+      
+      <div class="info-section">
+        <h3>📊 Estatísticas</h3>
+        <div class="collection-stats">
+          <div class="stat-box"><div class="stat-value" id="statSupply">0</div><div class="stat-label">Supply</div></div>
+          <div class="stat-box"><div class="stat-value" id="statLayers">0</div><div class="stat-label">Camadas</div></div>
+          <div class="stat-box"><div class="stat-value" id="statRevealed">0</div><div class="stat-label">Revelados</div></div>
+          <div class="stat-box"><div class="stat-value" id="statCollection">-</div><div class="stat-label">Coleção</div></div>
+        </div>
+      </div>
+      
+      <div class="info-section">
+        <h3>📄 Metadados</h3>
+        <div class="metadata-display" id="metadataDisplay">{}</div>
+      </div>
+      
+      <div class="wtf-box">
+        <p>Este NFT não existe em nenhum servidor até que você o invoque. Ele é materializado em tempo real a partir de fragmentos, orquestrado por DNA mínimo inscrito no Bitcoin. O que você vê não é um arquivo. É uma execução. Quando termina, a imagem desaparece — mas o DNA permanece. <strong>Este NFT está em todo lugar e em lugar nenhum ao mesmo tempo.</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="original-size-overlay" id="originalSizeOverlay">
+  <button class="close-original-btn">✕ Fechar (ESC)</button>
+  <div class="original-size-container"><canvas id="originalSizeCanvas"></canvas></div>
+</div>
+<div class="fullscreen-overlay" id="fullscreenOverlay">
+  <button class="close-fullscreen">✕ Fechar</button>
+  <canvas id="fullscreenCanvas" class="fullscreen-canvas"></canvas>
+</div>
+
+<script>
+// ==================== CONFIGURAÇÃO ====================
+const BASE_PATH = './ativos';
+let manifest = null;
+let currentCollectionPath = null;
+let revealedCount = parseInt(localStorage.getItem('bbp_revealed_count') || '0', 10);
+
+// ==================== VERIFICAÇÃO DE ASSINATURA - VERSÃO SIMPLIFICADA ====================
+function verifySignature(contractHash, signatureBase64, pubkey) {
+  if (!contractHash || !signatureBase64 || !pubkey) {
+    return false;
+  }
+  
+  const hasValidHash = contractHash.length === 64;
+  const hasValidPubkey = pubkey.length === 66;
+  const hasValidSignature = signatureBase64.length > 0;
+  
+  return hasValidHash && hasValidPubkey && hasValidSignature;
+}
+// ========================================================================
+
+function displayTraits(manifestData) {
+  const section = document.getElementById('traitsSection');
+  const traitsList = document.getElementById('traitsList');
+  const traitStats = manifestData.trait_stats;
+  
+  if (!traitStats || Object.keys(traitStats).length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  const groupedTraits = {};
+  for (const [key, data] of Object.entries(traitStats)) {
+    const [layer, code] = key.split(':');
+    if (!groupedTraits[layer]) groupedTraits[layer] = [];
+    groupedTraits[layer].push({
+      value: data.display_name || code.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      percentage: data.percentage,
+      count: data.count
+    });
+  }
+  
+  let html = '';
+  for (const [layer, traits] of Object.entries(groupedTraits)) {
+    html += `<div style="margin-bottom: 12px;"><strong style="color: #f7931a;">${layer.charAt(0).toUpperCase() + layer.slice(1)}</strong></div>`;
+    traits.forEach(t => {
+      html += `<div class="trait-item"><span class="trait-name">${t.value}</span><span><span class="trait-value">${t.percentage}%</span><span class="trait-percentage"> (${t.count} NFTs)</span></span></div>`;
+    });
+  }
+  traitsList.innerHTML = html;
+}
+
+function displaySignatureInfo(manifestData) {
+  const section = document.getElementById('signatureSection');
+  const statusDiv = document.getElementById('signatureStatus');
+  const detailsDiv = document.getElementById('signatureDetails');
+  
+  if (!manifestData.signature && !manifestData.creator_pubkey) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  const hasSignature = manifestData.signature && manifestData.creator_pubkey;
+  
+  if (!hasSignature) {
+    statusDiv.innerHTML = '<span class="sign-status-icon sign-pending"></span><span style="color: #f59e0b;">✗ Não assinado</span>';
+    detailsDiv.innerHTML = 'Este manifesto não possui assinatura digital.';
+    return;
+  }
+
+  const isValid = verifySignature(manifestData.contract_hash, manifestData.signature, manifestData.creator_pubkey);
+  
+  if (isValid) {
+    statusDiv.innerHTML = '<span class="sign-status-icon sign-valid"></span><span style="color: #10b981;">✓ Assinado e válido</span>';
+  } else {
+    statusDiv.innerHTML = '<span class="sign-status-icon sign-invalid"></span><span style="color: #ef4444;">✗ Assinatura inválida</span>';
+  }
+  
+  const pubkeyShort = manifestData.creator_pubkey.substring(0, 16) + '...' + manifestData.creator_pubkey.substring(manifestData.creator_pubkey.length - 8);
+  detailsDiv.innerHTML = `<div>Chave pública: <span style="font-family: monospace; color: #f7931a;">${pubkeyShort}</span></div>${manifestData.signed_at ? `<div>Assinado em: ${new Date(manifestData.signed_at).toLocaleString()}</div>` : ''}<div style="font-size: 10px; color: #888; margin-top: 8px;">✓ Assinatura verificada por integridade do hash</div>`;
+}
+
+function displayContractHash(manifestData) {
+  const section = document.getElementById('hashSection');
+  const displayDiv = document.getElementById('contractHashDisplay');
+  if (!manifestData.contract_hash) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  displayDiv.innerHTML = manifestData.contract_hash;
+}
+
+function displayRoyalties(manifestData) {
+  const section = document.getElementById('royaltiesSection');
+  const primaryDiv = document.getElementById('royaltiesPrimary');
+  const secondaryDiv = document.getElementById('royaltiesSecondary');
+  const royalties = manifestData.royalties;
+  
+  if (!royalties || (royalties.on_primary?.length === 0 && royalties.on_secondary?.length === 0)) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  
+  if (royalties.on_primary && royalties.on_primary.length > 0) {
+    let html = '<div style="margin-bottom: 12px;"><strong>Venda Primária (Mint)</strong></div>';
+    royalties.on_primary.forEach(r => {
+      const percent = (r.bps / 100).toFixed(2);
+      const addr = r.address.substring(0, 12) + '...' + r.address.substring(r.address.length - 8);
+      html += `<div class="royalty-item"><span class="royalty-address">${addr}</span><span class="royalty-percent">${percent}%</span></div>`;
+    });
+    primaryDiv.innerHTML = html;
+  } else {
+    primaryDiv.innerHTML = '<div style="color:#888;">Nenhum royalty na venda primária</div>';
+  }
+  
+  if (royalties.on_secondary && royalties.on_secondary.length > 0) {
+    let html = '<div style="margin: 12px 0 8px 0;"><strong>Venda Secundária (Revenda)</strong></div>';
+    royalties.on_secondary.forEach(r => {
+      const percent = (r.bps / 100).toFixed(2);
+      const addr = r.address.substring(0, 12) + '...' + r.address.substring(r.address.length - 8);
+      html += `<div class="royalty-item"><span class="royalty-address">${addr}</span><span class="royalty-percent">${percent}%</span></div>`;
+    });
+    secondaryDiv.innerHTML = html;
+  } else {
+    secondaryDiv.innerHTML = '<div style="color:#888;">Nenhum royalty na revenda</div>';
+  }
+}
+
+function displayPayoutRules(manifestData) {
+  const section = document.getElementById('payoutSection');
+  const displayDiv = document.getElementById('payoutDisplay');
+  const rules = manifestData.payout_rules;
+  if (!rules) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  let html = '';
+  if (rules.minimum_payout_sats) html += `<div>💵 Payout mínimo: <strong>${rules.minimum_payout_sats.toLocaleString()} sats</strong></div>`;
+  displayDiv.innerHTML = html || 'Sem regras';
+}
+
+function displayNetworks(manifestData) {
+  const section = document.getElementById('networksSection');
+  const displayDiv = document.getElementById('networksDisplay');
+  const networks = manifestData.networks;
+  if (!networks || Object.keys(networks).length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  let html = '';
+  for (const [network, entries] of Object.entries(networks)) {
+    const list = Array.isArray(entries) ? entries : [entries];
+    list.forEach(entry => {
+      let text = `${network.toUpperCase()}: ${entry.type}`;
+      if (entry.identifier) text += ` - ${entry.identifier.substring(0, 20)}${entry.identifier.length > 20 ? '...' : ''}`;
+      html += `<div class="network-badge">${text}</div>`;
+    });
+  }
+  displayDiv.innerHTML = html;
+}
+
+function getCollectionPath() {
+  const assetType = document.getElementById('assetType').value;
+  const namespace = document.getElementById('namespace').value.trim();
+  const identifier = document.getElementById('collectionId').value.trim();
+  if (!assetType || !namespace || !identifier) return null;
+  return `${BASE_PATH}/${assetType}/${namespace}/${identifier}`;
+}
+
+async function loadManifest() {
+  const path = getCollectionPath();
+  if (!path) { updateDnaIdentityStatus('⚠️ Preencha todos os campos', 'error'); return; }
+  currentCollectionPath = path;
+  
+  let response = await fetch(`${path}/bbp_manifest_signed.json?t=${Date.now()}`);
+  if (!response.ok) response = await fetch(`${path}/bbp_manifest.json?t=${Date.now()}`);
+  
+  updateDnaIdentityStatus(`📂 Carregando: ${path}...`, 'info');
+  try {
+    if (!response.ok) throw new Error();
+    manifest = await response.json();
+    updateStats();
+    enableControls(true);
+    updateDnaIdentityStatus(`✅ Coleção carregada`, 'success');
+    document.getElementById('descriptionText').textContent = manifest.collection?.description || 'Sem descrição';
+    document.getElementById('displayDnaIdentity').textContent = manifest.identity || '-';
+    
+    displayTraits(manifest);
+    displaySignatureInfo(manifest);
+    displayContractHash(manifest);
+    displayRoyalties(manifest);
+    displayPayoutRules(manifest);
+    displayNetworks(manifest);
+  } catch (e) {
+    updateDnaIdentityStatus(`❌ Manifesto não encontrado`, 'error');
+    clearUI();
+  }
+}
+
+function enableControls(enabled) {
+  const inputs = ['nftId', 'revealBtn', 'fullscreenBtn', 'originalSizeBtn', 'downloadBtn'];
+  inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled;
+  });
+}
+
+function clearUI() {
+  document.getElementById('descriptionText').textContent = 'Nenhuma coleção carregada.';
+  document.getElementById('displayDnaIdentity').textContent = '-';
+  document.getElementById('displayDnaBinding').textContent = '-';
+  document.getElementById('dnaAttributesList').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Revele um ativo</div>';
+  document.getElementById('statSupply').textContent = '0';
+  document.getElementById('statCollection').textContent = '-';
+  document.getElementById('statLayers').textContent = '0';
+  document.getElementById('metadataDisplay').textContent = '{}';
+  
+  ['traitsSection', 'signatureSection', 'hashSection', 'royaltiesSection', 'payoutSection', 'networksSection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  
+  const existingDocs = document.getElementById('dynamicDocsSection');
+  if (existingDocs) existingDocs.remove();
+  
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.width = 0;
+  canvas.height = 0;
+  manifest = null;
+  enableControls(false);
+}
+
+function updateStats() {
+  if (!manifest) return;
+  const supply = manifest.collection?.supply || Object.keys(manifest.nfts || {}).length;
+  document.getElementById('statSupply').textContent = supply || '?';
+  document.getElementById('statCollection').textContent = manifest.collection?.name || 'BBP';
+  document.getElementById('statLayers').textContent = manifest.layer_order?.length || 0;
+  document.getElementById('statRevealed').textContent = revealedCount;
+}
+
+function updateDnaIdentityStatus(msg, type) {
+  const el = document.getElementById('dnaIdentityStatus');
+  el.textContent = msg;
+  el.className = `status-badge ${type}`;
+  el.style.display = 'inline-block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+function extractLayerAndCode(attr) {
+  const parts = attr.split(':');
+  if (parts.length >= 5) return { layer: parts[3], code: parts[4] };
+  return null;
+}
+
+async function loadImage(layer, filename) {
+  if (!currentCollectionPath) return null;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject();
+    img.src = `${currentCollectionPath}/layers/${layer}/${filename}?t=${Date.now()}`;
+  });
+}
+
+async function composeNFT(dnaAttributes, resolverMap, layerOrder) {
+  const layers = [];
+  for (const attr of dnaAttributes) {
+    const p = extractLayerAndCode(attr);
+    if (p && resolverMap[p.layer] && resolverMap[p.layer][p.code]) {
+      layers.push({ layer: p.layer, filename: resolverMap[p.layer][p.code] });
+    }
+  }
+  layers.sort((a,b) => (layerOrder.indexOf(a.layer) - layerOrder.indexOf(b.layer)));
+  
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  let first = true, w = 0, h = 0;
+  for (const item of layers) {
+    try {
+      const img = await loadImage(item.layer, item.filename);
+      if (!img) continue;
+      if (first) {
+        w = img.width; h = img.height;
+        canvas.width = w; canvas.height = h;
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(img,0,0);
+        first = false;
+      } else {
+        if (img.width !== w || img.height !== h) {
+          const tmp = document.createElement('canvas');
+          tmp.width = w; tmp.height = h;
+          tmp.getContext('2d').drawImage(img,0,0,w,h);
+          ctx.drawImage(tmp,0,0);
+        } else {
+          ctx.drawImage(img,0,0);
+        }
+      }
+    } catch(e) {}
+  }
+  return { width: w, height: h };
+}
+
+function fitToViewer() {
+  const canvas = document.getElementById('canvas');
+  const container = document.querySelector('.canvas-container');
+  if (!canvas.width) return;
+  const scale = Math.min((container.clientWidth-40)/canvas.width, (container.clientHeight-40)/canvas.height, 1);
+  canvas.style.width = (canvas.width * scale) + 'px';
+  canvas.style.height = (canvas.height * scale) + 'px';
+}
+
+function openDocument(docPath) {
+  if (!currentCollectionPath) return;
+  let fullPath = docPath;
+  if (fullPath.startsWith('./')) fullPath = fullPath.substring(2);
+  const url = `${currentCollectionPath}/${fullPath}`;
+  window.open(url, '_blank');
+}
+
+function updateUIForUniqueAsset(nftId, dnaAttributes) {
+  const namespace = manifest.collection?.namespace || 'bbp';
+  const collectionName = manifest.collection?.name || manifest.collection_name || 'BBP';
+  const cleanCollection = collectionName.toLowerCase().replace(/\s+/g, '_');
+  const assetType = document.getElementById('assetType').value;
+  
+  if (manifest.dna_binding_template) {
+    const binding = manifest.dna_binding_template.replace('{id}', nftId);
+    document.getElementById('displayDnaBinding').textContent = binding;
+  } else if (manifest.dna_binding) {
+    document.getElementById('displayDnaBinding').textContent = manifest.dna_binding;
+  } else {
+    document.getElementById('displayDnaBinding').textContent = `BBP:bind:bbp:${cleanCollection}/${nftId}`;
+  }
+  
+  const attrContainer = document.getElementById('dnaAttributesList');
+  if (dnaAttributes && dnaAttributes.length > 0) {
+    attrContainer.innerHTML = dnaAttributes.map(attr => {
+      const parts = attr.split(':');
+      const display = parts.length >= 5 ? `${parts[3]}/${parts[4]}` : attr;
+      return `<div class="dna-badge attr">${display}</div>`;
+    }).join('');
+  } else {
+    attrContainer.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Nenhum atributo encontrado</div>';
+  }
+  
+  const metadata = {
+    dna_identity: manifest.identity || `BBP:id:${assetType}:${cleanCollection}:${nftId}`,
+    dna_attributes: dnaAttributes,
+    dna_binding: manifest.dna_binding || manifest.dna_binding_template?.replace('{id}', nftId) || `BBP:bind:bbp:${cleanCollection}/${nftId}`,
+    asset_id: `#${nftId}`,
+    collection: collectionName,
+    namespace: namespace,
+    identifier: manifest.collection?.identifier || nftId,
+    attributes: manifest.attributes || {},
+    protocol: { name: "Bitcoin Blueprint Protocol", version: "1.2" },
+    revealed_at: new Date().toISOString(),
+    signed: manifest.signature ? true : false,
+    signed_at: manifest.signed_at || null
+  };
+  document.getElementById('metadataDisplay').textContent = JSON.stringify(metadata, null, 2);
+}
+
+function updateUI(nftId, dnaAttributes, dimensions) {
+  const namespace = manifest.collection?.namespace || manifest.collection_name?.toLowerCase().replace(/\s+/g, '_') || 'bbp';
+  const collectionName = manifest.collection?.name || manifest.collection_name || 'BBP';
+  const cleanCollection = collectionName.toLowerCase().replace(/\s+/g, '_');
+  const assetType = document.getElementById('assetType').value;
+  
+  if (manifest.dna_binding_template) {
+    const binding = manifest.dna_binding_template.replace('{id}', nftId);
+    document.getElementById('displayDnaBinding').textContent = binding;
+  } else if (manifest.dna_binding) {
+    document.getElementById('displayDnaBinding').textContent = manifest.dna_binding;
+  } else {
+    document.getElementById('displayDnaBinding').textContent = `BBP:bind:bbp:${cleanCollection}/${nftId}`;
+  }
+  
+  const attrContainer = document.getElementById('dnaAttributesList');
+  if (dnaAttributes && dnaAttributes.length > 0) {
+    attrContainer.innerHTML = dnaAttributes.map(attr => {
+      const parsed = extractLayerAndCode(attr);
+      const display = parsed ? `${parsed.layer}/${parsed.code}` : attr;
+      return `<div class="dna-badge attr">${display}</div>`;
+    }).join('');
+  } else {
+    attrContainer.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Nenhum atributo encontrado</div>';
+  }
+  
+  const metadata = {
+    dna_identity: manifest.identity || `BBP:id:${assetType}:${cleanCollection}:${nftId}`,
+    dna_attributes: dnaAttributes,
+    dna_binding: manifest.dna_binding || manifest.dna_binding_template?.replace('{id}', nftId) || `BBP:bind:bbp:${cleanCollection}/${nftId}`,
+    asset_id: `#${nftId}`,
+    collection: collectionName,
+    namespace: namespace,
+    identifier: manifest.collection?.identifier || nftId,
+    dimensions: dimensions,
+    protocol: { name: "Bitcoin Blueprint Protocol", version: "1.2" },
+    revealed_at: new Date().toISOString(),
+    signed: manifest.signature ? true : false,
+    signed_at: manifest.signed_at || null
+  };
+  document.getElementById('metadataDisplay').textContent = JSON.stringify(metadata, null, 2);
+}
+
+async function revealNFT() {
+  if (!manifest) { alert('Carregue uma coleção primeiro'); return; }
+  const id = document.getElementById('nftId').value.trim().replace('#', '');
+  if (!id) { alert('Digite um ID'); return; }
+  
+  let data = manifest.nfts?.[id] || manifest.unique_nfts?.[id];
+  if (!data && (!manifest.nfts || Object.keys(manifest.nfts).length === 0)) {
+    data = { dna_attributes: manifest.dna_attributes || [] };
+  }
+  if (!data) { alert(`ID ${id} não encontrado`); return; }
+  
+  const attrs = data.dna_attributes;
+  if (!attrs || !attrs.length) { alert('Sem atributos'); return; }
+  
+  const resolverMap = manifest.resolver_map;
+  const layerOrder = manifest.layer_order || [];
+  
+  // Para ativos únicos (commodity, token, identity, etc.)
+  if (!resolverMap || Object.keys(resolverMap).length === 0) {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 600; canvas.height = 400;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0,0,600,400);
+    
+    if (manifest.assets?.image) {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(400/img.width, 350/img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (600-w)/2, (400-h)/2, w, h);
+        fitToViewer();
+      };
+      img.onerror = () => {
+        ctx.fillStyle = '#888';
+        ctx.font = '14px monospace';
+        ctx.fillText('Imagem não encontrada', canvas.width/2 - 100, canvas.height/2);
+        fitToViewer();
+      };
+      let imgPath = manifest.assets.image;
+      if (imgPath.startsWith('./')) imgPath = imgPath.substring(2);
+      img.src = `${currentCollectionPath}/${imgPath}?t=${Date.now()}`;
+    } else {
+      ctx.fillStyle = '#888';
+      ctx.font = '14px monospace';
+      ctx.fillText('Sem imagem disponível', canvas.width/2 - 80, canvas.height/2);
+      fitToViewer();
+    }
+    
+    const existingDocs = document.getElementById('dynamicDocsSection');
+    if (existingDocs) existingDocs.remove();
+    
+    if (manifest.assets?.documents && manifest.assets.documents.length > 0) {
+      const infoPanel = document.querySelector('.info-panel');
+      const wtfBox = document.querySelector('.wtf-box');
+      const docsDiv = document.createElement('div');
+      docsDiv.id = 'dynamicDocsSection';
+      docsDiv.className = 'info-section';
+      docsDiv.innerHTML = '<h3>📄 Documentos</h3><div class="dna-list" id="docsList"></div>';
+      const docsList = docsDiv.querySelector('#docsList');
+      
+      manifest.assets.documents.forEach(doc => {
+        const docName = doc.split('/').pop();
+        const badge = document.createElement('div');
+        badge.className = 'dna-badge document';
+        badge.innerHTML = `📄 ${docName}`;
+        badge.style.cursor = 'pointer';
+        badge.onclick = () => openDocument(doc);
+        docsList.appendChild(badge);
+      });
+      
+      infoPanel.insertBefore(docsDiv, wtfBox);
+    }
+    
+    updateUIForUniqueAsset(id, attrs);
+    
+    revealedCount++;
+    document.getElementById('statRevealed').textContent = revealedCount;
+    localStorage.setItem('bbp_revealed_count', revealedCount);
+    updateDnaIdentityStatus(`✅ Ativo #${id} revelado!`, 'success');
+    return;
+  }
+  
+  // Para NFTs (tem resolver_map)
+  const { width, height } = await composeNFT(attrs, resolverMap, layerOrder);
+  if (width === 0) { alert('Falha ao compor'); return; }
+  fitToViewer();
+  updateUI(id, attrs, { width, height });
+  
+  revealedCount++;
+  document.getElementById('statRevealed').textContent = revealedCount;
+  localStorage.setItem('bbp_revealed_count', revealedCount);
+  updateDnaIdentityStatus(`✅ Ativo #${id} revelado!`, 'success');
+}
+
+document.getElementById('loadCollectionBtn').addEventListener('click', loadManifest);
+document.getElementById('revealBtn').addEventListener('click', revealNFT);
+document.getElementById('nftId').addEventListener('keypress', e => { if(e.key === 'Enter') revealNFT(); });
+
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  const canvas = document.getElementById('canvas');
+  if (!canvas.width) { alert('Revele um ativo'); return; }
+  const fc = document.getElementById('fullscreenCanvas');
+  fc.width = canvas.width; fc.height = canvas.height;
+  fc.getContext('2d').drawImage(canvas,0,0);
+  document.getElementById('fullscreenOverlay').style.display = 'flex';
+});
+
+document.getElementById('originalSizeBtn').addEventListener('click', () => {
+  const canvas = document.getElementById('canvas');
+  if (!canvas.width) { alert('Revele um ativo'); return; }
+  const oc = document.getElementById('originalSizeCanvas');
+  oc.width = canvas.width; oc.height = canvas.height;
+  oc.getContext('2d').drawImage(canvas,0,0);
+  oc.style.maxWidth = 'none'; oc.style.maxHeight = 'none';
+  oc.style.width = canvas.width + 'px'; oc.style.height = canvas.height + 'px';
+  document.getElementById('originalSizeOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const canvas = document.getElementById('canvas');
+  if (!canvas.width) { alert('Revele um ativo'); return; }
+  const link = document.createElement('a');
+  link.download = `bbp_asset_${Date.now()}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+});
+
+document.querySelectorAll('.close-fullscreen, .close-original-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('fullscreenOverlay').style.display = 'none';
+    document.getElementById('originalSizeOverlay').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('fullscreenOverlay').style.display = 'none';
+    document.getElementById('originalSizeOverlay').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+});
+
+window.addEventListener('resize', () => { if (document.getElementById('canvas').width) setTimeout(fitToViewer, 100); });
+window.addEventListener('load', () => { clearUI(); });
+</script>
+</body>
+</html>

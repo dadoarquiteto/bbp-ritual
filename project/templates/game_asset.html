@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Game Asset</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .attribute-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .attribute-item input:first-child { flex: 1; min-width: 150px; }
+  .attribute-item input:nth-child(2) { flex: 2; }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .requirement-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .requirement-item input:first-child { flex: 1; }
+  .requirement-item input:nth-child(2) { width: 100px; }
+  
+  .royalty-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalty-item input:first-child {
+    flex: 2;
+    font-family: monospace;
+  }
+  .royalty-item input:nth-child(2) {
+    width: 100px;
+  }
+  .royalties-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalties-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .payout-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .payout-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Game Asset</h1>
+  <p class="small">Registre um item de jogo (arma, skin, personagem, terreno, etc.) no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="gameAssetForm">
+
+    <div class="card section">
+      <h2>Informações Básicas</h2>
+      <label>Nome do Item *</label>
+      <input id="itemName" placeholder="Ex: Espada do Dragão, Skin Lendária" />
+      <label>Tipo de Asset</label>
+      <select id="assetType" onchange="updateAssetTypeFields()">
+        <option value="weapon">⚔️ Arma</option>
+        <option value="armor">🛡️ Armadura</option>
+        <option value="skin">🎨 Skin</option>
+        <option value="character">🧙 Personagem</option>
+        <option value="mount">🐉 Montaria</option>
+        <option value="land">🏞️ Terreno</option>
+        <option value="consumable">🍎 Consumível</option>
+        <option value="currency">💰 Moeda</option>
+        <option value="collectible">🃏 Colecionável</option>
+      </select>
+      <label>Jogo / Universo</label>
+      <input id="gameName" placeholder="Ex: World of Warcraft, Axie Infinity" />
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição do item, suas habilidades e características"></textarea>
+      
+      <label>Imagem / Modelo 3D</label>
+      <div class="upload-area" onclick="document.getElementById('itemImage').click()">
+        🎮 Clique para selecionar imagem ou modelo 3D
+      </div>
+      <input type="file" id="itemImage" accept="image/*,.glb,.gltf" style="display: none;" onchange="handleImageUpload(this)" />
+      <div id="imagePreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Raridade e Nível</h2>
+      <div class="stats-grid">
+        <div><label>Raridade</label><select id="rarity"><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare">Rare</option><option value="epic">Epic</option><option value="legendary">Legendary</option><option value="mythic">Mythic</option></select></div>
+        <div><label>Nível</label><input type="number" id="level" min="1" value="1" placeholder="Ex: 50" /></div>
+      </div>
+      
+      <div id="weaponStats" class="hidden">
+        <h3>⚔️ Estatísticas da Arma</h3>
+        <div class="stats-grid">
+          <div><label>Ataque</label><input type="number" id="attack" placeholder="Ex: 150" /></div>
+          <div><label>Defesa</label><input type="number" id="defense" placeholder="Ex: 50" /></div>
+          <div><label>Velocidade</label><input type="number" id="speed" step="0.1" placeholder="Ex: 1.5" /></div>
+          <div><label>Crítico (%)</label><input type="number" id="critical" step="0.1" placeholder="Ex: 15" /></div>
+        </div>
+      </div>
+      
+      <div id="armorStats" class="hidden">
+        <h3>🛡️ Estatísticas da Armadura</h3>
+        <div class="stats-grid">
+          <div><label>Defesa</label><input type="number" id="armorDefense" placeholder="Ex: 200" /></div>
+          <div><label>Resistência Mágica</label><input type="number" id="magicResist" placeholder="Ex: 50" /></div>
+          <div><label>Durabilidade</label><input type="number" id="durability" placeholder="Ex: 500" /></div>
+        </div>
+      </div>
+      
+      <div id="characterStats" class="hidden">
+        <h3>🧙 Estatísticas do Personagem</h3>
+        <div class="stats-grid">
+          <div><label>Vida</label><input type="number" id="health" placeholder="Ex: 1000" /></div>
+          <div><label>Mana</label><input type="number" id="mana" placeholder="Ex: 500" /></div>
+          <div><label>Força</label><input type="number" id="strength" placeholder="Ex: 100" /></div>
+          <div><label>Agilidade</label><input type="number" id="agility" placeholder="Ex: 80" /></div>
+          <div><label>Inteligência</label><input type="number" id="intelligence" placeholder="Ex: 60" /></div>
+        </div>
+      </div>
+      
+      <div id="landStats" class="hidden">
+        <h3>🏞️ Estatísticas do Terreno</h3>
+        <div class="stats-grid">
+          <div><label>Tamanho</label><input type="number" id="landSize" placeholder="Ex: 100" /></div>
+          <div><label>Recursos</label><input type="text" id="resources" placeholder="Ex: Madeira, Pedra" /></div>
+          <div><label>Localização</label><input type="text" id="location" placeholder="Ex: Coordenadas X, Y" /></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Efeitos Especiais</h2>
+      <div id="effectsContainer"><div class="attribute-item"><input placeholder="Efeito (ex: Fogo, Veneno)" /><input placeholder="Valor / Duração" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addEffect()">+ Adicionar efeito</button>
+    </div>
+
+    <div class="card section">
+      <h2>Requisitos</h2>
+      <div id="requirementsContainer"><div class="requirement-item"><input placeholder="Requisito (ex: Nível, Classe)" /><input placeholder="Valor mínimo" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addRequirement()">+ Adicionar requisito</button>
+    </div>
+
+    <div class="card section">
+      <h2>Configurações</h2>
+      
+      <div class="royalties-section">
+        <h4>💰 Royalties (múltiplos destinatários)</h4>
+        <p class="small">Defina os destinatários dos royalties em basis points (bps). 10000 bps = 100%.</p>
+        
+        <div style="margin-bottom: 16px;">
+          <strong>Venda Primária (Mint)</strong>
+          <div id="primaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addPrimaryRoyalty()" style="margin-top: 4px;">+ Adicionar destinatário primário</button>
+        </div>
+
+        <div>
+          <strong>Venda Secundária (Resale)</strong>
+          <div id="secondaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addSecondaryRoyalty()">+ Adicionar destinatário secundário</button>
+        </div>
+      </div>
+
+      <div class="payout-section">
+        <h4>💰 Regras de Pagamento</h4>
+        <label>Endereço de pagamento (creator wallet)</label>
+        <input id="paymentAddress" placeholder="bc1... ou 1..." />
+        
+        <div style="margin-top: 16px;">
+          <label>Payout mínimo (satoshis)</label>
+          <input type="number" id="minimumPayout" value="546" placeholder="546" />
+          <p class="small">Valores abaixo deste limite serão acumulados ou ignorados para evitar dust.</p>
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="isTradeable" checked> Comercializável</label>
+        <label><input type="checkbox" id="isSoulbound"> Soulbound</label>
+        <label><input type="checkbox" id="isUpgradeable"> Aprimorável</label>
+        <label><input type="checkbox" id="isStackable"> Empilhável</label>
+      </div>
+      <div id="stackableFields" class="hidden"><label>Quantidade máxima por pilha</label><input type="number" id="maxStack" value="99" /></div>
+      
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color:#64748b;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section"><button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button></div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;"><div class="modal-overlay" onclick="closeAddNetworkModal(event)"><div class="modal-content"><h3>Adicionar representação em rede</h3><label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option></select><label>Tipo</label><select id="modalType"><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select><label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." /><div style="display:flex; gap:12px; margin-top:20px;"><button class="small" onclick="closeAddNetworkModal()">Cancelar</button><button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button></div></div></div></div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'game_asset') document.getElementById('gameAssetForm').classList.remove('hidden');
+
+let imageFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleImageUpload(input) { const file = input.files[0]; if(file){ imageFile = file; document.getElementById('imagePreviewContainer').innerHTML = `<div class="file-item"><span>🖼️ ${file.name}</span><button class="small danger" onclick="removeImage()">×</button></div>`; } }
+function removeImage() { imageFile = null; document.getElementById('imagePreviewContainer').innerHTML = ''; document.getElementById('itemImage').value = ''; }
+
+function updateAssetTypeFields() {
+  const type = document.getElementById('assetType').value;
+  document.getElementById('weaponStats').classList.add('hidden');
+  document.getElementById('armorStats').classList.add('hidden');
+  document.getElementById('characterStats').classList.add('hidden');
+  document.getElementById('landStats').classList.add('hidden');
+  if (type === 'weapon') document.getElementById('weaponStats').classList.remove('hidden');
+  else if (type === 'armor') document.getElementById('armorStats').classList.remove('hidden');
+  else if (type === 'character') document.getElementById('characterStats').classList.remove('hidden');
+  else if (type === 'land') document.getElementById('landStats').classList.remove('hidden');
+}
+
+function addEffect() { const container = document.getElementById('effectsContainer'); const row = document.createElement('div'); row.className = 'attribute-item'; row.innerHTML = `<input placeholder="Efeito" /><input placeholder="Valor / Duração" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+function addRequirement() { const container = document.getElementById('requirementsContainer'); const row = document.createElement('div'); row.className = 'requirement-item'; row.innerHTML = `<input placeholder="Requisito" /><input placeholder="Valor mínimo" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+
+function addPrimaryRoyalty() {
+  const container = document.getElementById('primaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function addSecondaryRoyalty() {
+  const container = document.getElementById('secondaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function getRoyaltiesFromUI() {
+  const onPrimary = [];
+  document.querySelectorAll('#primaryRoyaltiesContainer .royalty-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) onPrimary.push({ address, bps });
+    }
+  });
+  const onSecondary = [];
+  document.querySelectorAll('#secondaryRoyaltiesContainer .royalty-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) onSecondary.push({ address, bps });
+    }
+  });
+  return { onPrimary, onSecondary };
+}
+
+document.getElementById('isStackable').addEventListener('change', e => { document.getElementById('stackableFields').classList.toggle('hidden', !e.target.checked); });
+document.getElementById('isSoulbound').addEventListener('change', e => { if(e.target.checked) document.getElementById('isTradeable').checked = false; });
+document.getElementById('isTradeable').addEventListener('change', e => { if(e.target.checked) document.getElementById('isSoulbound').checked = false; });
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  window.networks[network].push({ type, identifier });
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'game';
+  const itemName = document.getElementById('itemName')?.value || "Game Item";
+  const identifier = itemName.toLowerCase().replace(/\s+/g, '_');
+  const assetType = document.getElementById('assetType').value;
+  const gameName = document.getElementById('gameName')?.value || "Unknown Game";
+  
+  const effects = []; document.querySelectorAll('#effectsContainer .attribute-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) effects.push({ effect: inputs[0].value.trim(), value: inputs[1].value.trim() }); });
+  const requirements = []; document.querySelectorAll('#requirementsContainer .requirement-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) requirements.push({ requirement: inputs[0].value.trim(), value: inputs[1].value.trim() }); });
+  
+  const stats = {};
+  if (assetType === 'weapon') { stats.attack = document.getElementById('attack').value; stats.defense = document.getElementById('defense').value; stats.speed = document.getElementById('speed').value; stats.critical = document.getElementById('critical').value; }
+  else if (assetType === 'armor') { stats.defense = document.getElementById('armorDefense').value; stats.magic_resist = document.getElementById('magicResist').value; stats.durability = document.getElementById('durability').value; }
+  else if (assetType === 'character') { stats.health = document.getElementById('health').value; stats.mana = document.getElementById('mana').value; stats.strength = document.getElementById('strength').value; stats.agility = document.getElementById('agility').value; stats.intelligence = document.getElementById('intelligence').value; }
+  else if (assetType === 'land') { stats.size = document.getElementById('landSize').value; stats.resources = document.getElementById('resources').value; stats.location = document.getElementById('location').value; }
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:name:${itemName.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:type:${assetType}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:game:${gameName.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:rarity:${document.getElementById('rarity').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:level:${document.getElementById('level').value}`);
+  for (const [k,v] of Object.entries(stats)) if(v) dnaAttributes.push(`BBP:attr:${namespace}:${k}:${v}`);
+  effects.forEach((e,i) => dnaAttributes.push(`BBP:attr:${namespace}:effect_${i+1}:${e.effect.toLowerCase().replace(/\s+/g, '_')}_${e.value}`));
+  requirements.forEach((r,i) => dnaAttributes.push(`BBP:attr:${namespace}:requirement_${i+1}:${r.requirement.toLowerCase().replace(/\s+/g, '_')}_${r.value}`));
+  const isTradeable = document.getElementById('isTradeable').checked, isSoulbound = document.getElementById('isSoulbound').checked, isUpgradeable = document.getElementById('isUpgradeable').checked, isStackable = document.getElementById('isStackable').checked;
+  dnaAttributes.push(`BBP:attr:${namespace}:tradeable:${isTradeable}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:soulbound:${isSoulbound}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:upgradeable:${isUpgradeable}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:stackable:${isStackable}`);
+  if(isStackable) dnaAttributes.push(`BBP:attr:${namespace}:max_stack:${document.getElementById('maxStack').value}`);
+  
+  const assets = imageFile ? { image: `./assets/images/${imageFile.name}` } : {};
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  const { onPrimary, onSecondary } = getRoyaltiesFromUI();
+  const minimumPayout = parseInt(document.getElementById('minimumPayout').value) || 546;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:${namespace}:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "game_item",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: itemName,
+      description: document.getElementById('description')?.value,
+      creator: root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "Game Asset"
+    },
+    royalties: {
+      on_primary: onPrimary,
+      on_secondary: onSecondary
+    },
+    payout_rules: {
+      precision: 10000,
+      minimum_payout_sats: minimumPayout
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      name: itemName,
+      type: assetType,
+      game: gameName,
+      rarity: document.getElementById('rarity').value,
+      level: parseInt(document.getElementById('level').value) || 1,
+      stats: Object.keys(stats).length ? stats : null,
+      effects: effects.length ? effects : null,
+      requirements: requirements.length ? requirements : null,
+      tradeable: isTradeable,
+      soulbound: isSoulbound,
+      upgradeable: isUpgradeable,
+      stackable: isStackable,
+      ...(isStackable && { max_stack: parseInt(document.getElementById('maxStack').value) || 99 })
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    capabilities: ["game_asset", isTradeable ? "tradeable" : null, isSoulbound ? "soulbound" : null].filter(Boolean),
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const networksCount = Object.keys(window.networks).length;
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <p><strong>💰 Royalties Primários:</strong> ${onPrimary.length} destinatários</p>
+    <p><strong>💰 Royalties Secundários:</strong> ${onSecondary.length} destinatários</p>
+    <p><strong>💵 Payout mínimo:</strong> ${minimumPayout} sats</p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${assetType} | ${document.getElementById('rarity').value} | Lvl ${document.getElementById('level').value}</p>
+    <p>🌐 Redes adicionais: ${networksCount}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  if(imageFile) alert(`⚠️ Salve a imagem em: ./assets/images/${imageFile.name}`);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+updateAssetTypeFields();
+addEffect();
+addRequirement();
+refreshNetworksList();
+addPrimaryRoyalty();
+addSecondaryRoyalty();
+</script>
+</body>
+</html>

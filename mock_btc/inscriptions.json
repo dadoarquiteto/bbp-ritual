@@ -1,0 +1,8 @@
+{
+  "anchor": {
+    "txid": "mock_anchor_abc123",
+    "content": "./mock_btc/anchor_10x10.png",
+    "dna": "BBP:id:ritual:genesis",
+    "timestamp": 1700000000
+  }
+}

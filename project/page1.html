@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BBP - Criar Ativo (DNA Raiz)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.5; }
+    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; font-size: 2.2rem; }
+    .small { font-size: 0.9rem; color: #64748b; margin-bottom: 24px; }
+    label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+    input, select, textarea {
+      width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box;
+    }
+    .form-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .form-row > div {
+      flex: 1;
+    }
+    button {
+      background: #3b82f6; color: white; border: none; padding: 14px 24px; border-radius: 999px;
+      font-size: 1.05rem; cursor: pointer; margin-top: 16px; width: 100%; max-width: 300px;
+    }
+    button:hover { background: #2563eb; }
+    button.secondary { background: #6b7280; }
+    button.secondary:hover { background: #4b5563; }
+    #preview { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; margin-top: 16px; display: none; }
+    .dna-example {
+      background: #f1f5f9;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      margin-top: 8px;
+      color: #1e293b;
+    }
+    hr {
+      margin: 24px 0;
+      border: none;
+      border-top: 1px solid #e2e8f0;
+    }
+    .template-info {
+      background: #e6f7e6;
+      border-left: 4px solid #10b981;
+      padding: 12px;
+      margin-top: 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🧬 Criar Ativo BBP</h1>
+  <p class="small">Defina a identidade raiz do ativo. O <strong>DNA_IDENTITY</strong> será gerado e registrado no Bitcoin.</p>
+
+  <div class="card">
+    <h2>📌 DNA_IDENTITY (Identidade do Ativo)</h2>
+    <p class="small">Segundo o padrão <strong>BBP-0001</strong>: <code>BBP:id:&lt;domain&gt;:&lt;namespace&gt;:&lt;identifier&gt;</code></p>
+
+    <div class="form-row">
+      <div>
+        <label>Tipo de Ativo *</label>
+        <select id="domain">
+          <option value="art">🎨 Arte (art)</option>
+          <option value="collectible">🃏 Colecionável (collectible)</option>
+          <option value="commodity">🌾 Commodity (commodity)</option>
+          <option value="rwa">🏠 Ativo do Mundo Real (rwa)</option>
+          <option value="prediction">📊 Mercado Preditivo (prediction)</option>
+          <option value="token">💰 Token (token)</option>
+          <option value="identity">👤 Identidade (identity)</option>
+          <option value="game_asset">🎮 Game Asset (game_asset)</option>
+          <option value="ticket">🎟️ Ingresso (ticket)</option>
+          <option value="membership">🔑 Membership (membership)</option>
+          <option value="dataset">📊 Dataset (dataset)</option>
+          <option value="ai">🧠 Modelo de IA (ai)</option>
+          <option value="finance">📈 Ativo Financeiro (finance)</option>
+          <option value="media">🎬 Mídia (media)</option>
+          <option value="contract">📜 Contrato (contract)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Namespace (projeto/coleção) *</label>
+        <input id="namespace" placeholder="Ex: fredo, louvre, fazenda_santa_rita, bbp" />
+        <small class="small">Organização ou coleção responsável pelo ativo</small>
+      </div>
+      <div>
+        <label>Identifier (identificador único) *</label>
+        <input id="identifier" placeholder="Ex: genesis_001, monalisa, lote_2026_01" />
+        <small class="small">Nome único dentro do namespace</small>
+      </div>
+    </div>
+
+    <div class="dna-example" id="dnaPreviewExample">
+      🔍 Seu DNA_IDENTITY será: <strong>BBP:id:art:exemplo:exemplo</strong>
+    </div>
+
+    <div id="templateInfo" class="template-info" style="display: none;">
+      <strong>📄 Template:</strong> <span id="templateName">NFT</span><br />
+      Você será redirecionado para o template específico após criar o DNA_IDENTITY.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👤 Origem / Responsável</h2>
+    <label>Nome ou Entidade</label>
+    <input id="creatorName" placeholder="Ex: Léo, Studio XYZ, Fundação ABC" />
+
+    <label>Endereço Bitcoin (opcional)</label>
+    <input id="creatorAddress" placeholder="bc1... ou 1..." />
+  </div>
+
+  <div class="card">
+    <button onclick="createRootAsset()">✨ Criar DNA_IDENTITY do Ativo</button>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <h2>🧬 DNA_IDENTITY Gerado (BBP 1.2)</h2>
+    <div id="preview"></div>
+
+    <button class="secondary" onclick="goToTemplate()">→ Avançar para Configurar Ativo</button>
+  </div>
+</div>
+
+<script>
+  // Mapeamento de domínio para template correspondente
+  const templateMap = {
+    'art': 'nft.html',
+    'collectible': 'collectible.html',
+    'commodity': 'commodity.html',
+    'rwa': 'rwa.html',
+    'prediction': 'prediction.html',
+    'token': 'token.html',
+    'identity': 'identity.html',
+    'game_asset': 'game_asset.html',
+    'ticket': 'ticket.html',
+    'membership': 'membership.html',
+    'dataset': 'dataset.html',
+    'ai': 'ai.html',
+    'finance': 'finance.html',
+    'media': 'media.html',
+    'contract': 'contract.html'
+  };
+
+  // Nomes amigáveis para exibição
+  const templateNames = {
+    'art': 'NFT / Arte',
+    'collectible': 'Colecionável',
+    'commodity': 'Commodity',
+    'rwa': 'Ativo do Mundo Real (RWA)',
+    'prediction': 'Mercado Preditivo',
+    'token': 'Token Fungível',
+    'identity': 'Identidade Digital',
+    'game_asset': 'Game Asset',
+    'ticket': 'Ingresso Digital',
+    'membership': 'Membresia',
+    'dataset': 'Dataset',
+    'ai': 'Modelo de IA',
+    'finance': 'Ativo Financeiro',
+    'media': 'Mídia',
+    'contract': 'Contrato'
+  };
+
+  function updateTemplateInfo() {
+    const domain = document.getElementById('domain').value;
+    const templateNiceName = templateNames[domain] || 'Genérico';
+    const infoDiv = document.getElementById('templateInfo');
+    const templateSpan = document.getElementById('templateName');
+    
+    templateSpan.textContent = templateNiceName;
+    infoDiv.style.display = 'block';
+  }
+
+  function updateDnaPreview() {
+    const domain = document.getElementById('domain').value;
+    const namespace = document.getElementById('namespace').value.trim() || 'exemplo';
+    const identifier = document.getElementById('identifier').value.trim() || 'exemplo';
+    const previewText = `BBP:id:${domain}:${namespace}:${identifier}`;
+    document.getElementById('dnaPreviewExample').innerHTML = `🔍 Seu DNA_IDENTITY será: <strong>${previewText}</strong>`;
+    updateTemplateInfo();
+  }
+
+  document.getElementById('domain').addEventListener('change', updateDnaPreview);
+  document.getElementById('namespace').addEventListener('input', updateDnaPreview);
+  document.getElementById('identifier').addEventListener('input', updateDnaPreview);
+
+  function createRootAsset() {
+    const domain = document.getElementById('domain').value;
+    let namespace = document.getElementById('namespace').value.trim();
+    let identifier = document.getElementById('identifier').value.trim();
+    const creatorName = document.getElementById('creatorName').value.trim() || "Anônimo";
+    const creatorAddr = document.getElementById('creatorAddress').value.trim();
+
+    if (!namespace) {
+      alert("Por favor, preencha o Namespace");
+      return;
+    }
+    if (!identifier) {
+      alert("Por favor, preencha o Identifier");
+      return;
+    }
+
+    namespace = namespace.toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+    identifier = identifier.toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+
+    const dnaIdentity = `BBP:id:${domain}:${namespace}:${identifier}`;
+
+    // O standard agora é definido pelo domínio, não mais pelo usuário
+    let standard = 'nft';
+    if (domain === 'token') standard = 'fungible_token';
+    else if (domain === 'game_asset') standard = 'game_item';
+    else if (domain === 'rwa') standard = 'rwa_token';
+    else if (domain === 'membership') standard = 'membership_card';
+    else if (domain === 'identity') standard = 'identity';
+    else if (domain === 'commodity') standard = 'commodity';
+    else if (domain === 'prediction') standard = 'prediction_market';
+    else if (domain === 'ticket') standard = 'event_ticket';
+    else if (domain === 'dataset') standard = 'dataset';
+    else if (domain === 'ai') standard = 'ai_model';
+    else if (domain === 'finance') standard = 'finance';
+    else if (domain === 'media') standard = 'media';
+    else if (domain === 'contract') standard = 'contract';
+    else if (domain === 'collectible') standard = 'collectible';
+    else standard = 'nft';
+
+    const root = {
+      bbp_version: "1.2",
+      dna: {
+        identity: dnaIdentity,
+        attributes: [],
+        binding: null
+      },
+      asset: {
+        class: domain,
+        standard: standard,
+        namespace: namespace,
+        identifier: identifier
+      },
+      creator: {
+        name: creatorName,
+        address: creatorAddr || null
+      },
+      origin: {
+        network: "bitcoin",
+        protocol: "ordinals",
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    window.currentRoot = root;
+
+    document.getElementById('preview').textContent = JSON.stringify(root, null, 2);
+    document.getElementById('resultCard').style.display = 'block';
+  }
+
+  function goToTemplate() {
+    if (!window.currentRoot) {
+      alert("Crie o DNA_IDENTITY primeiro.");
+      return;
+    }
+    
+    localStorage.setItem('bbpRootAsset', JSON.stringify(window.currentRoot));
+    
+    const domain = window.currentRoot.asset.class;
+    const templateFile = templateMap[domain];
+    
+    if (!templateFile) {
+      alert(`Template não encontrado para o tipo de ativo: ${domain}. Usando template genérico.`);
+      window.location.href = "generic.html";
+      return;
+    }
+    
+    window.location.href = `templates/${templateFile}`;
+  }
+
+  // Inicializa
+  updateDnaPreview();
+</script>
+</body>
+</html>

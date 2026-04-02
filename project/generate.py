@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+"""
+BBP NFT Generator - Gera imagens EXATAMENTE como descrito no manifesto
+Lê o bbp_manifest_signed.json e para cada NFT usa os dna_attributes para compor a imagem
+"""
+
+import os
+import json
+from PIL import Image
+from collections import defaultdict
+from datetime import datetime
+
+# ========================= CONFIGURAÇÃO =========================
+MANIFEST_FILE = "bbp_manifest_signed.json"
+OUTPUT_PATH = "output"
+IMAGES_PATH = os.path.join(OUTPUT_PATH, "images")
+JSON_PATH = os.path.join(OUTPUT_PATH, "json")
+LAYERS_BASE_PATH = "layers"
+
+# =================================================================
+
+def load_manifest():
+    """Carrega o manifesto da pasta atual"""
+    if not os.path.exists(MANIFEST_FILE):
+        print(f"❌ ERRO: Arquivo {MANIFEST_FILE} não encontrado!")
+        print(f"Por favor, coloque o manifesto na mesma pasta do gerador.")
+        return None
+    
+    try:
+        with open(MANIFEST_FILE, 'r', encoding='utf-8') as f:
+            manifest = json.load(f)
+        print(f"✅ Manifesto carregado: {MANIFEST_FILE}")
+        return manifest
+    except Exception as e:
+        print(f"❌ ERRO ao carregar o manifesto: {e}")
+        return None
+
+def load_image(layer_name, filename):
+    """Carrega uma imagem da pasta layers"""
+    # Tenta o caminho exato
+    layer_path = os.path.join(LAYERS_BASE_PATH, layer_name, filename)
+    
+    if not os.path.exists(layer_path):
+        # Tenta encontrar a pasta com case insensitive
+        if os.path.exists(LAYERS_BASE_PATH):
+            for d in os.listdir(LAYERS_BASE_PATH):
+                if d.lower() == layer_name.lower():
+                    layer_path = os.path.join(LAYERS_BASE_PATH, d, filename)
+                    if os.path.exists(layer_path):
+                        break
+                    else:
+                        layer_path = None
+    
+    if not layer_path or not os.path.exists(layer_path):
+        return None
+    
+    try:
+        img = Image.open(layer_path).convert("RGBA")
+        return img
+    except Exception:
+        return None
+
+def extract_layer_and_code(dna_attribute):
+    """Extrai layer e code de um DNA_ATTRIBUTE"""
+    parts = dna_attribute.split(':')
+    if len(parts) >= 5:
+        return parts[3], parts[4]
+    return None, None
+
+def compose_nft(dna_attributes, resolver_map, layer_order):
+    """
+    Compõe um NFT a partir dos DNA_ATTRIBUTES
+    Retorna a imagem composta e o número de camadas carregadas
+    """
+    layers_to_render = []
+    
+    for attr in dna_attributes:
+        layer, code = extract_layer_and_code(attr)
+        if not layer or not code:
+            continue
+        
+        # Busca no resolver_map
+        if layer in resolver_map and code in resolver_map[layer]:
+            filename = resolver_map[layer][code]
+            layers_to_render.append((layer, filename))
+    
+    # Ordena conforme layer_order
+    def get_layer_index(layer_name):
+        try:
+            return layer_order.index(layer_name)
+        except ValueError:
+            return 999
+    
+    layers_to_render.sort(key=lambda x: get_layer_index(x[0]))
+    
+    # Compõe a imagem
+    base = None
+    loaded = 0
+    
+    for layer, filename in layers_to_render:
+        img = load_image(layer, filename)
+        if img is None:
+            continue
+        
+        loaded += 1
+        
+        if base is None:
+            base = img.copy()
+        else:
+            # Garante que as imagens tenham o mesmo tamanho
+            if img.size != base.size:
+                img = img.resize(base.size, Image.Resampling.LANCZOS)
+            base.paste(img, (0, 0), img)
+    
+    return base, loaded
+
+def generate_metadata(token_id, dna_attributes, collection_name, description):
+    """Gera os metadados no formato padrão"""
+    formatted_attributes = []
+    
+    for attr in dna_attributes:
+        layer, code = extract_layer_and_code(attr)
+        if layer:
+            value = code.replace('_', ' ').title()
+            formatted_attributes.append({
+                "trait_type": layer,
+                "value": value
+            })
+    
+    metadata = {
+        "name": f"{collection_name} #{token_id}",
+        "description": description,
+        "image": f"ipfs://YOUR_IPFS_HASH_HERE/{token_id}.png",
+        "attributes": formatted_attributes
+    }
+    
+    return metadata
+
+def main():
+    print("=" * 60)
+    print("BBP Protocol - NFT Generator (USANDO MANIFESTO)")
+    print("Gera imagens usando EXATAMENTE os dna_attributes do manifesto")
+    print("=" * 60)
+    print()
+    
+    # 1. Carrega o manifesto
+    manifest = load_manifest()
+    if not manifest:
+        input("\nPressione ENTER para sair...")
+        return
+    
+    # 2. Extrai informações
+    collection = manifest.get("collection", {})
+    collection_name = collection.get("name", "bbp_collection")
+    description = collection.get("description", "Generated by BBP Protocol")
+    
+    resolver_map = manifest.get("resolver_map", {})
+    layer_order = manifest.get("layer_order", list(resolver_map.keys()))
+    nfts = manifest.get("nfts", {})
+    
+    print(f"📁 Coleção: {collection_name}")
+    print(f"📊 Total de NFTs no manifesto: {len(nfts)}")
+    print(f"🗺️ Camadas disponíveis: {len(resolver_map)}")
+    print(f"📋 Ordem das camadas: {layer_order}")
+    print()
+    
+    if not nfts:
+        print("❌ ERRO: Nenhum NFT encontrado no manifesto!")
+        input("\nPressione ENTER para sair...")
+        return
+    
+    if not resolver_map:
+        print("❌ ERRO: resolver_map não encontrado no manifesto!")
+        input("\nPressione ENTER para sair...")
+        return
+    
+    # Verifica se a pasta layers existe
+    if not os.path.exists(LAYERS_BASE_PATH):
+        print(f"❌ ERRO: Pasta '{LAYERS_BASE_PATH}' não encontrada!")
+        print(f"Certifique-se que a pasta com as imagens está no mesmo local.")
+        input("\nPressione ENTER para sair...")
+        return
+    
+    # 3. Cria diretórios
+    os.makedirs(IMAGES_PATH, exist_ok=True)
+    os.makedirs(JSON_PATH, exist_ok=True)
+    
+    print("🎨 Gerando NFTs a partir do manifesto...")
+    print("-" * 60)
+    
+    generated = 0
+    failed = 0
+    total_camadas = 0
+    
+    # 4. Para cada NFT no manifesto, gera a imagem
+    for nft_id_str, nft_data in nfts.items():
+        dna_attributes = nft_data.get("dna_attributes", [])
+        
+        if not dna_attributes:
+            print(f"  ⚠️ NFT #{nft_id_str}: sem atributos, pulando")
+            failed += 1
+            continue
+        
+        # Compõe a imagem
+        img, camadas_carregadas = compose_nft(dna_attributes, resolver_map, layer_order)
+        
+        if img is None:
+            print(f"  ❌ NFT #{nft_id_str}: falhou ao compor (0 camadas carregadas)")
+            failed += 1
+            continue
+        
+        # Salva a imagem
+        img_filename = f"{nft_id_str}.png"
+        img_path = os.path.join(IMAGES_PATH, img_filename)
+        img.save(img_path)
+        
+        # Gera e salva metadados
+        metadata = generate_metadata(nft_id_str, dna_attributes, collection_name, description)
+        json_path = os.path.join(JSON_PATH, f"{nft_id_str}.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=4, ensure_ascii=False)
+        
+        generated += 1
+        total_camadas += camadas_carregadas
+        
+        # Progresso
+        if generated % 500 == 0 or generated == len(nfts):
+            print(f"  ✅ Gerados: {generated}/{len(nfts)} NFTs")
+    
+    # 5. Salva metadados completos
+    print("\n💾 Salvando metadados completos...")
+    full_metadata = []
+    for nft_id_str in nfts.keys():
+        json_path = os.path.join(JSON_PATH, f"{nft_id_str}.json")
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                full_metadata.append(json.load(f))
+    
+    metadata_path = os.path.join(OUTPUT_PATH, "_metadata.json")
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(full_metadata, f, indent=4, ensure_ascii=False)
+    
+    # 6. Salva uma cópia do manifesto na pasta output
+    manifest_copy_path = os.path.join(OUTPUT_PATH, "bbp_manifest.json")
+    with open(manifest_copy_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=4, ensure_ascii=False)
+    
+    # 7. Estatísticas
+    media_camadas = total_camadas / generated if generated > 0 else 0
+    
+    print()
+    print("=" * 60)
+    print("✅ GERAÇÃO COMPLETA!")
+    print("=" * 60)
+    print(f"Total NFTs gerados: {generated}")
+    print(f"Falhas: {failed}")
+    print(f"Média de camadas por NFT: {media_camadas:.1f}")
+    print(f"Imagens → {os.path.abspath(IMAGES_PATH)}")
+    print(f"JSONs → {os.path.abspath(JSON_PATH)}")
+    print(f"Metadados completos → {os.path.abspath(metadata_path)}")
+    print(f"Cópia do manifesto → {os.path.abspath(manifest_copy_path)}")
+    print()
+    print("=" * 60)
+    print("✨ Pronto! As imagens foram geradas usando EXATAMENTE os atributos do manifesto.")
+    print("=" * 60)
+    
+    input("\nPressione ENTER para sair...")
+
+if __name__ == "__main__":
+    main()
