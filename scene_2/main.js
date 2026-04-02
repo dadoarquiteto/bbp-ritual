@@ -3,7 +3,7 @@
 // ==================================================
 let currentFrameNumber = 0;
 const totalFrames = 550; // Total de frames da Cena 2
-const totalSeeds = 4000; // 4.000 seeds para Cena 2
+let totalSeeds = 4000; // 4.000 seeds para Cena 2
 const frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
@@ -16,10 +16,8 @@ let notificationTimeout = null;
 // ==================================================
 // INTEGRAÇÃO COM TIMELINE
 // ==================================================
-// Obtém dados da timeline
 let timelineData = window.Timeline ? window.Timeline.data : null;
 
-// Atualiza totalSeeds baseado na cena atual da timeline
 if (timelineData && timelineData.phases) {
   const currentPhase = timelineData.phases.find(p => p.status === 'active');
   if (currentPhase && currentPhase.seeds) {
@@ -35,7 +33,6 @@ let currentLoreIndex = 0;
 let loreInterval = null;
 let loreCarouselActive = false;
 
-// FUNÇÃO PARA MUDAR TEXTO COM ANIMAÇÃO
 function changeLoreText(nextIndex) {
   const texts = document.querySelectorAll('.lore-text');
   
@@ -50,7 +47,6 @@ function changeLoreText(nextIndex) {
   }
 }
 
-// FUNÇÃO PARA INICIAR CARROSSEL AUTOMÁTICO
 function startLoreCarousel() {
   if (loreCarouselActive) return;
   
@@ -109,12 +105,10 @@ function disableSeedImageClick() {
 // FUNÇÃO PARA AGENDAR NOTIFICAÇÃO
 // ==================================================
 function scheduleNotification() {
-  // Limpa timeout anterior se existir
   if (notificationTimeout) {
     clearTimeout(notificationTimeout);
   }
   
-  // Agenda para aparecer em 9 segundos (entre 8-10 segundos)
   notificationTimeout = setTimeout(() => {
     showNotification();
   }, 9000);
@@ -141,7 +135,6 @@ function closeNotification() {
     notificationOverlay.style.display = 'none';
   }
   
-  // Limpa o timeout se ainda não executou
   if (notificationTimeout) {
     clearTimeout(notificationTimeout);
     notificationTimeout = null;
@@ -168,21 +161,17 @@ function startEternalRitualLoop() {
   console.log('🔥 Ritual da Ignição eterno iniciado');
   inEternalLoop = true;
   
-  // 1. MUDA O TÍTULO DA TABELA CENTRAL
   if (loreTitle) {
     loreTitle.textContent = 'A IGNIÇÃO É ETERNA';
     loreTitle.style.color = '#ffaa33';
   }
   
-  // 2. INICIA CARROSSEL AUTOMÁTICO DE TEXTOS
   startLoreCarousel();
   
-  // 3. MOSTRA MENSAGEM SIMPLES
   if (eternalMsg) {
     eternalMsg.style.display = 'flex';
   }
   
-  // 4. ESCONDE CONTEÚDO ANTES DO OVERLAY DOS CARDS
   if (seedBeforeOverlay) {
     seedBeforeOverlay.style.display = 'none';
   }
@@ -191,7 +180,6 @@ function startEternalRitualLoop() {
     fragmentBeforeOverlay.style.display = 'none';
   }
   
-  // 5. MOSTRA STATUS DOS CARDS
   if (nftStatus) {
     nftStatus.style.display = 'flex';
   }
@@ -200,18 +188,13 @@ function startEternalRitualLoop() {
     fragmentStatus.style.display = 'flex';
   }
   
-  // 6. DESATIVA CLIQUE NA IMAGEM DA SEED
   disableSeedImageClick();
-  
-  // 7. INICIA OS COUNTDOWNS NOS CARDS
   startAllCountdowns();
   
-  // 8. ATUALIZA O HUD
   if (ritualPhase) {
     ritualPhase.textContent = '🔥 Cena 2: Ignição Bem Sucedida';
   }
   
-  // 9. RESETA ANIMAÇÃO PARA INÍCIO
   currentFrameNumber = 1;
   animationFrameIndex = 0;
   accumulatedSeeds = totalSeeds;
@@ -221,10 +204,7 @@ function startEternalRitualLoop() {
     seedText.innerText = totalSeeds;
   }
   
-  // 10. REATIVA MOVIMENTO
   isMoving = true;
-  
-  // 11. AGENDA NOTIFICAÇÃO PARA 9 SEGUNDOS DEPOIS
   scheduleNotification();
 }
 
@@ -280,7 +260,6 @@ function updateAllCountdowns() {
   updateCountdown(document.getElementById('countdownTimer'));
 }
 
-// FUNÇÃO PARA INICIAR TODOS OS COUNTDOWNS
 function startAllCountdowns() {
   if (countdownInterval) {
     clearInterval(countdownInterval);
@@ -319,6 +298,52 @@ let currentStep = null;
 let animationFrameIndex = 0;
 let bgX = 0;
 let bgSpeed = 2;
+
+// ==================================================
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.banana_slip,
+      ...ANIMATIONS.stumble_stone,
+    ];
+
+    const bgImages = [
+      'backgrounds/BG_02.png',
+    ];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
 
 // ==================================================
 // CENA 2
@@ -384,7 +409,7 @@ function showRitualOverlay() {
 }
 
 // ==================================================
-// LOOP PRINCIPAL OTIMIZADO
+// LOOP PRINCIPAL
 // ==================================================
 function startMainLoop() {
   if (mainInterval) {
@@ -475,6 +500,30 @@ function startMainLoop() {
         }
       }
       
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 2)
+      // ==================================================
+      const characterElement = document.getElementById('character');
+      if (characterElement) {
+        let removeFloat = false;
+        
+        // Remove float durante banana_slip (escorregando)
+        if (currentStep && currentStep.animation === "banana_slip") {
+          removeFloat = true;
+        }
+        
+        // Remove float durante stumble_stone (tropeçando)
+        if (currentStep && currentStep.animation === "stumble_stone") {
+          removeFloat = true;
+        }
+        
+        if (removeFloat) {
+          characterElement.style.animation = 'none';
+        } else {
+          characterElement.style.animation = 'float 6s ease-in-out infinite';
+        }
+      }
+      
     } catch (error) {
       console.error('Erro no loop principal:', error);
       clearInterval(mainInterval);
@@ -538,7 +587,9 @@ document.addEventListener('DOMContentLoaded', function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  startMainLoop();
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
