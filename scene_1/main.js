@@ -462,13 +462,13 @@ function startMainLoop() {
       if (characterElement) {
         let removeFloat = false;
         
-        // Remove float durante dog_entering (cão entrando)
-        if (currentStep && currentStep.animation === "dog_entering") {
+        // Remove float durante os frames onde o boneco está parado
+        // dog_entering: frames 201-216
+        // dog_leaving: frames 409-424
+        if (currentFrameNumber >= 201 && currentFrameNumber <= 216) {
           removeFloat = true;
         }
-        
-        // Remove float durante dog_leaving (cão saindo)
-        if (currentStep && currentStep.animation === "dog_leaving") {
+        if (currentFrameNumber >= 409 && currentFrameNumber <= 424) {
           removeFloat = true;
         }
         
