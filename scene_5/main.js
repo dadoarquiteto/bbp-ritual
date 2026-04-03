@@ -7,7 +7,7 @@ let totalSeeds = 10000; // 10.000 seeds para Cena 5
 const frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
-let accumulatedSeeds = 1;
+let accumulatedSeeds = 4;
 let inEternalLoop = false;
 let mainInterval = null;
 let countdownInterval = null;
@@ -33,7 +33,6 @@ let currentLoreIndex = 0;
 let loreInterval = null;
 let loreCarouselActive = false;
 
-// FUNÇÃO PARA MUDAR TEXTO COM ANIMAÇÃO
 function changeLoreText(nextIndex) {
   const texts = document.querySelectorAll('.lore-text');
   
@@ -48,7 +47,6 @@ function changeLoreText(nextIndex) {
   }
 }
 
-// FUNÇÃO PARA INICIAR CARROSSEL AUTOMÁTICO
 function startLoreCarousel() {
   if (loreCarouselActive) return;
   
@@ -163,21 +161,17 @@ function startEternalRitualLoop() {
   console.log('📜 Ritual da Convergência eterno iniciado');
   inEternalLoop = true;
   
-  // 1. MUDA O TÍTULO DA TABELA CENTRAL
   if (loreTitle) {
     loreTitle.textContent = 'A CONVERGÊNCIA É ETERNA';
     loreTitle.style.color = '#ffaa33';
   }
   
-  // 2. INICIA CARROSSEL AUTOMÁTICO DE TEXTOS
   startLoreCarousel();
   
-  // 3. MOSTRA MENSAGEM SIMPLES
   if (eternalMsg) {
     eternalMsg.style.display = 'flex';
   }
   
-  // 4. ESCONDE CONTEÚDO ANTES DO OVERLAY DOS CARDS
   if (seedBeforeOverlay) {
     seedBeforeOverlay.style.display = 'none';
   }
@@ -186,7 +180,6 @@ function startEternalRitualLoop() {
     fragmentBeforeOverlay.style.display = 'none';
   }
   
-  // 5. MOSTRA STATUS DOS CARDS
   if (nftStatus) {
     nftStatus.style.display = 'flex';
   }
@@ -195,18 +188,13 @@ function startEternalRitualLoop() {
     fragmentStatus.style.display = 'flex';
   }
   
-  // 6. DESATIVA CLIQUE NA IMAGEM DA SEED
   disableSeedImageClick();
-  
-  // 7. INICIA OS COUNTDOWNS NOS CARDS
   startAllCountdowns();
   
-  // 8. ATUALIZA O HUD
   if (ritualPhase) {
     ritualPhase.textContent = '📜 Cena 5: Convergência Bem Sucedida';
   }
   
-  // 9. RESETA ANIMAÇÃO PARA INÍCIO
   currentFrameNumber = 1;
   animationFrameIndex = 0;
   accumulatedSeeds = totalSeeds;
@@ -216,10 +204,7 @@ function startEternalRitualLoop() {
     seedText.innerText = totalSeeds;
   }
   
-  // 10. REATIVA MOVIMENTO
   isMoving = true;
-  
-  // 11. AGENDA NOTIFICAÇÃO PARA 9 SEGUNDOS DEPOIS
   scheduleNotification();
 }
 
@@ -275,7 +260,6 @@ function updateAllCountdowns() {
   updateCountdown(document.getElementById('countdownTimer'));
 }
 
-// FUNÇÃO PARA INICIAR TODOS OS COUNTDOWNS
 function startAllCountdowns() {
   if (countdownInterval) {
     clearInterval(countdownInterval);
@@ -286,7 +270,7 @@ function startAllCountdowns() {
 }
 
 // ==================================================
-// CARREGAR FRAMES (CENA 5 - SUA ANIMAÇÃO)
+// CARREGAR FRAMES (CENA 5)
 // ==================================================
 function loadFrames(path, prefix, start, end) {
   const frames = [];
@@ -297,15 +281,15 @@ function loadFrames(path, prefix, start, end) {
 }
 
 // ==================================================
-// ANIMAÇÕES DA CENA 5 (SUA ANIMAÇÃO)
+// ANIMAÇÕES DA CENA 5
 // ==================================================
 const ANIMATIONS = {
-  walking: loadFrames("character/walking", "walking", 1, 16),
-  car: loadFrames("character/car", "car", 1, 8),
+  walking:      loadFrames("character/walking",      "walking",      1, 16),
+  car:          loadFrames("character/car",          "car",          1,  8),
   dog_entering: loadFrames("character/dog_entering", "dog_entering", 1, 16),
-  walking_dog: loadFrames("character/walking_dog", "walking_dog", 1, 16),
-  dog_leaving: loadFrames("character/dog_leaving", "dog_leaving", 1, 16),
-  car_dog: loadFrames("character/car_dog", "car_dog", 1, 8)
+  walking_dog:  loadFrames("character/walking_dog",  "walking_dog",  1, 16),
+  dog_leaving:  loadFrames("character/dog_leaving",  "dog_leaving",  1, 16),
+  car_dog:      loadFrames("character/car_dog",      "car_dog",      1,  8)
 };
 
 // ==================================================
@@ -319,70 +303,69 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
-// CENA 5 (SEU ROTEIRO)
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.car,
+      ...ANIMATIONS.dog_entering,
+      ...ANIMATIONS.walking_dog,
+      ...ANIMATIONS.dog_leaving,
+      ...ANIMATIONS.car_dog,
+    ];
+
+    const bgImages = ['backgrounds/BG_09.png'];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
+
+// ==================================================
+// CENA 5
 // ==================================================
 const SCENES = [
   {
     start: 1,
     end: 750,
-    bg: "BG_09.png", // Fundo da Cena 5
+    bg: "BG_09.png",
     steps: [
-      // Seed 1-100: walking (loop)
-      { 
-        from: 1, 
-        to: 100, 
-        animation: "walking", 
-        loop: true 
-      },
-      // Seed 101-300: car (loop) - 8 frames, 200 seeds
-      { 
-        from: 101, 
-        to: 300, 
-        animation: "car", 
-        loop: true 
-      },
-      // Seed 301-400: walking (loop) - 100 seeds
-      { 
-        from: 301, 
-        to: 400, 
-        animation: "walking", 
-        loop: true 
-      },
-      // Seed 401-416: dog_entering (não loop) - 16 frames
-      { 
-        from: 401, 
-        to: 416, 
-        animation: "dog_entering", 
-        loop: false 
-      },
-      // Seed 417-550: walking_dog (loop) - 134 seeds
-      { 
-        from: 417, 
-        to: 550, 
-        animation: "walking_dog", 
-        loop: true 
-      },
-      // Seed 551-566: dog_leaving (não loop) - 16 frames
-      { 
-        from: 551, 
-        to: 566, 
-        animation: "dog_leaving", 
-        loop: false 
-      },
-      // Seed 567-600: walking (loop) - 34 seeds
-      { 
-        from: 567, 
-        to: 600, 
-        animation: "walking", 
-        loop: true 
-      },
-      // Seed 601-750: car_dog (loop) - 8 frames, 150 seeds
-      { 
-        from: 601, 
-        to: 750, 
-        animation: "car_dog", 
-        loop: true 
-      }
+      { from: 1,   to: 100, animation: "walking",      loop: true  },
+      { from: 101, to: 300, animation: "car",          loop: true  },
+      { from: 301, to: 400, animation: "walking",      loop: true  },
+      { from: 401, to: 416, animation: "dog_entering", loop: false },
+      { from: 417, to: 550, animation: "walking_dog",  loop: true  },
+      { from: 551, to: 566, animation: "dog_leaving",  loop: false },
+      { from: 567, to: 600, animation: "walking",      loop: true  },
+      { from: 601, to: 750, animation: "car_dog",      loop: true  }
     ]
   }
 ];
@@ -433,7 +416,7 @@ function showRitualOverlay() {
 }
 
 // ==================================================
-// LOOP PRINCIPAL OTIMIZADO
+// LOOP PRINCIPAL
 // ==================================================
 function startMainLoop() {
   if (mainInterval) {
@@ -498,6 +481,19 @@ function startMainLoop() {
                 animationFrameIndex = 0;
               }
               
+              // CONTROLE DE FUNDO PARA hand_box (frames 10-39)
+              if (step.animation === "hand_box") {
+                const frameWithinHandBox = currentFrameNumber - step.from;
+                
+                if (frameWithinHandBox >= 10 && frameWithinHandBox <= 39) {
+                  bgSpeed = 0;
+                } else {
+                  bgSpeed = 2;
+                }
+              } else {
+                bgSpeed = 2;
+              }
+              
               break;
             }
           }
@@ -522,6 +518,27 @@ function startMainLoop() {
         animationFrameIndex++;
         if (animationFrameIndex >= currentAnimation.length) {
           animationFrameIndex = currentStep.loop ? 0 : currentAnimation.length - 1;
+        }
+      }
+      
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 5)
+      // ==================================================
+      const characterElement = document.getElementById('character');
+      if (characterElement) {
+        let removeFloat = false;
+        
+        if (currentStep && currentStep.animation === "dog_entering") {
+          removeFloat = true;
+        }
+        if (currentStep && currentStep.animation === "dog_leaving") {
+          removeFloat = true;
+        }
+        
+        if (removeFloat) {
+          characterElement.style.animation = 'none';
+        } else {
+          characterElement.style.animation = 'float 6s ease-in-out infinite';
         }
       }
       
@@ -588,7 +605,9 @@ document.addEventListener('DOMContentLoaded', function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  startMainLoop();
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
