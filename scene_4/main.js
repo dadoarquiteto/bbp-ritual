@@ -301,6 +301,51 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.getting_scooter,
+      ...ANIMATIONS.scooter,
+      ...ANIMATIONS.hand_box,
+    ];
+
+    const bgImages = ['backgrounds/BG_07.png'];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
+
+// ==================================================
 // CENA 4
 // ==================================================
 const SCENES = [
@@ -560,7 +605,9 @@ document.addEventListener('DOMContentLoaded', function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  startMainLoop();
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
