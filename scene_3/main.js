@@ -33,7 +33,6 @@ let currentLoreIndex = 0;
 let loreInterval = null;
 let loreCarouselActive = false;
 
-// FUNÇÃO PARA MUDAR TEXTO COM ANIMAÇÃO
 function changeLoreText(nextIndex) {
   const texts = document.querySelectorAll('.lore-text');
   
@@ -48,7 +47,6 @@ function changeLoreText(nextIndex) {
   }
 }
 
-// FUNÇÃO PARA INICIAR CARROSSEL AUTOMÁTICO
 function startLoreCarousel() {
   if (loreCarouselActive) return;
   
@@ -163,21 +161,17 @@ function startEternalRitualLoop() {
   console.log('📜 Ritual da Inscrição eterno iniciado');
   inEternalLoop = true;
   
-  // 1. MUDA O TÍTULO DA TABELA CENTRAL
   if (loreTitle) {
     loreTitle.textContent = 'A INSCRIÇÃO É ETERNA';
     loreTitle.style.color = '#ffaa33';
   }
   
-  // 2. INICIA CARROSSEL AUTOMÁTICO DE TEXTOS
   startLoreCarousel();
   
-  // 3. MOSTRA MENSAGEM SIMPLES
   if (eternalMsg) {
     eternalMsg.style.display = 'flex';
   }
   
-  // 4. ESCONDE CONTEÚDO ANTES DO OVERLAY DOS CARDS
   if (seedBeforeOverlay) {
     seedBeforeOverlay.style.display = 'none';
   }
@@ -186,7 +180,6 @@ function startEternalRitualLoop() {
     fragmentBeforeOverlay.style.display = 'none';
   }
   
-  // 5. MOSTRA STATUS DOS CARDS
   if (nftStatus) {
     nftStatus.style.display = 'flex';
   }
@@ -195,18 +188,13 @@ function startEternalRitualLoop() {
     fragmentStatus.style.display = 'flex';
   }
   
-  // 6. DESATIVA CLIQUE NA IMAGEM DA SEED
   disableSeedImageClick();
-  
-  // 7. INICIA OS COUNTDOWNS NOS CARDS
   startAllCountdowns();
   
-  // 8. ATUALIZA O HUD
   if (ritualPhase) {
     ritualPhase.textContent = '📜 Cena 3: Inscrição Bem Sucedida';
   }
   
-  // 9. RESETA ANIMAÇÃO PARA INÍCIO
   currentFrameNumber = 1;
   animationFrameIndex = 0;
   accumulatedSeeds = totalSeeds;
@@ -216,10 +204,7 @@ function startEternalRitualLoop() {
     seedText.innerText = totalSeeds;
   }
   
-  // 10. REATIVA MOVIMENTO
   isMoving = true;
-  
-  // 11. AGENDA NOTIFICAÇÃO PARA 9 SEGUNDOS DEPOIS
   scheduleNotification();
 }
 
@@ -275,7 +260,6 @@ function updateAllCountdowns() {
   updateCountdown(document.getElementById('countdownTimer'));
 }
 
-// FUNÇÃO PARA INICIAR TODOS OS COUNTDOWNS
 function startAllCountdowns() {
   if (countdownInterval) {
     clearInterval(countdownInterval);
@@ -286,7 +270,7 @@ function startAllCountdowns() {
 }
 
 // ==================================================
-// CARREGAR FRAMES (CENA 3 - SUA ANIMAÇÃO)
+// CARREGAR FRAMES (CENA 3)
 // ==================================================
 function loadFrames(path, prefix, start, end) {
   const frames = [];
@@ -297,12 +281,12 @@ function loadFrames(path, prefix, start, end) {
 }
 
 // ==================================================
-// ANIMAÇÕES DA CENA 3 (SUA ANIMAÇÃO)
+// ANIMAÇÕES DA CENA 3
 // ==================================================
 const ANIMATIONS = {
-  walking: loadFrames("character/walking", "walking", 1, 16),
-  ball_obstacle: loadFrames("character/ball_obstacle", "ball_obstacle", 1, 16),
-  dog_skate: loadFrames("character/dog_skate", "dog_skate", 1, 14)
+  walking:      loadFrames("character/walking",      "walking",      1, 16),
+  ball_obstacle: loadFrames("character/ball_obstacle","ball_obstacle",1, 16),
+  dog_skate:    loadFrames("character/dog_skate",    "dog_skate",    1, 14)
 };
 
 // ==================================================
@@ -316,49 +300,63 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
-// CENA 3 (SEU ROTEIRO)
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.ball_obstacle,
+      ...ANIMATIONS.dog_skate,
+    ];
+
+    const bgImages = ['backgrounds/BG_03.png'];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
+
+// ==================================================
+// CENA 3
 // ==================================================
 const SCENES = [
   {
     start: 1,
     end: 570,
-    bg: "BG_03.png", // Fundo da Cena 3
+    bg: "BG_03.png",
     steps: [
-      // Seed 1-200: walking (loop)
-      { 
-        from: 1, 
-        to: 200, 
-        animation: "walking", 
-        loop: true 
-      },
-      // Seed 201-216: ball_obstacle (não loop) - 16 frames
-      { 
-        from: 201, 
-        to: 216, 
-        animation: "ball_obstacle", 
-        loop: false 
-      },
-      // Seed 217-280: walking (loop)
-      { 
-        from: 217, 
-        to: 280, 
-        animation: "walking", 
-        loop: true 
-      },
-      // Seed 281-450: dog_skate (loop) - 14 frames, loop sim
-      { 
-        from: 281, 
-        to: 450, 
-        animation: "dog_skate", 
-        loop: true 
-      },
-      // Seed 451-570: walking (loop)
-      { 
-        from: 451, 
-        to: 570, 
-        animation: "walking", 
-        loop: true 
-      }
+      { from: 1,   to: 200, animation: "walking",      loop: true  },
+      { from: 201, to: 216, animation: "ball_obstacle", loop: false },
+      { from: 217, to: 280, animation: "walking",      loop: true  },
+      { from: 281, to: 450, animation: "dog_skate",    loop: true  },
+      { from: 451, to: 570, animation: "walking",      loop: true  }
     ]
   }
 ];
@@ -409,7 +407,7 @@ function showRitualOverlay() {
 }
 
 // ==================================================
-// LOOP PRINCIPAL OTIMIZADO
+// LOOP PRINCIPAL
 // ==================================================
 function startMainLoop() {
   if (mainInterval) {
@@ -500,6 +498,25 @@ function startMainLoop() {
         }
       }
       
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 3)
+      // ==================================================
+      const characterElement = document.getElementById('character');
+      if (characterElement) {
+        let removeFloat = false;
+        
+        // Remove float durante ball_obstacle
+        if (currentStep && currentStep.animation === "ball_obstacle") {
+          removeFloat = true;
+        }
+        
+        if (removeFloat) {
+          characterElement.style.animation = 'none';
+        } else {
+          characterElement.style.animation = 'float 6s ease-in-out infinite';
+        }
+      }
+      
     } catch (error) {
       console.error('Erro no loop principal:', error);
       clearInterval(mainInterval);
@@ -563,7 +580,9 @@ document.addEventListener('DOMContentLoaded', function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  startMainLoop();
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
