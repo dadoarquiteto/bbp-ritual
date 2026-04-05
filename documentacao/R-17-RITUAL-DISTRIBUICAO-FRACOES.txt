@@ -1,0 +1,191 @@
+================================================================================
+BBP PROTOCOL - DOCUMENTAÇÃO OFICIAL
+REF: R-17-RITUAL-DISTRIBUICAO-FRACOES
+STATUS: FINAL
+================================================================================
+
+1. RELAÇÃO COM O DOCUMENTO N-13
+
+   O documento N-13 descreve o FLUXO DO RITUAL (cenas, interações, P2P).
+   Este documento (R-17) descreve a ECONOMIA e os ATIVOS distribuídos.
+   
+   Ambos são complementares e devem ser lidos em conjunto.
+
+2. O DNA DO PROTOCOLO (A RAIZ DE TUDO)
+
+   2.1. O BBP inscreve APENAS UM DNA no Bitcoin: BBP:PROTOCOL:CORE
+        - Esta é a ÚNICA inscrição necessária para todo o protocolo
+        - Tudo o mais deriva deste DNA via binding (Arweave/IPFS)
+
+   2.2. Conteúdo da inscrição:
+        {
+          "dna": "BBP:PROTOCOL:CORE",
+          "manifesto": {
+            "nome": "Bitcoin Blueprint Protocol",
+            "versao": "1.0",
+            "total_fragmentos": 21000000,
+            "fracoes_por_fragmento": 100000000,
+            "whitepaper": "ar://bbp_whitepaper_v1.pdf",
+            "data_inscricao": "2026-04-XX"
+          }
+        }
+
+3. O QUE O PARTICIPANTE RECEBE NO RITUAL
+
+   3.1. O participante NÃO recebe um "arquivo NFT" na carteira.
+        Ele recebe:
+        a) Uma ASSINATURA CRIPTOGRÁFICA (prova de participação)
+        b) Um DNA BINDING (string que resolve para o ativo)
+
+   3.2. Formato do DNA Binding (confirmado nos manifestos reais):
+        BBP:bind:bbp:[NAMESPACE]:[IDENTIFIER]
+
+   3.3. Exemplos:
+        - Café: BBP:bind:bbp:santa_rita:lote_001/2026_-_bourbon_amarelo
+        - Ouro: BBP:bind:bbp:refinaria_pamp:barra_au-001_-_1000g
+        - Game Asset: BBP:bind:bbp:weapon_asset:espada_do_dragão
+        - Identidade: BBP:bind:bbp:identity:satoshi
+        - NFT Mannequin: BBP:bind:bbp:mannequin:1
+
+   3.4. Como o participante usa:
+        - Guarda a assinatura + DNA Binding
+        - No viewer (viewer.html), seleciona o template e cola o DNA Binding
+        - O viewer resolve e revela o ativo
+
+4. DISTRIBUIÇÃO DE FRAÇÕES POR CENA
+
+   4.1. Tabela oficial:
+
+        | Cena | Frações do NFT disponíveis | BBP Fractions (tokens) |
+        |------|---------------------------|------------------------|
+        | 1    | 2.000 (early adopters)    | 10                     |
+        | 2    | 4.000                      | 10                     |
+        | 3    | 6.000                      | 10                     |
+        | 4    | 8.000                      | 10                     |
+        | 5    | 10.000                     | 10                     |
+        | 6    | (nenhuma - NFT único do protocolo) | 10              |
+
+   4.2. Bônus de conclusão:
+        - Participante que completar TODAS as cenas (1 a 6): +50 BBP Fractions
+        - Total máximo por participante: 110 BBP Fractions
+
+   4.3. Mecanismo de distribuição:
+        - Ao conectar a carteira em cada cena, o sistema verifica:
+          a) Se o participante já reivindicou esta cena
+          b) Se ainda há frações disponíveis
+        - Se positivo, gera o DNA Binding e a assinatura
+        - Registra no P2P (gun-integration.js) a participação
+
+5. ESTRUTURA DOS NFTS DAS CENAS
+
+   5.1. Cada cena tem UMA imagem única (a animação)
+   5.2. Esta imagem é compartilhada por todas as frações da cena
+   5.3. O que diferencia cada fração:
+        - Número da fração (ex: scene 1 fração #0042)
+        - Dono (endereço da carteira)
+        - Data de reivindicação
+
+   5.4. Exemplo de manifesto da Cena 1:
+        {
+          "dna": "BBP:RITUAL:SCENE_1",
+          "class": "nft_fractioned",
+          "parent_dna": "BBP:PROTOCOL:CORE",
+          "image_uri": "ar://scene1_animation.png",
+          "total_fractions": 2000,
+          "fractions": [...]
+        }
+
+6. BBP FRACTIONS (TOKENS DO PROTOCOLO)
+
+   6.1. Definição:
+        - BBP Fractions são FRAÇÕES de fragmentos do protocolo
+        - Cada fragmento = 100 milhões de frações
+        - O participante recebe FRAÇÕES, não fragmentos inteiros
+        - NÃO têm imagem - são SALDO CONTÁBIL (como satoshis do Bitcoin)
+
+   6.2. Supply total:
+        - Vinculado aos 21 milhões de fragmentos
+        - Distribuição gradual ao longo de décadas (halving programado)
+
+   6.3. Distribuição no ritual (valores provisórios, ajustáveis depois):
+
+        | Ação                                   | BBP Fractions |
+        |----------------------------------------|---------------|
+        | Participar de uma cena                 | 10            |
+        | Primeiros 100 de cada cena             | +50           |
+        | Compartilhar em redes sociais          | +5 (max 3x)   |
+        | Concluir as 5 cenas                    | +100          |
+        | Convidar amigo que participar          | +10           |
+
+    6.3.1. Como o sistema detecta cada ação:
+        - Compartilhar: botão na cena gera link com parâmetro da carteira
+        - Convidar amigo: link único; quando amigo conecta, sistema associa
+        - Primeiros 100: ordem de chegada registrada no P2P
+        - Concluir cenas: registro de participação em cada cena
+
+   6.4. Utilidades (futuras, sujeitas à governança):
+        - Votação em propostas do protocolo
+        - Acesso a funcionalidades premium
+        - [OUTRAS UTILIDADES DEFINIDAS PELA GOVERNANÇA]
+
+   6.5. AVISO LEGAL OBRIGATÓRIO:
+        "As utilidades dos BBP Fractions serão definidas pela governança
+        do protocolo em fases futuras, conforme a evolução do ecossistema
+        e o cumprimento das exigências legais aplicáveis. Nada neste
+        documento constitui oferta de valores mobiliários ou promessa de
+        rentabilidade."
+
+    6.6. Utilidade Futura (Sujeita à Legalização):
+        Haverá, ainda, uma utilidade especial para os BBP Fractions que
+        depende de regulamentação legal específica. Seu anúncio oficial
+        ocorrerá tão logo as condições legais estejam cumpridas. Enquanto
+        isso, a comunidade pode se preparar.
+
+7. O QUE NÃO ESTÁ NESTE DOCUMENTO (REMETIDO AO N-13)
+
+   - Como as cenas funcionam (animações, bonequinho, frames)
+   - Como o P2P sincroniza os acessos
+   - Como o participante conecta a carteira
+   - Como o living_wallet.py assina as mensagens
+   - Como o viewer resolve os DNA Bindings
+
+8. NÚMEROS DE FRAMES (REFERÊNCIA)
+
+   | Cena | Seeds | Frames | Participantes por frame |
+   |------|-------|--------|------------------------|
+   | 1    | 2.000 | 500    | 4                      |
+   | 2    | 4.000 | 550    | ~7,27                  |
+   | 3    | 6.000 | 570    | ~10,52                 |
+   | 4    | 8.000 | 650    | ~12,30                 |
+   | 5    | 10.000| 750    | ~13,33                 |
+   | 6    | 30.000| 4.385  | ~6,84                  |
+
+   FÓRMULA: PARTICIPANTES_POR_FRAME = TOTAL_FRAÇÕES / TOTAL_FRAMES
+
+9. TAXAS DO PROTOCOLO
+
+   9.1. No ritual de lançamento (rede de testes):
+        - TAXA ZERO para os participantes
+        - Objetivo: validar o protocolo, atrair comunidade, demonstrar eficácia
+        - Quem paga é o protocolo (1 inscrição do DNA BBP:PROTOCOL:CORE)
+
+   9.2. Na rede definitiva (após lançamento da Circus):
+        - Taxa de $15 por registro de DNA (a definir)
+        - Aplica-se também à evolução da Fredo (Fredo DNA)
+
+10. DATAS DO RITUAL (ATENÇÃO)
+
+    10.1. As datas no timeline.js são PROVISÓRIAS (fakes)
+    10.2. Quando chegar a hora de ligar a rede, as datas deverão ser atualizadas
+    10.3. Este é um item pendente na checklist de lançamento
+
+11. PRÓXIMOS PASSOS
+
+    11.1. Inscrição do BBP:PROTOCOL:CORE no Bitcoin (1 transação)
+    11.2. Configuração do gerador de DNA Bindings
+    11.3. Teste do fluxo completo com participantes reais
+    11.4. Lançamento do ritual
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================
