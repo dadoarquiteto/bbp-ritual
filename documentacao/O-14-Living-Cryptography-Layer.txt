@@ -1,285 +1,149 @@
-
-
-
-
-
 BBP-0014
 Living Cryptography Layer
 Camada de Criptografia Viva do Protocolo BBP
-   Integração da Tecnologia Viva com Inscrição Ordinal, Manifesto e Arweave   
-
-
-
-
-Status: Draft  |  Versão: 1.0  |  Autor: BBP Core Team
-Complementa: BBP-0001, BBP-0002, BBP-0012
-
-
+Integração da Tecnologia Viva com Inscrição Ordinal, Manifesto e Arweave
+Status: Draft  |  Versão: 2.0  |  Autor: BBP Core Team
+Complementa: BBP-0001, BBP-0002, BBP-0012, BBP-0015
+Atualizado para Tecnologia Viva v3.0 — Abril 2026
+ 
 Resumo
-Este documento define a integração da Tecnologia Viva — um protocolo de criptografia contextual com chaves efêmeras — ao protocolo BBP. A integração opera como uma camada opcional que protege três momentos críticos do ciclo de vida de um ativo BBP:
-•	A assinatura da inscrição Ordinal no Bitcoin.
-•	O armazenamento do manifesto e assets no Arweave.
-•	A identidade criptográfica do criador, ancorada no BBP:id:identity.
-A Tecnologia Viva não substitui nenhum componente existente do protocolo BBP. Ela envolve os pontos de assinatura e armazenamento com uma camada de proteção contextual, onde as chaves privadas nunca existem em repouso — nascem do contexto do momento, são usadas e destruídas.
-Este documento é complementar ao BBP-0012 (Registro no Bitcoin e Armazenamento no Arweave). Leia o BBP-0012 antes de implementar esta especificação.
+Este documento define a integração da Tecnologia Viva — um protocolo de criptografia contextual com chaves efêmeras — ao protocolo BBP. A camada opera como proteção opcional em três momentos críticos do ciclo de vida de um ativo BBP: a assinatura da inscrição Ordinal no Bitcoin, o armazenamento do manifesto e assets no Arweave, e a identidade criptográfica do criador ancorada no BBP:id:identity.
+
+A versão 2.0 deste documento reflete as atualizações da Tecnologia Viva v3.0, incorporando entropia comportamental distribuída, hash chain viva alimentada pela rede P2P, e SHA3-256 em todas as operações de hash. O campo quantum_resistant no manifesto passa a ser true em implementações que seguem BBP-0015.
+
+Este documento é complementar ao BBP-0012 (Registro no Bitcoin e Armazenamento no Arweave) e ao BBP-0015 (Post-Quantum Security Standard). Leia BBP-0012 e BBP-0015 antes de implementar esta especificação.
 
 1. Visão Geral
 1.1 O problema que esta camada resolve
-No fluxo atual do BBP-0012, o criador assina o contract_hash do manifesto com sua chave privada convencional (ECDSA). Essa chave existe permanentemente no dispositivo do criador. Se ela for comprometida:
+No fluxo atual do BBP-0012, o criador assina o contract_hash do manifesto com sua chave privada convencional (ECDSA). Essa chave existe permanentemente no dispositivo. Se for comprometida:
 •	Qualquer ativo inscrito pelo criador tem sua autoria questionável.
 •	A chave pode assinar inscrições fraudulentas em nome do criador.
 •	Não há como provar que a assinatura ocorreu em momento e contexto específicos.
-A Tecnologia Viva resolve esses três problemas simultaneamente.
+A Tecnologia Viva resolve os três problemas simultaneamente. A versão 2.0 adiciona um quarto: a rede que valida as assinaturas é alimentada pelo comportamento humano dos próprios usuários, tornando o estado do sistema irreproduzível por atacantes externos.
 
-1.2 O que a camada adiciona
-Aspecto	Sem BBP-0014	Com BBP-0014
+1.2 O que a camada adiciona — v2.0
+Aspecto	Sem BBP-0014	Com BBP-0014 v2.0
 Chave privada do criador	Armazenada permanentemente	Nunca armazenada — gerada e destruída
 Prova de autoria	Assinatura ECDSA convencional	Assinatura + context_snapshot verificável
-Recuperação de identidade	Seed phrase (frágil)	BBP identity DNA + oráculo + setup
+Fonte de entropia	Ausente	Beacon drand + Bitcoin + entropia comportamental da rede P2P
+Hash chain viva	Ausente	Estado irreproduzível alimentado por cada interação humana na rede
+Recuperação de identidade	Seed phrase (fragil)	BBP DNA + oraculo + setup fisico
 Proteção do manifesto no Arweave	Upload em claro	Fragmentação criptografada opcional
-Resistência quântica	Não	Sim (com BBP-0015)
+Resistência quântica	Não	Sim — zero curvas elipticas, SHA3-256, Dilithium3 (com BBP-0015)
 
 1.3 Compatibilidade
-A camada BBP-0014 é retrocompatível. Ativos registrados sem ela continuam válidos. Resolvers e viewers que não implementam BBP-0014 continuam funcionando normalmente — apenas não verificam o context_snapshot adicional.
-Ativos que usam BBP-0014 incluem um campo security adicional no manifesto (seção 3) e um campo living_proof na inscrição Ordinal (seção 2), ambos opcionais para resolvers legados.
+A camada BBP-0014 é retrocompatível. Ativos registrados sem ela continuam válidos. Resolvers que não implementam BBP-0014 continuam funcionando — apenas não verificam o context_snapshot adicional.
 
+ 
 2. Integração com a Inscrição Ordinal (Bitcoin)
-2.1 Fluxo modificado de assinatura
-O fluxo do BBP-0012 (passos 3 e 4 — calcular contract_hash e assinar) é estendido da seguinte forma:
- 
-Fluxo BBP-0014 — Assinatura com chave efêmera:
+2.1 Fluxo modificado de assinatura — v2.0
+O fluxo do BBP-0012 é estendido da seguinte forma:
 
-  1. Template gera bbp_manifest_unsigned.json  (sem alteração)
-  2. Template calcula contract_hash             (sem alteração)
-  3. [NOVO] Oráculo Vivo gera context_snapshot:
-       - beacon_round   : rodada atual do drand randomness beacon
-       - beacon_random  : aleatoriedade verificável do beacon
-       - block_height   : altura atual do bloco Bitcoin
-       - block_hash     : hash do bloco atual (prefixo 16 chars)
-       - event_hash     : SHA256(contract_hash + timestamp)
-       - timestamp_utc  : momento exato da operação
-       - setup_id_ref   : referência (prefixo) do LiveSetupID do criador
-  4. [NOVO] Chave efêmera derivada:
-       key = KDF(context_snapshot + setup_id_completo)
-  5. [NOVO] contract_hash assinado com chave efêmera
-  6. [NOVO] Chave efêmera destruída (sobrescrita em memória)
-  7. [NOVO] context_snapshot adicionado à inscrição como living_proof
-  8. Template gera bbp_manifest_signed.json    (estendido)
- 
+Fluxo BBP-0014 v2.0 — Assinatura com chave efemera:  1. Template gera bbp_manifest_unsigned.json (sem alteracao) 2. Template calcula contract_hash com SHA3-256 (v2.0: era SHA-256) 3. [NOVO v2.0] BehavioralEntropyCollector captura entropia da interacao 4. [NOVO] Oraculo Vivo gera context_snapshot:    - beacon_round      : rodada atual do drand randomness beacon    - beacon_random     : aleatoriedade verificavel do beacon    - block_height      : altura atual do bloco Bitcoin    - block_hash_prefix : hash do bloco (prefixo 16 chars)    - event_hash        : SHA3-256(contract_hash + timestamp)  [v2.0: era SHA-256]    - timestamp_utc     : momento exato da operacao    - setup_id_ref      : referencia (prefixo) do LiveSetupID do criador    - genesis_seed      : ancora do usuario na hash chain viva  [NOVO v2.0]    - behavioral_contribution : hash da entropia comportamental  [NOVO v2.0] 5. [NOVO] Chave efemera derivada:    key = HKDF-SHA3-256(context_snapshot + setup_id_completo)  [v2.0: era HMAC-SHA256] 6. [NOVO] contract_hash assinado com Dilithium3  [v2.0: era ECDSA] 7. [NOVO] Chave efemera destruida (sobrescrita em memoria) 8. [NOVO] context_snapshot adicionado a inscricao como living_proof 9. Template gera bbp_manifest_signed.json (estendido)
 
-2.2 Formato estendido da inscrição Ordinal
-O JSON da inscrição Ordinal (definido no BBP-0012, seção 2.1) recebe o campo opcional living_proof:
- 
-{
-  "p": "bbp",
-  "op": "identity",
-  "id": "BBP:id:art:fredo:2654",
-  "timestamp": 1700000000,
-  "creator": "bc1qxyz...",
-  "signature": "base64_da_assinatura_efemera",
-  "binding": "BBP:bind:arweave:abc123",
-  "living_proof": {
-    "version": "bbp-lc-v1",
-    "oracle_id": "fe9bccac764083da",
-    "beacon_round": 382947,
-    "beacon_random": "82b7c2f39ad55e1a9b3fd22c...",
-    "block_height": 901234,
-    "block_hash_prefix": "0000000000000000",
-    "event_hash": "75782eb5ae0874e5f7acdbd9...",
-    "timestamp_utc": "2026-04-01T19:27:56Z",
-    "setup_id_ref": "639a195398d69dd1",
-    "snapshot_sig": "1b38f0423f7bee62383c7a23..."
-  }
-}
- 
+2.2 Formato estendido da inscrição Ordinal — v2.0
+O JSON da inscrição Ordinal recebe o campo opcional living_proof, atualizado para incluir genesis_seed e behavioral_contribution:
 
-2.3 O que o living_proof prova
+{   "p": "bbp",   "op": "identity",   "id": "BBP:id:art:fredo:2654",   "timestamp": 1700000000,   "creator": "bc1qxyz...",   "signature": "base64_assinatura_dilithium3",   "binding": "BBP:bind:arweave:abc123",   "living_proof": {     "version": "bbp-lc-v2",     "oracle_id": "fe9bccac764083da",     "beacon_round": 382947,     "beacon_random": "82b7c2f39ad55e1a9b3fd22c...",     "block_height": 901234,     "block_hash_prefix": "0000000000000000",     "event_hash": "SHA3-256_hash_aqui...",     "timestamp_utc": "2026-04-01T19:27:56Z",     "setup_id_ref": "639a195398d69dd1",     "genesis_seed": "ancora_na_hash_chain_viva...",     "behavioral_contribution": "hash_entropia_comportamental...",     "snapshot_sig": "1b38f0423f7bee62383c7a23..."   } }
+
+2.3 O que o living_proof prova — v2.0
 Campo	O que prova
-beacon_round + beacon_random	A assinatura ocorreu após aquela rodada do beacon — prova temporal verificável por qualquer pessoa
-block_height + block_hash_prefix	A assinatura ocorreu após aquele bloco Bitcoin ser minerado — âncora temporal na blockchain
-event_hash	Liga o living_proof especificamente ao contract_hash daquele manifesto
-snapshot_sig	O oráculo assinou este snapshot — garante que não foi fabricado após o fato
-setup_id_ref	Liga a assinatura ao dispositivo específico do criador — sem revelar o setup completo
+beacon_round + beacon_random	A assinatura ocorreu apos aquela rodada do beacon — prova temporal verificavel por qualquer pessoa
+block_height + block_hash_prefix	A assinatura ocorreu apos aquele bloco Bitcoin ser minerado — ancora temporal na blockchain
+event_hash (SHA3-256)	Liga o living_proof ao contract_hash daquele manifesto. v2.0: SHA3-256 em vez de SHA-256
+genesis_seed	NOVO v2.0 — ancora do usuario na hash chain viva do oraculo. Gravado no Arweave.
+behavioral_contribution	NOVO v2.0 — prova que entropia humana real foi incorporada no momento da assinatura
+snapshot_sig	O oraculo assinou este snapshot — garante que nao foi fabricado apos o fato
+setup_id_ref	Liga a assinatura ao dispositivo especifico do criador — sem revelar o setup completo
 
-2.4 Verificação por resolvers
-Um resolver compatível com BBP-0014 pode verificar o living_proof da seguinte forma:
- 
-Verificação do living_proof:
+2.4 Verificação por resolvers — v2.0
+Verificacao do living_proof v2.0:  1. Extrair beacon_round do living_proof 2. Consultar drand: GET https://drand.cloudflare.com/public/{beacon_round} 3. Confirmar que beacon_random corresponde a resposta do drand 4. Confirmar que block_height e block_hash_prefix existem na blockchain Bitcoin 5. Recalcular event_hash = SHA3-256(contract_hash + timestamp_utc)  [v2.0: SHA3-256] 6. Confirmar que event_hash corresponde ao campo do living_proof 7. Verificar snapshot_sig com Dilithium3  [v2.0: era HMAC/ECDSA] 8. [NOVO v2.0] Verificar genesis_seed contra registro no Arweave do usuario  Se todos os passos passam: living_proof e valido. A assinatura ocorreu naquele momento, naquele contexto, naquele dispositivo, com entropia comportamental humana real incorporada.
 
-  1. Extrair beacon_round do living_proof
-  2. Consultar drand: GET https://drand.cloudflare.com/public/{beacon_round}
-  3. Confirmar que beacon_random corresponde à resposta do drand
-  4. Confirmar que block_height e block_hash_prefix existem na blockchain Bitcoin
-  5. Recalcular event_hash = SHA256(contract_hash + timestamp_utc)
-  6. Confirmar que event_hash corresponde ao campo do living_proof
-  7. Verificar snapshot_sig contra a chave pública do oráculo
-
-  Se todos os passos passam: living_proof é válido.
-  A assinatura ocorreu naquele momento, naquele contexto, naquele dispositivo.
- 
-
+ 
 3. Integração com o Manifesto e Arweave
-3.1 Campo security no manifesto
-O manifesto BBP-0002 recebe um campo opcional security que registra a prova de autoria viva:
- 
-{
-  "bbp_version": "1.2",
-  "identity": "BBP:id:art:fredo:2654",
-  "standard": "nft",
-  "origin": { "network": "bitcoin", "reference": "inscription_847392" },
-  ...
-  "security": {
-    "layer": "bbp-living-cryptography-v1",
-    "living_proof": {
-      "oracle_id": "fe9bccac764083da",
-      "beacon_round": 382947,
-      "beacon_random": "82b7c2f39ad55e1a9b3fd22c...",
-      "block_height": 901234,
-      "block_hash_prefix": "0000000000000000",
-      "event_hash": "75782eb5ae0874e5f7acdbd9...",
-      "timestamp_utc": "2026-04-01T19:27:56Z",
-      "setup_id_ref": "639a195398d69dd1",
-      "snapshot_sig": "1b38f0423f7bee62383c7a23..."
-    },
-    "fragmented": false,
-    "quantum_resistant": false
-  }
-}
- 
-O campo quantum_resistant será true quando o BBP-0015 (Post-Quantum Security Standard) for implementado, substituindo ECDSA por CRYSTALS-Dilithium. Nesta versão inicial, o campo indica false para transparência.
+3.1 Campo security no manifesto — v2.0
+O manifesto BBP-0002 recebe o campo opcional security atualizado para v2.0. O campo quantum_resistant passa a ser true com BBP-0015 implementado:
 
-3.2 Proteção opcional dos assets no Arweave
-Assets sensíveis podem ser fragmentados antes do upload para o Arweave, usando o LiveDataFractal descrito na Tecnologia Viva. Neste modo, o campo fragmented é true e o manifesto inclui o mapa de reconstrução:
- 
-"security": {
-  "layer": "bbp-living-cryptography-v1",
-  "fragmented": true,
-  "fragment_map": {
-    "n_fragments": 12,
-    "snapshot_ref": "75782eb5ae0874e5f7acdbd9...",
-    "reconstruction": "requires_setup_and_oracle"
-  },
-  "living_proof": { ... }
-}
- 
-Quando fragmented é true, o resolver sinaliza à aplicação que o asset requer autenticação via Tecnologia Viva para ser reconstruído. O viewer exibe o ativo normalmente para o dono autenticado, e lixo criptográfico para qualquer outra pessoa.
+{   "bbp_version": "1.2",   "identity": "BBP:id:art:fredo:2654",   "standard": "nft",   "origin": { "network": "bitcoin", "reference": "inscription_847392" },   "security": {     "layer": "bbp-living-cryptography-v2",     "quantum_resistant": true,     "algorithms": {       "signature": "Dilithium3-ML-DSA-FIPS204",       "hash": "SHA3-256",       "kdf": "HKDF-SHA3-256"     },     "living_proof": {       "oracle_id": "fe9bccac764083da",       "beacon_round": 382947,       "genesis_seed": "ancora_hash_chain...",       "behavioral_contribution": "hash_entropia...",       "snapshot_sig": "1b38f0423f7bee62..."     },     "fragmented": false   } }
 
-3.3 Fluxo completo de upload para Arweave com BBP-0014
-Passo	Ação	BBP-0012 original	Extensão BBP-0014
-1	Gerar manifesto unsigned	Sem alteração	Sem alteração
-2	Calcular contract_hash	Sem alteração	Sem alteração
-3	Gerar context_snapshot	—	Oráculo Vivo gera snapshot
-4	Derivar chave efêmera	—	KDF(snapshot + setup)
-5	Assinar contract_hash	Chave ECDSA convencional	Chave efêmera — destruída após
-6	Fragmentar assets (opcional)	—	LiveDataFractal fragmenta
-7	Upload assets para Arweave	Upload direto	Upload de fragmentos separados
-8	Upload manifesto + security	Sem campo security	Campo security com living_proof
-9	Obter tx_id do manifesto	Sem alteração	Sem alteração
-10	Criar inscrição Bitcoin	JSON padrão	JSON com campo living_proof
+3.2 Papel do Arweave na arquitetura v2.0
+Na versão 2.0, o Arweave tem um papel expandido além de armazenar manifestos. Ele é a memória permanente e auditável da hash chain viva:
+•	Armazena manifestos BBP e assets (papel original — sem alteracao).
+•	Armazena o genesis_seed de cada usuario — ancora imutavel de entrada na hash chain.
+•	Armazena checkpoints periodicos da hash chain — auditoria publica verificavel por qualquer pessoa.
+•	Qualquer resolver pode verificar a legitimidade de um genesis_seed consultando o Arweave sem confiar em nenhuma parte central.
 
+Distinção importante: os nós do Arweave guardam e servem arquivos — não executam lógica nem contribuem entropia. A entropia viva vem da rede P2P comportamental. O Arweave é a memória permanente; a rede P2P é o processamento vivo.
+
+3.3 Proteção opcional dos assets no Arweave
+Assets sensíveis podem ser fragmentados antes do upload usando o LiveDataFractal. O campo fragmented é true e o manifesto inclui o mapa de reconstrução:
+
+"security": {   "layer": "bbp-living-cryptography-v2",   "quantum_resistant": true,   "fragmented": true,   "fragment_map": {     "n_fragments": 12,     "snapshot_ref": "SHA3-256_fingerprint...",     "genesis_seed_ref": "ancora_hash_chain...",     "reconstruction": "requires_setup_and_oracle_and_behavioral_chain"   },   "living_proof": { "..." } }
+
+3.4 Fluxo completo de upload para Arweave — v2.0
+Passo	Ação	v1.0 original	v2.0 atualizado
+1	Gerar manifesto unsigned	Sem alteracao	Sem alteracao
+2	Calcular contract_hash	SHA-256	SHA3-256
+3	Capturar entropia comportamental	—	BehavioralEntropyCollector registra interacao do usuario
+4	Gerar context_snapshot	Oraculo gera snapshot	Oraculo gera snapshot com genesis_seed e behavioral_contribution
+5	Derivar chave efemera	HMAC-SHA256	HKDF-SHA3-256
+6	Assinar contract_hash	ECDSA	Dilithium3 (com BBP-0015)
+7	Fragmentar assets (opcional)	LiveDataFractal	LiveDataFractal com seed SHA3-256
+8	Upload manifesto + security	quantum_resistant: false	quantum_resistant: true, genesis_seed no Arweave
+9-10	Inscricao Bitcoin	living_proof v1	living_proof v2 com genesis_seed e behavioral
+
+ 
 4. Identidade Criptográfica via BBP:id:identity
 4.1 O BBP DNA como raiz de identidade
-O protocolo BBP já define a classe IDENTITY no BBP-0006 (Universal Asset Classes) e no BBP-0011 (Metadata Standards). Com o BBP-0014, o ativo de identidade de um criador passa a ter um papel criptográfico além do descritivo.
-O DNA do ativo de identidade do criador funciona como IdentityRoot — a raiz determinística da qual todas as chaves efêmeras do criador são derivadas:
- 
-Criador registra seu ativo de identidade:
-  BBP:id:identity:global:leo_ramalho
+Com BBP-0014 v2.0, o DNA do ativo de identidade do criador funciona como IdentityRoot. A derivação usa SHA3-256 em vez de SHA-256:
 
-Esse DNA vira o IdentityRoot:
-  identity_root = SHA256(BBP:id:identity:global:leo_ramalho)
+Criador registra seu ativo de identidade:   BBP:id:identity:global:leo_ramalho  IdentityRoot com SHA3-256 (v2.0):   identity_root = SHA3-256(BBP:id:identity:global:leo_ramalho)  Todas as chaves efemeras do criador derivam de:   key = HKDF-SHA3-256(identity_root + device_setup + oracle_snapshot + genesis_seed)  Consequencia: qualquer ativo assinado pelo criador pode ser verificado contra o IdentityRoot registrado no Bitcoin.
 
-Todas as chaves efêmeras do criador derivam de:
-  key = KDF(identity_root + device_setup + oracle_snapshot)
+4.2 Fluxo de recuperação de identidade — v2.0
+Recuperacao de identidade BBP-0014 v2.0:  1. Criador apresenta: BBP:id:identity:global:leo_ramalho 2. Resolver confirma que o DNA existe no Bitcoin (imutavel) 3. Criador apresenta genesis_seed registrado no Arweave 4. Criador se autentica com biometria ou backup secreto 5. Oraculo valida genesis_seed contra hash chain atual 6. Novo context_snapshot gerado para o novo dispositivo 7. Novo LiveSetupID gerado no novo dispositivo 8. identity_root reutilizado — chaves efemeras futuras derivam do mesmo root 9. Acesso restaurado — nenhuma seed phrase envolvida
 
-Consequência: qualquer ativo assinado pelo criador
-pode ser verificado contra o IdentityRoot registrado no Bitcoin.
- 
+5. Entropia Comportamental — Novo em v2.0
+A versão 2.0 introduz o BehavioralEntropyCollector como componente central do protocolo. Cada interação humana na rede P2P do BBP alimenta a hash chain do oráculo, tornando a rede viva por natureza.
 
-4.2 Fluxo de recuperação de identidade
-Se o criador perder o dispositivo, a recuperação usa o BBP identity como âncora:
- 
-Recuperação de identidade BBP-0014:
+5.1 Como a entropia comportamental entra no living_proof
+•	Usuario interage com a rede BBP (clique, comentario, transacao, revelacao de ativo).
+•	BehavioralEntropyCollector captura o padrao matematico da interacao — nunca o dado em si.
+•	Hash calculado: SHA3-256(timing + tipo_evento + timestamp_ns + beacon_atual).
+•	Hash contribui para o context_snapshot como behavioral_contribution.
+•	Hash avanca a hash chain do oraculo via ratcheting irreversivel.
+•	O genesis_seed do usuario e derivado do estado atual da chain no momento da operacao.
 
-  1. Criador apresenta: BBP:id:identity:global:leo_ramalho
-  2. Resolver confirma que o DNA existe no Bitcoin (imutável)
-  3. Criador se autentica com biometria ou backup secreto
-  4. Oráculo gera novo context_snapshot para o novo dispositivo
-  5. Novo LiveSetupID gerado no novo dispositivo
-  6. identity_root reutilizado: chaves efêmeras futuras derivam do mesmo root
-  7. Acesso restaurado — nenhuma seed phrase envolvida
- 
+5.2 Privacidade — o que é coletado e o que não é
+O que é coletado	O que não é coletado	Como é processado
+Tempo entre cliques (ms)	O que o usuario clicou	SHA3-256(timing + contexto) → hash anonimo
+Temperatura da CPU no momento	Dados pessoais do usuario	Incorporado ao hash do evento
+Tipo do evento (click, reveal, tx)	Conteudo da interacao	String anonima no hash
+Jitter de rede local	Endereco IP ou localizacao	Valor numerico no hash
 
-4.3 Formato do ativo de identidade com BBP-0014
-O manifesto do ativo BBP:id:identity inclui o campo security com o living_proof da criação da identidade:
- 
-{
-  "bbp_version": "1.2",
-  "identity": "BBP:id:identity:global:leo_ramalho",
-  "standard": "identity",
-  "attributes": {
-    "name": "Léo Ramalho",
-    "role": "creator",
-    "protocols": ["bbp", "living_cryptography"]
-  },
-  "security": {
-    "layer": "bbp-living-cryptography-v1",
-    "identity_root": "SHA256_do_DNA_identity",
-    "living_proof": { ... }
-  }
-}
- 
+O dado original é descartado imediatamente após o hash ser calculado. O que alimenta a chain é o hash — não o comportamento. Isso garante que o sistema nunca armazena nem processa dados pessoais dos usuários.
 
-5. Implementação de Referência
-5.1 Componentes necessários
+ 
+6. Implementação de Referência
+6.1 Componentes necessários — v2.0
 Componente	Arquivo	Função
-LiveSetupID	living_wallet.py	Gera fingerprint do dispositivo do criador
-OracleClient	living_wallet.py	Gera context_snapshot e deriva chave efêmera
-LivingKey	living_wallet.py	Encapsula chave efêmera — destruída após assinatura
-LiveDataFractal	living_wallet.py	Fragmenta assets antes do upload para Arweave
-OracleNetwork	oracle_network.py	Oráculo descentralizado (fase 2 em diante)
+BehavioralEntropyCollector	living_wallet_v3.py	Captura entropia comportamental da rede P2P
+LiveSetupID	living_wallet_v3.py	Fingerprint do dispositivo do criador
+OracleClient	living_wallet_v3.py	Gera context_snapshot com genesis_seed e behavioral
+LivingKey	living_wallet_v3.py	Encapsula chave efemera — destruida apos assinatura
+LiveDataFractal	living_wallet_v3.py	Fragmenta assets com SHA3-256
+LivingChain	oracle_network_v3.py	Hash chain viva — avanca com cada contribuicao
+OracleNetwork	oracle_network_v3.py	Oraculo descentralizado threshold/MPC
 
-5.2 Exemplo mínimo de integração
-Integração mínima para proteger a assinatura de uma inscrição BBP:
- 
-from living_wallet import LiveSetupID, OracleClient, LivingKey
-import json, hashlib
+6.2 Exemplo mínimo de integração — v2.0
+from living_wallet_v3 import (     BehavioralEntropyCollector, LiveSetupID, OracleClient, LivingKey ) import json, hashlib  # 1. Coletor de entropia comportamental behavioral = BehavioralEntropyCollector() behavioral.collect_event('page_load')  # 2. Setup do criador setup = LiveSetupID(     user_id='leo_ramalho',     secret_pin='seu_pin',     behavioral_collector=behavioral )  # 3. Manifesto BBP manifest = { ... } manifest_bytes = json.dumps(manifest, sort_keys=True).encode()  # 4. contract_hash com SHA3-256 (pos-quantico) contract_hash = hashlib.sha3_256(manifest_bytes).digest()  # 5. Oraculo gera context_snapshot com genesis_seed e behavioral oracle = OracleClient(oracle_url='https://oracle.bbp.io') snapshot = oracle.get_context_snapshot(setup, manifest_bytes, behavioral)  # 6. Chave efemera — existe apenas durante a assinatura key_bytes = oracle.reconstruct_key_from_snapshot(snapshot, setup) with LivingKey(key_bytes, snapshot) as living_key:     signature = living_key.sign(contract_hash) # Chave destruida aqui  # 7. Montar inscricao com living_proof v2 inscription = {     'p': 'bbp', 'op': 'identity',     'id': 'BBP:id:art:fredo:2654',     'signature': signature.hex(),     'living_proof': snapshot.__dict__ }
 
-# 1. Setup do criador (uma vez por dispositivo)
-setup = LiveSetupID(user_id="leo_ramalho", secret_pin="seu_pin")
-
-# 2. Manifesto BBP (gerado pelo template)
-manifest = { ... }  # bbp_manifest_unsigned.json
-manifest_bytes = json.dumps(manifest, sort_keys=True).encode()
-contract_hash = hashlib.sha256(manifest_bytes).hexdigest()
-
-# 3. Oráculo gera context_snapshot
-oracle = OracleClient(oracle_url="https://oracle.bbp.io")
-snapshot = oracle.get_context_snapshot(setup, manifest_bytes)
-
-# 4. Chave efêmera — existe apenas durante a assinatura
-key_bytes = oracle.reconstruct_key_from_snapshot(snapshot, setup)
-with LivingKey(key_bytes, snapshot) as living_key:
-    signature = living_key.sign(bytes.fromhex(contract_hash))
-    living_proof = living_key.get_snapshot_for_storage()
-# Chave destruída aqui — não existe mais
-
-# 5. Montar inscrição com living_proof
-inscription = {
-    "p": "bbp", "op": "identity",
-    "id": "BBP:id:art:fredo:2654",
-    "timestamp": int(time.time()),
-    "signature": signature.hex(),
-    "living_proof": living_proof
-}
- 
-
-5.3 Roadmap de implementação no BBP
+6.3 Roadmap de implementação — v2.0
 Fase	Descrição	Status
-Fase 1 — Assinatura efêmera	living_proof na inscrição Ordinal. Oráculo centralizado único.	Implementável agora
-Fase 2 — Manifesto seguro	Campo security no manifesto. Assets fragmentados opcionais.	Curto prazo
-Fase 3 — Identidade BBP	BBP:id:identity como IdentityRoot criptográfico.	Médio prazo
-Fase 4 — Oráculo descentralizado	OracleNetwork com threshold/MPC. Entropia emergente da rede BBP.	Longo prazo
-Fase 5 — Pós-quântico	Integração com BBP-0015. Substituição de ECDSA por Dilithium.	Com BBP-0015
+Fase 1 — Assinatura efemera + SHA3	living_proof v2 na inscricao Ordinal. SHA3-256. Oraculo centralizado.	Implementavel agora
+Fase 2 — Entropia comportamental	BehavioralEntropyCollector ativo na rede P2P. genesis_seed no Arweave.	Curto prazo
+Fase 3 — Identidade BBP	BBP:id:identity como IdentityRoot com SHA3-256.	Medio prazo
+Fase 4 — Oraculo descentralizado	OracleNetwork com threshold/MPC. LivingChain distribuida.	Longo prazo
+Fase 5 — Pos-quantico completo	Dilithium3 em todas as assinaturas. Integracao total com BBP-0015.	Com BBP-0015
 
 
-BBP-0014 — Living Cryptography Layer  |  Draft v1.0  |  BBP Core Team
+BBP-0014 — Living Cryptography Layer v2.0  |  BBP Core Team  |  Abril 2026

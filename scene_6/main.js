@@ -348,6 +348,74 @@ let isInStaticScene = false;
 let isInHandBoxScene = false;
 
 // ==================================================
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.dog_entering,
+      ...ANIMATIONS.walking_dog,
+      ...ANIMATIONS.dog_leaving,
+      ...ANIMATIONS.banana_slip,
+      ...ANIMATIONS.stumble_stone,
+      ...ANIMATIONS.ball_obstacle,
+      ...ANIMATIONS.dog_skate,
+      ...ANIMATIONS.getting_scooter,
+      ...ANIMATIONS.scooter,
+      ...ANIMATIONS.hand_box,
+      ...ANIMATIONS.car,
+      ...ANIMATIONS.car_dog,
+      ...ANIMATIONS.abduction,
+      ...ANIMATIONS.ufo_flying,
+      ...ANIMATIONS.ufo_landing,
+      ...ANIMATIONS.walk_activation_white,
+      ...ANIMATIONS.walk_activation_black,
+    ];
+
+    const bgImages = [
+      'backgrounds/BG_01.png',
+      'backgrounds/BG_02.png',
+      'backgrounds/BG_08.png',
+      'backgrounds/BG_07.png',
+      'backgrounds/BG_09.png',
+      'backgrounds/BG_10.png',
+      'backgrounds/BG_11.png',
+      'backgrounds/BG_12.png',
+    ];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+
+
+// ==================================================
 // CENA 6 - RITUAL COMPLETO (COM CONTROLE DE CENAS ESTÁTICAS E HAND_BOX)
 // ==================================================
 const SCENES = [
@@ -781,7 +849,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inicializa a animação do personagem
   updateCharacterAnimation();
   
-  startMainLoop();
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;

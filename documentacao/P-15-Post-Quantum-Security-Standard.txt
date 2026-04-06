@@ -1,250 +1,163 @@
-
-
-
-
-
 BBP-0015
-Post-Quantum
-Security Standard
+Post-Quantum Security Standard
 Padrão de Segurança Pós-Quântica do Protocolo BBP
-   CRYSTALS-Dilithium · CRYSTALS-Kyber · Chaves Efêmeras · Threat Model Quântico   
-
-
-
-
-Status: Draft  |  Versão: 1.0  |  Autor: BBP Core Team
-Requer: BBP-0014 (Living Cryptography Layer)
-
-
+CRYSTALS-Dilithium · CRYSTALS-Kyber · SHA3-256 · Resistência por Design · Entropia Comportamental
+Status: Draft  |  Versão: 2.0  |  Autor: BBP Core Team
+Requer: BBP-0014 v2.0 (Living Cryptography Layer)
+Atualizado para Tecnologia Viva v3.0 — Abril 2026
+ 
 Resumo
-Este documento define os algoritmos criptográficos pós-quânticos adotados pelo protocolo BBP e pela Tecnologia Viva (BBP-0014). Estabelece quais algoritmos substituem os convencionais em cada ponto do sistema, qual é o modelo de ameaça quântica considerado, e como o protocolo mantém resistência mesmo diante de um computador quântico operacional.
-Os algoritmos adotados são os padronizados pelo NIST em agosto de 2024, de uso público e gratuito:
-•	CRYSTALS-Dilithium (ML-DSA) — substitui ECDSA em todas as assinaturas digitais.
-•	CRYSTALS-Kyber (ML-KEM) — substitui ECDH em toda derivação e encapsulamento de chaves.
-•	SHA-3 / SHAKE-256 — substitui SHA-256 onde resistência quântica adicional é necessária.
-CRYSTALS-Dilithium é formalmente denominado ML-DSA (Module-Lattice Digital Signature Algorithm) no padrão FIPS 204 do NIST. CRYSTALS-Kyber é formalmente ML-KEM (Module-Lattice Key Encapsulation Mechanism) no FIPS 203. Este documento usa os nomes populares por clareza.
+Este documento define os algoritmos criptográficos pós-quânticos adotados pelo protocolo BBP e pela Tecnologia Viva (BBP-0014). Estabelece quais algoritmos substituem os convencionais em cada ponto do sistema, qual é o modelo de ameaça quântica, e como o protocolo mantém resistência diante de computação quântica.
 
-1. Modelo de Ameaça Quântica
-1.1 O que um computador quântico pode quebrar
-O algoritmo de Shor, executável em um computador quântico suficientemente grande, quebra qualquer sistema baseado em:
-Algoritmo vulnerável	Usado atualmente em	Impacto no BBP sem BBP-0015
-ECDSA (secp256k1)	Assinatura de transações Bitcoin, assinatura do contract_hash BBP	Autoria de ativos pode ser forjada
-ECDH	Derivação de chaves compartilhadas	Chaves de sessão interceptáveis
-RSA	Sistemas legados, alguns HSMs	Não usado no BBP diretamente
-DH clássico	Troca de chaves legada	Não usado no BBP diretamente
+A versão 2.0 formaliza dois níveis complementares de resistência quântica que trabalham juntos:
+•	Resistência por design — a chave não existe em repouso, então não há alvo para ataque. A hash chain viva alimentada por entropia comportamental humana torna o estado do sistema irreproduzível.
+•	Resistência matemática — quando a chave existe por milissegundos, é protegida por algoritmos baseados em lattices (reticulados), imunes ao algoritmo de Shor.
 
-1.2 O que o computador quântico NÃO quebra
+Os algoritmos adotados são os padronizados pelo NIST em agosto de 2024:
+•	CRYSTALS-Dilithium3 (ML-DSA) — substitui ECDSA em todas as assinaturas digitais.
+•	CRYSTALS-Kyber768 (ML-KEM) — substitui ECDH em toda derivação e encapsulamento de chaves.
+•	SHA3-256 / SHAKE-256 — substitui SHA-256 em todas as operações de hash críticas.
+
+Zero curvas elípticas: nenhum componente do protocolo BBP usa ECDSA, ECDH ou qualquer sistema baseado em curvas elípticas. A base matemática é exclusivamente lattices (reticulados) e funções de hash. CRYSTALS-Dilithium é formalmente ML-DSA (FIPS 204). CRYSTALS-Kyber é formalmente ML-KEM (FIPS 203).
+
+1. Modelo de Ameaça Quântica — v2.0
+1.1 Dois níveis de resistência
+A versão 2.0 formaliza a distinção entre dois tipos de proteção que se complementam:
+
+Nível	Mecanismo	Como funciona	Cobre
+Resistência por design	Arquitetural	A chave não existe em repouso. Sem alvo, não há ataque.	Qualquer ataque que dependa de chave armazenada
+Resistência matematica	Algoritmos PQC	Dilithium/Kyber usam lattices — Shor nao resolve.	Os milissegundos em que a chave existe
+
+Um computador quântico com 500.000 qubits pode quebrar ECDSA (chave estática do Bitcoin). No BBP, não há chave estática para quebrar. O problema não existe por design — não é uma solução matemática ao mesmo problema, é a eliminação do problema.
+
+1.2 O que um computador quântico pode quebrar
+Algoritmo vulnerável	Usado em	Status no BBP v2.0
+ECDSA (secp256k1)	Assinatura Bitcoin convencional	Eliminado — substituido por Dilithium3
+ECDH	Derivacao de chaves compartilhadas	Eliminado — substituido por Kyber768
+SHA-256	Hash de manifesto e eventos	Substituido por SHA3-256 em todas as operacoes criticas
+RSA	Sistemas legados	Nunca usado no BBP
+
+1.3 O que o computador quântico NÃO quebra
 Elemento	Por que resiste
-Chave efêmera (BBP-0014)	Não existe em repouso — nada para atacar matematicamente
-Context_snapshot	É um hash de estado — o algoritmo de Grover reduz segurança do SHA-256 para 128 bits, ainda seguro
-Fragmentação LiveDataFractal	Não é problema matemático — é ordem derivada de entropia contextual
-Entropia do Oráculo Vivo	Caos físico e emergente — não há estrutura matemática para atacar
-SHA-3 / SHAKE-256	Resistência ao Grover mantida com output de 256 bits ou mais
-CRYSTALS-Dilithium	Baseado em lattices — resistente a Shor e Grover
-CRYSTALS-Kyber	Baseado em lattices — resistente a Shor e Grover
-A combinação da Tecnologia Viva (BBP-0014) com os algoritmos pós-quânticos (BBP-0015) cria um sistema onde: (a) as chaves nunca existem para serem atacadas, e (b) quando existem por milissegundos, usam matemática que computadores quânticos não conseguem quebrar. Estas são duas defesas independentes e complementares.
+Chave efemera (BBP-0014)	Nao existe em repouso — nada para atacar matematicamente
+Hash chain viva	Estado irreproduzivel — inclui entropia comportamental humana de milhares de pessoas
+Entropia comportamental	Nao e problema matematico — e comportamento humano fisico e distribuido
+LiveSetupID fisico	Fingerprint do dispositivo — requer acesso fisico, nao matematico
+SHA3-256 / SHAKE-256	Resistencia ao Grover mantida com output de 256 bits
+CRYSTALS-Dilithium3	Baseado em lattices — resistente a Shor e Grover. NIST FIPS 204.
+CRYSTALS-Kyber768	Baseado em lattices — resistente a Shor e Grover. NIST FIPS 203.
+BBP DNA no Bitcoin	Imutavel na blockchain — reescrita exigiria refazer toda a blockchain
 
-1.3 Horizonte temporal da ameaça
-Computadores quânticos suficientemente grandes para quebrar ECDSA não existem em 2026. As estimativas mais conservadoras indicam que isso pode ocorrer entre 2030 e 2040. A adoção dos algoritmos pós-quânticos agora serve a dois propósitos:
+A combinação da Tecnologia Viva (BBP-0014) com os algoritmos pós-quânticos (BBP-0015) cria um sistema com cinco camadas de proteção independentes: arquitetural, física, distribuída-comportamental, matemática e blockchain. Um atacante precisaria comprometer todas as cinco simultaneamente.
+
+1.4 Horizonte temporal da ameaça
+Computadores quânticos suficientemente grandes para quebrar ECDSA não existem em 2026. Estimativas conservadoras indicam 2030-2040. A adoção antecipada serve a dois propósitos:
 •	Proteção proativa: ativos registrados no BBP hoje terão autoria verificável por décadas.
-•	Harvest now, decrypt later: adversários com recursos podem capturar assinaturas hoje e quebrá-las quando computadores quânticos estiverem disponíveis. Dilithium elimina esse risco.
+•	Harvest now, decrypt later: adversários com recursos podem capturar assinaturas ECDSA hoje e quebrá-las no futuro. Dilithium3 elimina esse risco — assinaturas capturadas hoje permanecem seguras.
 
+ 
 2. Algoritmos Adotados
-2.1 CRYSTALS-Dilithium — Assinaturas Digitais
+2.1 CRYSTALS-Dilithium3 — Assinaturas Digitais
+Substitui ECDSA em todas as assinaturas do protocolo BBP. Base matemática: Module Learning With Errors (MLWE) sobre lattices — completamente diferente de curvas elípticas.
+
 Propriedade	Valor
 Nome formal (NIST)	ML-DSA — FIPS 204 (agosto 2024)
-Nível de segurança adotado	Dilithium3 — equivalente a AES-192 / 128 bits pós-quântico
-Tamanho da chave pública	1.952 bytes
-Tamanho da assinatura	3.293 bytes
-Base matemática	Module Learning With Errors (MLWE) sobre lattices
-Resistência a Shor	Sim — lattices não são atacáveis por algoritmo de Shor
-Resistência a Grover	Sim — parâmetros escolhidos para manter segurança
-Custo (licença)	Gratuito — domínio público, padrão aberto NIST
+Nivel de seguranca adotado	Dilithium3 — equivalente a AES-192 / 128 bits pos-quantico
+Tamanho da chave publica	1.952 bytes (~1,9 KB)
+Tamanho da assinatura	3.293 bytes (~3,2 KB)
+Base matematica	Module Learning With Errors (MLWE) sobre lattices
+Curvas elipticas envolvidas	Nenhuma — base completamente diferente de ECDSA
+Resistencia a Shor	Sim — lattices nao sao atacaveis pelo algoritmo de Shor
+Resistencia a Grover	Sim — parametros escolhidos para manter seguranca
+Licenca	Gratuito — dominio publico, padrao aberto NIST
 Biblioteca recomendada	liboqs (Open Quantum Safe) — Python, C, Go, Java, Rust
+Compativel com hardware wallet	Sim — 3,2 KB por assinatura cabe em qualquer hardware wallet moderno
 
-Instalação da biblioteca (Python):
- 
-# Instalar liboqs-python (Open Quantum Safe)
-pip install liboqs-python
+# Instalacao pip install liboqs-python  import oqs  # Gerar par de chaves Dilithium3 with oqs.Signature('Dilithium3') as signer:     public_key = signer.generate_keypair()     message = b'contract_hash_sha3_256_do_manifesto_bbp'     signature = signer.sign(message)  # Verificar assinatura (qualquer resolver pode fazer isso) with oqs.Signature('Dilithium3') as verifier:     is_valid = verifier.verify(message, signature, public_key)     print('Assinatura Dilithium3 valida:', is_valid)
 
-# Uso básico — geração de chave e assinatura
-import oqs
+2.2 CRYSTALS-Kyber768 — Encapsulamento de Chaves
+Substitui ECDH em toda troca e encapsulamento de chaves. Usado na comunicação segura entre nós do oráculo descentralizado.
 
-# Gerar par de chaves Dilithium3
-with oqs.Signature("Dilithium3") as signer:
-    public_key = signer.generate_keypair()
-    message = b"contract_hash_do_manifesto_bbp"
-    signature = signer.sign(message)
-
-# Verificar assinatura (qualquer resolver pode fazer isso)
-with oqs.Signature("Dilithium3") as verifier:
-    is_valid = verifier.verify(message, signature, public_key)
-    print("Assinatura válida:", is_valid)
- 
-
-2.2 CRYSTALS-Kyber — Encapsulamento de Chaves
 Propriedade	Valor
 Nome formal (NIST)	ML-KEM — FIPS 203 (agosto 2024)
-Nível de segurança adotado	Kyber768 — equivalente a AES-192 / 128 bits pós-quântico
-Tamanho da chave pública	1.184 bytes
-Tamanho do ciphertext	1.088 bytes
-Base matemática	Module Learning With Errors (MLWE) sobre lattices
-Uso no BBP	Encapsulamento da chave efêmera para transmissão segura entre partes
-Custo (licença)	Gratuito — domínio público, padrão aberto NIST
-Biblioteca recomendada	liboqs (Open Quantum Safe)
+Nivel de seguranca adotado	Kyber768 — equivalente a AES-192 / 128 bits pos-quantico
+Tamanho da chave publica	1.184 bytes (~1,2 KB)
+Tamanho do ciphertext	1.088 bytes (~1,1 KB)
+Base matematica	Module Learning With Errors (MLWE) sobre lattices
+Curvas elipticas envolvidas	Nenhuma — base completamente diferente de ECDH
+Uso no BBP	Comunicacao segura entre nos do oraculo descentralizado
+Licenca	Gratuito — dominio publico, padrao aberto NIST
 
-Uso básico — Kyber para encapsulamento de chave:
- 
-import oqs
+import oqs  # No A (receptor) gera par de chaves Kyber768 with oqs.KeyEncapsulation('Kyber768') as receiver:     public_key = receiver.generate_keypair()      # No B (emissor) encapsula chave compartilhada     with oqs.KeyEncapsulation('Kyber768') as sender:         ciphertext, shared_key_sender = sender.encap_secret(public_key)      # No A decapsula — obtem a mesma chave compartilhada     shared_key_receiver = receiver.decap_secret(ciphertext)  # shared_key_sender == shared_key_receiver # Usar como chave para AES-256-GCM na comunicacao entre nos
 
-# Parte A (receptor) gera par de chaves Kyber
-with oqs.KeyEncapsulation("Kyber768") as receiver:
-    public_key = receiver.generate_keypair()
+2.3 SHA3-256 / SHAKE-256 — Funções de Hash
+SHA3-256 não é criptografia de chave pública. É uma função de hash de mão única baseada em permutações de bits (estrutura Keccak) — completamente diferente de curvas elípticas. O único ataque quântico relevante é o algoritmo de Grover, que reduz a segurança do SHA-256 de 256 para 128 bits. O SHA3-256 foi projetado para resistir a isso.
 
-    # Parte B (emissor) encapsula uma chave compartilhada
-    with oqs.KeyEncapsulation("Kyber768") as sender:
-        ciphertext, shared_key_sender = sender.encap_secret(public_key)
-
-    # Parte A decapsula — obtém a mesma chave compartilhada
-    shared_key_receiver = receiver.decap_secret(ciphertext)
-
-    # shared_key_sender == shared_key_receiver
-    # Essa chave pode ser usada para criptografia simétrica (AES-256-GCM)
- 
-
-2.3 SHA-3 / SHAKE-256 — Funções de Hash
-SHA-256 tem segurança reduzida de 256 para 128 bits pelo algoritmo de Grover em computadores quânticos. Para o BBP-0015, todas as funções de hash críticas migram para SHA-3-256 ou SHAKE-256, que mantêm resistência quântica completa:
-Função	Uso no BBP	Versão convencional	Versão pós-quântica (BBP-0015)
+Funcao	Uso no BBP	Versao v1.0	Versao v2.0
 Hash do manifesto	contract_hash	SHA-256	SHA3-256
-Hash da inscrição	event_hash	SHA-256	SHA3-256
-KDF da chave efêmera	derivação do context_snapshot	HMAC-SHA-256	HKDF-SHA3-256
-Fingerprint do snapshot	snapshot_fingerprint	SHA-256	SHAKE-256 (32 bytes)
+Hash do evento	event_hash no living_proof	SHA-256	SHA3-256
+KDF da chave efemera	derivacao do context_snapshot	HMAC-SHA-256	HKDF-SHA3-256
+Fingerprint do snapshot	snapshot_fingerprint	SHA-256	SHA3-256
 Hash do DNA BBP	identity_root	SHA-256	SHA3-256
+Hash da chain viva	ratcheting do oraculo	—	SHA3-256 (novo v2.0)
+Entropia comportamental	behavioral_contribution	—	SHA3-256 (novo v2.0)
 
-3. Integração com BBP-0014
+ 
+3. Integração com BBP-0014 v2.0
 3.1 Substituição ponto a ponto
-O BBP-0015 é aplicado diretamente sobre o fluxo definido no BBP-0014, substituindo os algoritmos convencionais pelos pós-quânticos em cada ponto de assinatura e derivação:
-Ponto do fluxo BBP-0014	Algoritmo convencional	Algoritmo BBP-0015
-Assinatura do contract_hash	ECDSA (secp256k1)	Dilithium3 (ML-DSA)
-Assinatura do context_snapshot pelo oráculo	HMAC-SHA-256	Dilithium3
-Derivação da chave efêmera (KDF)	HMAC-SHA-256 / HKDF	HKDF-SHA3-256
-Encapsulamento de chave entre partes	ECDH	Kyber768 (ML-KEM)
+Ponto do fluxo BBP-0014	Algoritmo v1.0	Algoritmo v2.0
+Assinatura do contract_hash	ECDSA (secp256k1)	Dilithium3 (ML-DSA) — zero curvas elipticas
+Assinatura do context_snapshot pelo oraculo	HMAC-SHA-256	HMAC-SHA3-256 / Dilithium3
+Derivacao da chave efemera (KDF)	HMAC-SHA-256 / HKDF	HKDF-SHA3-256
+Encapsulamento de chave entre nos	ECDH	Kyber768 (ML-KEM) — zero curvas elipticas
 Hash do manifesto (contract_hash)	SHA-256	SHA3-256
 Hash do evento (event_hash)	SHA-256	SHA3-256
-Hash de fingerprint do snapshot	SHA-256	SHAKE-256
+Hash da hash chain viva	—	SHA3-256 (novo v2.0)
+Hash da entropia comportamental	—	SHA3-256 (novo v2.0)
 
-3.2 Campo quantum_resistant no manifesto
-Com BBP-0015 implementado, o campo security do manifesto (BBP-0014, seção 3.1) passa a ter quantum_resistant: true:
- 
-"security": {
-  "layer": "bbp-living-cryptography-v1",
-  "quantum_resistant": true,
-  "algorithms": {
-    "signature": "Dilithium3-ML-DSA-FIPS204",
-    "kem": "Kyber768-ML-KEM-FIPS203",
-    "hash": "SHA3-256",
-    "kdf": "HKDF-SHA3-256"
-  },
-  "living_proof": { ... }
-}
- 
+3.2 Campo quantum_resistant no manifesto — v2.0
+Com BBP-0015 v2.0 implementado, o campo security do manifesto passa a quantum_resistant: true e documenta os algoritmos usados:
 
-3.3 Exemplo completo de assinatura pós-quântica
-Fluxo completo de inscrição BBP com BBP-0014 + BBP-0015:
- 
-import oqs, hashlib, json
-from living_wallet import LiveSetupID, OracleClient, LivingKey
+"security": {   "layer": "bbp-living-cryptography-v2",   "quantum_resistant": true,   "algorithms": {     "signature": "Dilithium3-ML-DSA-FIPS204",     "kem": "Kyber768-ML-KEM-FIPS203",     "hash": "SHA3-256",     "kdf": "HKDF-SHA3-256"   },   "living_proof": {     "genesis_seed": "ancora_hash_chain_viva...",     "behavioral_contribution": "hash_entropia_humana...",     "..."   } }
 
-# 1. Setup do criador
-setup = LiveSetupID(user_id="leo_ramalho", secret_pin="seu_pin")
+3.3 Exemplo completo — assinatura pós-quântica v2.0
+import oqs, hashlib, json from living_wallet_v3 import (     BehavioralEntropyCollector, LiveSetupID, OracleClient, LivingKey )  # 1. Entropia comportamental behavioral = BehavioralEntropyCollector() behavioral.collect_event('pre_sign_interaction')  # 2. Setup do criador setup = LiveSetupID('leo_ramalho', 'pin', behavioral)  # 3. Manifesto BBP manifest = { ... } manifest_bytes = json.dumps(manifest, sort_keys=True).encode()  # 4. contract_hash com SHA3-256 contract_hash = hashlib.sha3_256(manifest_bytes).digest()  # 5. Oraculo gera context_snapshot com genesis_seed oracle = OracleClient('https://oracle.bbp.io') snapshot = oracle.get_context_snapshot(setup, manifest_bytes, behavioral)  # 6. Chave efemera com HKDF-SHA3-256 key_bytes = oracle.reconstruct_key_from_snapshot(snapshot, setup)  # 7. Assinatura com Dilithium3 — zero curvas elipticas with oqs.Signature('Dilithium3') as signer:     dilithium_pubkey = signer.generate_keypair()     signature_pq = signer.sign(contract_hash) del key_bytes  # chave efemera destruida  # 8. Manifesto com security v2.0 manifest['security'] = {     'layer': 'bbp-living-cryptography-v2',     'quantum_resistant': True,     'algorithms': {         'signature': 'Dilithium3-ML-DSA-FIPS204',         'hash': 'SHA3-256', 'kdf': 'HKDF-SHA3-256'     },     'living_proof': snapshot.__dict__ }
 
-# 2. Manifesto BBP
-manifest = { ... }
-manifest_bytes = json.dumps(manifest, sort_keys=True).encode()
-
-# 3. contract_hash com SHA3-256 (pós-quântico)
-contract_hash = hashlib.sha3_256(manifest_bytes).digest()
-
-# 4. Oráculo gera context_snapshot
-oracle = OracleClient("https://oracle.bbp.io")
-snapshot = oracle.get_context_snapshot(setup, manifest_bytes)
-
-# 5. Chave efêmera — derivada com HKDF-SHA3-256
-key_bytes = oracle.reconstruct_key_from_snapshot(snapshot, setup)
-
-# 6. Assinatura com Dilithium3 (pós-quântica)
-with oqs.Signature("Dilithium3") as signer:
-    # Chave privada Dilithium derivada da chave efêmera
-    # (em produção: usar key_bytes como seed para gerar par Dilithium)
-    dilithium_pubkey = signer.generate_keypair()
-    signature_pq = signer.sign(contract_hash)
-
-# 7. Chave efêmera destruída
-del key_bytes
-
-# 8. living_proof + algoritmos no manifesto
-manifest["security"] = {
-    "layer": "bbp-living-cryptography-v1",
-    "quantum_resistant": True,
-    "algorithms": {
-        "signature": "Dilithium3-ML-DSA-FIPS204",
-        "hash": "SHA3-256"
-    },
-    "living_proof": snapshot.__dict__
-}
- 
-
-4. A Afirmação de Resistência Quântica
+ 
+4. Mapa Completo de Resistência — v2.0
 4.1 O que pode ser afirmado com base técnica
-Com BBP-0014 + BBP-0015 implementados, o protocolo BBP pode afirmar:
- 
-"O protocolo BBP implementa o primeiro padrão de registro de ativos
- digitais com criptografia contextual pós-quântica. As chaves privadas
- nunca existem em repouso — nascem do contexto do momento, são usadas
- por milissegundos e destruídas. Quando existem, são protegidas pelos
- algoritmos CRYSTALS-Dilithium e CRYSTALS-Kyber, padronizados pelo NIST
- em 2024 como resistentes a computadores quânticos."
- 
+O protocolo BBP implementa resistência quântica em dois níveis complementares: (1) por design — a chave não existe em repouso, eliminando o alvo; (2) por algoritmo — quando a chave existe por milissegundos, é protegida por Dilithium3 e Kyber768, padronizados pelo NIST em 2024. A hash chain viva, alimentada por entropia comportamental humana distribuída, torna o estado do sistema irreproduzível por qualquer atacante externo.
 
-4.2 Mapa completo de resistência
-Vetor de ataque	Ataque convencional	Ataque quântico (Shor/Grover)	Defesa BBP-0014+0015
-Roubo de chave privada	Acesso ao arquivo de chave	Acesso ao arquivo de chave	Chave não existe em repouso — nada para roubar
-Quebra de assinatura ECDSA	Computacionalmente inviável hoje	Algoritmo de Shor (futuro)	Dilithium3 — imune ao Shor
-Ataque ao hash SHA-256	Colisão computacionalmente inviável	Grover reduz para 128 bits	SHA3-256 — mantém 256 bits contra Grover
-Reprodução do context_snapshot	Requer acesso ao oráculo e setup	Sem vantagem quântica	Entropia física — não é problema matemático
-Ataque ao oráculo centralizado	Comprometer o servidor	Sem vantagem quântica	Oráculo descentralizado (BBP-0014, Fase 4)
-Harvest now decrypt later	Não aplicável agora	Captura assinaturas hoje para quebrar no futuro	Dilithium elimina esse risco completamente
+4.2 Tabela completa de vetores de ataque
+Vetor de ataque	Ataque classico	Ataque quantico	Defesa BBP v2.0
+Roubo de chave privada	Acesso ao arquivo de chave	Idem	Chave nao existe em repouso — nada para roubar
+Quebra de assinatura ECDSA	Computacionalmente inviavel hoje	Algoritmo de Shor (futuro)	Dilithium3 — imune ao Shor. Zero ECDSA.
+Ataque ao hash SHA-256	Colisao inviavel	Grover reduz para 128 bits	SHA3-256 — mantém 256 bits contra Grover
+Reproducao do context_snapshot	Requer acesso ao oraculo e setup	Sem vantagem quantica	genesis_seed + entropia comportamental — irreproduzivel
+Ataque a hash chain viva	Reescrever contribuicoes passadas	Sem vantagem quantica	SHA3-256 irreversivel + comportamento humano distribuido
+Ataque ao oraculo centralizado	Comprometer o servidor	Sem vantagem quantica	Oraculo descentralizado (Fase 4) + threshold MPC
+Harvest now, decrypt later	Nao aplicavel a ECDSA hoje	Captura assinaturas para quebrar no futuro	Dilithium3 elimina esse risco — assinaturas capturadas sao seguras
+Clonagem do dispositivo fisico	Acesso fisico a maquina	Sem vantagem quantica	LiveSetupID com jitter e temperatura — clone fisicamente impossivel com TPM
 
-4.3 O que não é garantido (transparência)
-Por honestidade técnica e para manter credibilidade perante especialistas, o protocolo também documenta o que não é garantido nesta versão:
-•	Side-channel attacks em hardware específico: ataques físicos de timing ou consumo de energia em dispositivos com implementação ruim da liboqs não são cobertos por esta especificação.
-•	Implementações não auditadas: a segurança depende de implementação correta da liboqs. Uma implementação incorreta pode introduzir vulnerabilidades independentemente dos algoritmos.
-•	Oráculo centralizado (Fase 1): enquanto o oráculo for um servidor único, existe um ponto de falha. Mitigado na Fase 4 (oráculo descentralizado).
+4.3 O que não é garantido — transparência
+Por honestidade técnica, o protocolo documenta o que não é garantido nesta versão:
+•	Side-channel attacks em hardware especifico: ataques fisicos de timing ou consumo de energia em dispositivos com implementacao ruim da liboqs nao sao cobertos.
+•	Implementacoes nao auditadas: a seguranca depende de implementacao correta da liboqs. Uma implementacao incorreta pode introduzir vulnerabilidades independentemente dos algoritmos.
+•	Oraculo centralizado (Fase 1): enquanto o oraculo for um servidor unico, existe um ponto de falha. Mitigado na Fase 4 com oraculo descentralizado.
+•	Dilithium/Kyber como padroes novos: sao os melhores algoritmos disponiveis e padronizados pelo NIST, mas ainda tem pouco tempo de uso em producao em larga escala em comparacao com algoritmos classicos.
+
 A transparência sobre limitações é uma característica de protocolos de segurança sérios. Ela aumenta, não diminui, a credibilidade do protocolo perante auditores, pesquisadores e instituições.
 
-5. Roadmap de Implementação
-Fase	Ação	Algoritmo	Prazo
-Fase 1 — Hash pós-quântico	Substituir SHA-256 por SHA3-256 no contract_hash e event_hash	SHA3-256 (hashlib nativo Python)	Imediato — sem dependências externas
-Fase 2 — Assinatura pós-quântica	Substituir ECDSA por Dilithium3 na assinatura do contract_hash	Dilithium3 via liboqs	Curto prazo — instalar liboqs
-Fase 3 — KEM pós-quântico	Substituir ECDH por Kyber768 para encapsulamento entre partes	Kyber768 via liboqs	Médio prazo — quando houver comunicação entre partes
-Fase 4 — KDF pós-quântico	Substituir HKDF-SHA256 por HKDF-SHA3-256 na derivação de chave efêmera	HKDF-SHA3-256	Junto com Fase 2
-Fase 5 — Auditoria	Auditoria externa da implementação completa por criptógrafo	Todas as camadas	Antes do lançamento enterprise
+ 
+5. Roadmap de Implementação — v2.0
+Fase	Acao	Algoritmo	Prazo
+Fase 1 — Hash pos-quantico	SHA3-256 em contract_hash, event_hash, KDF e hash chain	SHA3-256 (hashlib nativo Python)	Imediato — sem dependencias externas
+Fase 2 — Assinatura pos-quantica	Dilithium3 na assinatura do contract_hash	Dilithium3 via liboqs	Curto prazo — instalar liboqs
+Fase 3 — KEM pos-quantico	Kyber768 para comunicacao entre nos	Kyber768 via liboqs	Medio prazo — com oraculo descentralizado
+Fase 4 — Auditoria	Auditoria externa da implementacao completa	Todas as camadas	Antes do lancamento enterprise
 
 5.1 Instalação das dependências
- 
-# Instalar Open Quantum Safe (liboqs)
-pip install liboqs-python
-
-# Verificar algoritmos disponíveis
-import oqs
-print(oqs.get_enabled_sig_mechanisms())   # lista Dilithium, Falcon, etc.
-print(oqs.get_enabled_kem_mechanisms())   # lista Kyber, etc.
-
-# SHA3-256 já está disponível na stdlib Python
-import hashlib
-h = hashlib.sha3_256(b"BBP:id:art:fredo:2654").hexdigest()
-print(h)  # hash pós-quântico do DNA BBP
- 
+# Instalar Open Quantum Safe (liboqs) pip install liboqs-python  # Verificar algoritmos disponiveis import oqs print(oqs.get_enabled_sig_mechanisms())  # lista Dilithium3, Falcon, etc. print(oqs.get_enabled_kem_mechanisms())  # lista Kyber768, etc.  # SHA3-256 ja disponivel na stdlib Python — sem dependencias import hashlib h = hashlib.sha3_256(b'BBP:id:art:fredo:2654').hexdigest() print('SHA3-256 do DNA BBP:', h)  # SHAKE-256 tambem disponivel na stdlib shake = hashlib.shake_256(b'BBP:snapshot').hexdigest(32) print('SHAKE-256 fingerprint:', shake)
 
 
-BBP-0015 — Post-Quantum Security Standard  |  Draft v1.0  |  BBP Core Team
+BBP-0015 — Post-Quantum Security Standard v2.0  |  BBP Core Team  |  Abril 2026
