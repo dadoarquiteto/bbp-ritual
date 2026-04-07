@@ -17,7 +17,6 @@ let notificationTimeout = null;
 // VARIÁVEIS DA REDE P2P (NOVO)
 // ==================================================
 let walletAddress = null;
-let networkInitialized = false;
 
 // ==================================================
 // INTEGRAÇÃO COM TIMELINE
@@ -307,7 +306,10 @@ let bgX = 0;
 let bgSpeed = 2;
 
 // ==================================================
-// PRÉ-CARREGAMENTO DE IMAGENS
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// Garante que todas as imagens sejam baixadas antes
+// da animação começar — elimina travamento na troca
+// de frames em produção.
 // ==================================================
 let allImagesPreloaded = false;
 
@@ -320,6 +322,7 @@ function preloadAllImages() {
       ...ANIMATIONS.dog_leaving
     ];
 
+    // Também pré-carrega o background
     const bgImages = ['backgrounds/BG_01.png'];
     const allImages = [...allFrames, ...bgImages];
 
@@ -348,6 +351,8 @@ function preloadAllImages() {
     });
   });
 }
+
+
 
 // ==================================================
 // CENA 1
@@ -423,7 +428,6 @@ async function connectWalletIfNeeded() {
     walletAddress = savedAddress;
     console.log(`✅ Carteira conectada: ${walletAddress}`);
     
-    // Registrar na rede BBP
     if (typeof BBPRitual !== 'undefined') {
       BBPRitual.setCurrentScene(1);
       await BBPRitual.registerSeed(walletAddress);
@@ -546,14 +550,19 @@ function startMainLoop() {
         }
       }
       
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 1)
+      // ==================================================
       const characterElement = document.getElementById('character');
       if (characterElement) {
         let removeFloat = false;
         
+        // Remove float durante dog_entering (cão entrando)
         if (currentStep && currentStep.animation === "dog_entering") {
           removeFloat = true;
         }
         
+        // Remove float durante dog_leaving (cão saindo)
         if (currentStep && currentStep.animation === "dog_leaving") {
           removeFloat = true;
         }
@@ -631,8 +640,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     seedText.innerText = accumulatedSeeds;
   }
   
-  await preloadAllImages();
-  startMainLoop();
+  // Aguarda preload de todas as imagens antes de iniciar o loop
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
