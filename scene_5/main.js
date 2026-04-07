@@ -1,614 +1,654 @@
 // ==================================================
-// CONFIGURAÇÕES DA CENA 5
+// CENA 5 - FASE DA CONVERGÊNCIA
+// COM BBP RITUAL NETWORK
 // ==================================================
-let currentFrameNumber = 0;
-const totalFrames = 750; // Total de frames da Cena 5
-let totalSeeds = 10000; // 10.000 seeds para Cena 5
-const frameSpeed = 100;
-let isMoving = true;
-let overlayShown = false;
-let accumulatedSeeds = 4;
-let inEternalLoop = false;
-let mainInterval = null;
-let countdownInterval = null;
-let notificationTimeout = null;
 
-// ==================================================
-// INTEGRAÇÃO COM TIMELINE
-// ==================================================
-let timelineData = window.Timeline ? window.Timeline.data : null;
+const SCENE_ID = 5;
+const SCENE_NAME = 'Fase da Convergência';
+const SEEDS_REQUIRED = 10000;
 
-if (timelineData && timelineData.phases) {
-  const currentPhase = timelineData.phases.find(p => p.status === 'active');
-  if (currentPhase && currentPhase.seeds) {
-    totalSeeds = currentPhase.seeds;
-    console.log(`🎯 Total de seeds atualizado para: ${totalSeeds}`);
-  }
-}
+let player = { x: 100, y: 100, moving: false };
+let seedsCollected = 0;
+let convergencePoints = [];
+let vehicles = [];
+let followers = [];
+let animationId = null;
+let walletAddress = null;
+let currentTimelineIndex = 0;
+let convergenceLevel = 0;
+let dogPosition = { x: 200, y: 300, following: false };
+let carPosition = { x: 600, y: 400, moving: false };
 
-// ==================================================
-// SISTEMA DE TEXTO AUTOMÁTICO
-// ==================================================
-let currentLoreIndex = 0;
-let loreInterval = null;
-let loreCarouselActive = false;
+let canvas, ctx, timelineEl, seedCountEl, statusEl, convergenceEl, convergenceBar;
 
-function changeLoreText(nextIndex) {
-  const texts = document.querySelectorAll('.lore-text');
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.remove('active');
-  }
-  
-  currentLoreIndex = nextIndex;
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.add('active');
-  }
-}
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
 
-function startLoreCarousel() {
-  if (loreCarouselActive) return;
-  
-  console.log('🌀 Iniciando carrossel automático de textos');
-  loreCarouselActive = true;
-  
-  changeLoreText(1);
-  
-  loreInterval = setInterval(() => {
-    const availableTexts = [1, 2, 3];
-    let nextIndex;
+async function init() {
+    console.log('🚗 Iniciando Cena 5:', SCENE_NAME);
     
-    do {
-      nextIndex = availableTexts[Math.floor(Math.random() * availableTexts.length)];
-    } while (nextIndex === currentLoreIndex && availableTexts.length > 1);
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    timelineEl = document.getElementById('timelineText');
+    seedCountEl = document.getElementById('seedCount');
+    statusEl = document.getElementById('connectionStatus');
+    convergenceEl = document.getElementById('convergenceText');
+    convergenceBar = document.getElementById('convergenceBar');
     
-    changeLoreText(nextIndex);
-  }, 8000);
-}
-
-// ==================================================
-// ELEMENTOS DO DOM
-// ==================================================
-const character = document.getElementById("character");
-const background = document.getElementById("background");
-const seedText = document.getElementById("seedCount");
-const overlay = document.getElementById("sceneOverlay");
-const eternalMsg = document.getElementById("eternalRitualMsg");
-const ritualPhase = document.querySelector('.ritual-phase');
-const loreTitle = document.getElementById('loreTitle');
-const seedBeforeOverlay = document.getElementById('seedBeforeOverlay');
-const fragmentBeforeOverlay = document.getElementById('fragmentBeforeOverlay');
-const nftStatus = document.getElementById('nftStatus');
-const fragmentStatus = document.getElementById('fragmentStatus');
-const nftCountdown = document.getElementById('nftCountdown');
-const fragmentCountdown = document.getElementById('fragmentCountdown');
-const notificationOverlay = document.getElementById('notificationOverlay');
-
-// ==================================================
-// FUNÇÃO PARA DESATIVAR CLIQUE NA IMAGEM DA SEED
-// ==================================================
-function disableSeedImageClick() {
-  const seedImage = document.querySelector('.seed-image');
-  if (seedImage) {
-    seedImage.style.cursor = 'default';
-    seedImage.style.opacity = '0.6';
-    seedImage.style.filter = 'grayscale(70%)';
-    seedImage.onclick = null;
-    seedImage.title = 'Limite de seeds atingido';
-    seedImage.style.boxShadow = '0 0 8px rgba(255, 68, 68, 0.5)';
-    seedImage.style.borderColor = '#ff4444';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA AGENDAR NOTIFICAÇÃO
-// ==================================================
-function scheduleNotification() {
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-  }
-  
-  notificationTimeout = setTimeout(() => {
-    showNotification();
-  }, 9000);
-}
-
-// ==================================================
-// FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO
-// ==================================================
-function showNotification() {
-  console.log('📢 Mostrando overlay de notificação');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'flex';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA FECHAR NOTIFICAÇÃO
-// ==================================================
-function closeNotification() {
-  console.log('Fechando notificação...');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'none';
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
-
-// ==================================================
-// FUNÇÃO ORGÂNICA: CONVERTE FRAME PARA SEED
-// ==================================================
-function frameToSeedOrganic(frame) {
-  const progress = frame / totalFrames;
-  const curvedProgress = progress < 0.5 
-    ? 2 * progress * progress
-    : 1 - 2 * (1 - progress) * (1 - progress);
-  
-  const seeds = Math.round(totalSeeds * curvedProgress);
-  return frame >= totalFrames ? totalSeeds : seeds;
-}
-
-// ==================================================
-// FUNÇÃO PARA REINICIAR CENA EM LOOP ETERNO
-// ==================================================
-function startEternalRitualLoop() {
-  console.log('📜 Ritual da Convergência eterno iniciado');
-  inEternalLoop = true;
-  
-  if (loreTitle) {
-    loreTitle.textContent = 'A CONVERGÊNCIA É ETERNA';
-    loreTitle.style.color = '#ffaa33';
-  }
-  
-  startLoreCarousel();
-  
-  if (eternalMsg) {
-    eternalMsg.style.display = 'flex';
-  }
-  
-  if (seedBeforeOverlay) {
-    seedBeforeOverlay.style.display = 'none';
-  }
-  
-  if (fragmentBeforeOverlay) {
-    fragmentBeforeOverlay.style.display = 'none';
-  }
-  
-  if (nftStatus) {
-    nftStatus.style.display = 'flex';
-  }
-  
-  if (fragmentStatus) {
-    fragmentStatus.style.display = 'flex';
-  }
-  
-  disableSeedImageClick();
-  startAllCountdowns();
-  
-  if (ritualPhase) {
-    ritualPhase.textContent = '📜 Cena 5: Convergência Bem Sucedida';
-  }
-  
-  currentFrameNumber = 1;
-  animationFrameIndex = 0;
-  accumulatedSeeds = totalSeeds;
-  bgX = 0;
-  
-  if (seedText) {
-    seedText.innerText = totalSeeds;
-  }
-  
-  isMoving = true;
-  scheduleNotification();
-}
-
-// ==================================================
-// FUNÇÕES DO OVERLAY
-// ==================================================
-function closeOverlay() {
-  console.log('Fechando overlay...');
-  
-  if (overlay) {
-    overlay.style.display = 'none';
-  }
-  
-  if (!inEternalLoop) {
-    startEternalRitualLoop();
-  } else {
-    isMoving = true;
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA ATUALIZAR TODOS OS COUNTDOWNS
-// ==================================================
-function updateAllCountdowns() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0);
-  
-  const targetTime = tomorrow.getTime();
-  
-  function updateCountdown(element) {
-    if (!element) return;
+    canvas.width = 800;
+    canvas.height = 500;
     
-    const now = new Date().getTime();
-    const distance = targetTime - now;
+    await connectWalletIfNeeded();
     
-    if (distance < 0) {
-      element.textContent = "00:00:00";
-      return;
-    }
-    
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    element.textContent = 
-      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-  
-  updateCountdown(nftCountdown);
-  updateCountdown(fragmentCountdown);
-  updateCountdown(document.getElementById('countdownTimer'));
-}
-
-function startAllCountdowns() {
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-  }
-  
-  updateAllCountdowns();
-  countdownInterval = setInterval(updateAllCountdowns, 1000);
-}
-
-// ==================================================
-// CARREGAR FRAMES (CENA 5)
-// ==================================================
-function loadFrames(path, prefix, start, end) {
-  const frames = [];
-  for (let i = start; i <= end; i++) {
-    frames.push(`${path}/${prefix}_${String(i).padStart(2, "0")}.png`);
-  }
-  return frames;
-}
-
-// ==================================================
-// ANIMAÇÕES DA CENA 5
-// ==================================================
-const ANIMATIONS = {
-  walking:      loadFrames("character/walking",      "walking",      1, 16),
-  car:          loadFrames("character/car",          "car",          1,  8),
-  dog_entering: loadFrames("character/dog_entering", "dog_entering", 1, 16),
-  walking_dog:  loadFrames("character/walking_dog",  "walking_dog",  1, 16),
-  dog_leaving:  loadFrames("character/dog_leaving",  "dog_leaving",  1, 16),
-  car_dog:      loadFrames("character/car_dog",      "car_dog",      1,  8)
-};
-
-// ==================================================
-// VARIÁVEIS DE ANIMAÇÃO
-// ==================================================
-let currentAnimation = ANIMATIONS.walking;
-let currentAnimationName = "walking";
-let currentStep = null;
-let animationFrameIndex = 0;
-let bgX = 0;
-let bgSpeed = 2;
-
-// ==================================================
-// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
-// ==================================================
-let allImagesPreloaded = false;
-
-function preloadAllImages() {
-  return new Promise((resolve) => {
-    const allFrames = [
-      ...ANIMATIONS.walking,
-      ...ANIMATIONS.car,
-      ...ANIMATIONS.dog_entering,
-      ...ANIMATIONS.walking_dog,
-      ...ANIMATIONS.dog_leaving,
-      ...ANIMATIONS.car_dog,
-    ];
-
-    const bgImages = ['backgrounds/BG_09.png'];
-    const allImages = [...allFrames, ...bgImages];
-
-    let loaded = 0;
-    const total = allImages.length;
-
-    if (total === 0) {
-      allImagesPreloaded = true;
-      resolve();
-      return;
-    }
-
-    console.log(`🖼️ Pré-carregando ${total} imagens...`);
-
-    allImages.forEach((src) => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === total) {
-          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
-          allImagesPreloaded = true;
-          resolve();
+    // REGISTRAR NA REDE BBP RITUAL
+    if (typeof BBPRitual !== 'undefined') {
+        BBPRitual.setCurrentScene(SCENE_ID);
+        
+        if (walletAddress) {
+            await BBPRitual.registerSeed(walletAddress);
+            await BBPRitual.distributeSceneNFT(SCENE_ID, walletAddress);
+            await BBPRitual.distributeProtocolFractions(10, walletAddress);
+            showLog('✅ Registrado na rede BBP', 'success');
         }
-      };
-      img.src = src;
-    });
-  });
+    } else {
+        showLog('⚠️ BBPRitual não carregado', 'warning');
+    }
+    
+    loadProgress();
+    generateConvergencePoints();
+    startTimeline();
+    startGameLoop();
+    setupControls();
+    startConvergenceEffect();
 }
 
+// ==========================================
+// CONEXÃO COM CARTEIRA
+// ==========================================
 
+async function connectWalletIfNeeded() {
+    const savedAddress = loadFromLocalStorage('wallet_address');
+    
+    if (savedAddress && savedAddress !== 'null') {
+        walletAddress = savedAddress;
+        updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+        showLog(`Carteira conectada: ${walletAddress}`, 'info');
+        return true;
+    }
+    
+    updateStatus('⚠️ Conecte sua carteira Bitcoin', 'warning');
+    
+    if (typeof connectWallet === 'function') {
+        const wallet = await connectWallet();
+        if (wallet && wallet.address) {
+            walletAddress = wallet.address;
+            updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+            return true;
+        }
+    }
+    
+    return false;
+}
 
-// ==================================================
-// CENA 5
-// ==================================================
-const SCENES = [
-  {
-    start: 1,
-    end: 750,
-    bg: "BG_09.png",
-    steps: [
-      { from: 1,   to: 100, animation: "walking",      loop: true  },
-      { from: 101, to: 300, animation: "car",          loop: true  },
-      { from: 301, to: 400, animation: "walking",      loop: true  },
-      { from: 401, to: 416, animation: "dog_entering", loop: false },
-      { from: 417, to: 550, animation: "walking_dog",  loop: true  },
-      { from: 551, to: 566, animation: "dog_leaving",  loop: false },
-      { from: 567, to: 600, animation: "walking",      loop: true  },
-      { from: 601, to: 750, animation: "car_dog",      loop: true  }
-    ]
-  }
+// ==========================================
+= CONVERGÊNCIA
+// ==========================================
+
+function generateConvergencePoints() {
+    const pointPositions = [
+        { x: 150, y: 120, name: 'PONTO DE ENCONTRO', radius: 25, activated: false },
+        { x: 400, y: 80, name: 'CRUZAMENTO', radius: 25, activated: false },
+        { x: 650, y: 150, name: 'ROTATÓRIA', radius: 25, activated: false },
+        { x: 100, y: 380, name: 'ESTAÇÃO CENTRAL', radius: 25, activated: false },
+        { x: 350, y: 440, name: 'TERMINAL NORTE', radius: 25, activated: false },
+        { x: 600, y: 420, name: 'TERMINAL SUL', radius: 25, activated: false }
+    ];
+    
+    convergencePoints = pointPositions.map((point, index) => ({
+        ...point,
+        id: index,
+        activated: false,
+        activationProgress: 0
+    }));
+}
+
+function startConvergenceEffect() {
+    setInterval(() => {
+        if (carPosition.moving) {
+            carPosition.x += carPosition.vx || 0;
+            carPosition.y += carPosition.vy || 0;
+            
+            carPosition.x = Math.max(50, Math.min(canvas.width - 50, carPosition.x));
+            carPosition.y = Math.max(50, Math.min(canvas.height - 50, carPosition.y));
+        }
+    }, 50);
+    
+    setInterval(() => {
+        if (dogPosition.following) {
+            const dx = player.x - dogPosition.x;
+            const dy = player.y - dogPosition.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 30) {
+                dogPosition.x += dx * 0.05;
+                dogPosition.y += dy * 0.05;
+            }
+        }
+    }, 100);
+}
+
+function increaseConvergence(amount) {
+    convergenceLevel = Math.min(100, convergenceLevel + amount);
+    updateConvergenceDisplay();
+    
+    if (convergenceBar) {
+        convergenceBar.style.width = `${convergenceLevel}%`;
+        convergenceBar.style.backgroundColor = `rgb(${Math.floor(255 * convergenceLevel / 100)}, ${Math.floor(100 * (1 - convergenceLevel / 100))}, 0)`;
+    }
+    
+    if (convergenceLevel >= 20 && convergencePoints[0] && !convergencePoints[0].activated) {
+        activateConvergencePoint(0);
+    }
+    if (convergenceLevel >= 40 && convergencePoints[1] && !convergencePoints[1].activated) {
+        activateConvergencePoint(1);
+    }
+    if (convergenceLevel >= 60 && convergencePoints[2] && !convergencePoints[2].activated) {
+        activateConvergencePoint(2);
+        startCar();
+    }
+    if (convergenceLevel >= 80 && convergencePoints[3] && !convergencePoints[3].activated) {
+        activateConvergencePoint(3);
+        startDogFollowing();
+    }
+    if (convergenceLevel >= 100 && convergencePoints[4] && !convergencePoints[4].activated) {
+        activateConvergencePoint(4);
+        completeScene();
+    }
+}
+
+function activateConvergencePoint(pointId) {
+    if (convergencePoints[pointId] && !convergencePoints[pointId].activated) {
+        convergencePoints[pointId].activated = true;
+        
+        showLog(`📍 Ponto de convergência ${pointId + 1} ativado: ${convergencePoints[pointId].name}`, 'success');
+        showTimelineMessage(`🚦 ${convergencePoints[pointId].name} - todos convergem para o mesmo destino`);
+        
+        for (let i = 0; i < 30; i++) {
+            collectSeed();
+        }
+    }
+}
+
+function startCar() {
+    carPosition.moving = true;
+    carPosition.vx = 2;
+    carPosition.vy = 1;
+    showLog('🚗 O carro começa a se mover na estrada da convergência', 'success');
+}
+
+function startDogFollowing() {
+    dogPosition.following = true;
+    showLog('🐕 O cão agora segue seus passos', 'success');
+}
+
+function updateConvergenceDisplay() {
+    if (convergenceEl) {
+        convergenceEl.textContent = `Convergência: ${Math.floor(convergenceLevel)}%`;
+    }
+    
+    const activeCount = convergencePoints.filter(p => p.activated).length;
+    if (document.getElementById('activePoints')) {
+        document.getElementById('activePoints').textContent = `${activeCount}/${convergencePoints.length}`;
+    }
+}
+
+// ==========================================
+= PROGRESSO
+// ==========================================
+
+function loadProgress() {
+    const sceneCompleted = loadFromLocalStorage(`scene_${SCENE_ID}_completed`);
+    if (sceneCompleted) {
+        seedsCollected = SEEDS_REQUIRED;
+        updateSeedDisplay();
+        showLog('Você já completou a Fase da Convergência', 'info');
+    }
+    
+    const savedSeeds = loadFromLocalStorage(`scene_${SCENE_ID}_seeds`);
+    if (savedSeeds && !sceneCompleted) {
+        seedsCollected = Math.min(savedSeeds, SEEDS_REQUIRED);
+        updateSeedDisplay();
+    }
+    
+    const savedPosition = loadFromLocalStorage(`scene_${SCENE_ID}_position`);
+    if (savedPosition) {
+        player.x = savedPosition.x;
+        player.y = savedPosition.y;
+    }
+    
+    const savedConvergence = loadFromLocalStorage(`scene_${SCENE_ID}_convergence`);
+    if (savedConvergence) {
+        convergenceLevel = savedConvergence;
+        updateConvergenceDisplay();
+        
+        convergencePoints.forEach((point, idx) => {
+            if (idx === 0 && convergenceLevel >= 20) point.activated = true;
+            if (idx === 1 && convergenceLevel >= 40) point.activated = true;
+            if (idx === 2 && convergenceLevel >= 60) { point.activated = true; startCar(); }
+            if (idx === 3 && convergenceLevel >= 80) { point.activated = true; startDogFollowing(); }
+            if (idx === 4 && convergenceLevel >= 100) point.activated = true;
+        });
+    }
+}
+
+function saveProgress() {
+    saveToLocalStorage(`scene_${SCENE_ID}_seeds`, seedsCollected);
+    saveToLocalStorage(`scene_${SCENE_ID}_position`, { x: player.x, y: player.y });
+    saveToLocalStorage(`scene_${SCENE_ID}_convergence`, convergenceLevel);
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
+    }
+}
+
+// ==========================================
+= COLETA
+// ==========================================
+
+function collectSeed() {
+    if (seedsCollected >= SEEDS_REQUIRED) return;
+    
+    seedsCollected++;
+    updateSeedDisplay();
+    saveProgress();
+    
+    showLog(`🌱 Seed coletada! ${seedsCollected}/${SEEDS_REQUIRED}`, 'success');
+    createSeedEffect();
+    
+    increaseConvergence(0.5);
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        completeScene();
+    }
+}
+
+function updateSeedDisplay() {
+    if (seedCountEl) {
+        seedCountEl.textContent = `${seedsCollected}/${SEEDS_REQUIRED}`;
+    }
+}
+
+function createSeedEffect() {
+    const effect = document.createElement('div');
+    effect.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        background: radial-gradient(circle, #00ff88, #00aa44);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: convergeExpand 0.5s ease-out forwards;
+        z-index: 1000;
+    `;
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 500);
+}
+
+// ==========================================
+= CONCLUSÃO
+// ==========================================
+
+async function completeScene() {
+    if (seedsCollected >= SEEDS_REQUIRED && convergenceLevel >= 100) {
+        showLog(`✅ Cena ${SCENE_ID} completa!`, 'success');
+        showTimelineMessage('🎉 Tudo se move junto. O carro, o cão, a estrada. Convergência total.');
+        
+        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
+        
+        showNextSceneButton();
+        return true;
+    } else if (seedsCollected >= SEEDS_REQUIRED && convergenceLevel < 100) {
+        showTimelineMessage('⚠️ Seeds coletadas, mas a convergência ainda é fraca. Reúna mais participantes.');
+    }
+    return false;
+}
+
+function showNextSceneButton() {
+    const button = document.createElement('button');
+    button.textContent = '▶ PRÓXIMA CENA - FASE DA MANIFESTAÇÃO';
+    button.className = 'next-scene-btn';
+    button.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #ff8c00;
+        color: #0d0d0d;
+        border: none;
+        padding: 12px 24px;
+        font-family: monospace;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 100;
+        clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    `;
+    button.onclick = () => {
+        window.location.href = '../scene_6/';
+    };
+    document.body.appendChild(button);
+}
+
+// ==========================================
+= TIMELINE
+// ==========================================
+
+const timelineMessages = [
+    "Tudo começa a se mover junto.",
+    "O carro surge na estrada digital.",
+    "O cão segue os passos do bonequinho.",
+    "Cada participante é parte de um mesmo fluxo.",
+    "A convergência transforma muitos em um.",
+    "O protocolo agora respira como um organismo."
 ];
 
-// ==================================================
-// MOSTRAR OVERLAY
-// ==================================================
-function showRitualOverlay() {
-  if (overlayShown) return;
-  
-  console.log('📜 Mostrando overlay da Cena 5');
-  overlayShown = true;
-  isMoving = false;
-  
-  const countdownTimer = document.getElementById('countdownTimer');
-  if (countdownTimer) {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    
-    const targetTime = tomorrow.getTime();
-    
-    function updateOverlayCountdown() {
-      const now = new Date().getTime();
-      const distance = targetTime - now;
-      
-      if (distance < 0) {
-        countdownTimer.textContent = "00:00:00";
-        return;
-      }
-      
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      
-      countdownTimer.textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    updateOverlayCountdown();
-    setInterval(updateOverlayCountdown, 1000);
-  }
-  
-  if (overlay) {
-    overlay.style.display = 'flex';
-  }
+function startTimeline() {
+    currentTimelineIndex = 0;
+    showNextTimelineMessage();
 }
 
-// ==================================================
-// LOOP PRINCIPAL
-// ==================================================
-function startMainLoop() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-  }
-  
-  mainInterval = setInterval(() => {
-    try {
-      if (!isMoving) return;
-      
-      if (inEternalLoop && currentFrameNumber >= totalFrames) {
-        currentFrameNumber = 1;
-        animationFrameIndex = 0;
-        bgX = 0;
-      }
-      
-      currentFrameNumber++;
-      
-      if (!inEternalLoop) {
-        const targetSeeds = frameToSeedOrganic(currentFrameNumber);
-        
-        if (accumulatedSeeds < targetSeeds) {
-          const remaining = targetSeeds - accumulatedSeeds;
-          const increment = Math.max(1, Math.ceil(remaining / (totalFrames - currentFrameNumber + 1)));
-          accumulatedSeeds = Math.min(accumulatedSeeds + increment, targetSeeds);
-          
-          if (seedText) {
-            seedText.innerText = accumulatedSeeds;
-          }
-        }
-        
-        if (currentFrameNumber >= totalFrames && !overlayShown) {
-          accumulatedSeeds = totalSeeds;
-          
-          if (seedText) {
-            seedText.innerText = totalSeeds;
-          }
-          
-          setTimeout(() => {
-            if (!overlayShown) {
-              showRitualOverlay();
+function showNextTimelineMessage() {
+    if (currentTimelineIndex < timelineMessages.length) {
+        showTimelineMessage(timelineMessages[currentTimelineIndex]);
+        currentTimelineIndex++;
+        setTimeout(() => showNextTimelineMessage(), 5000);
+    }
+}
+
+function showTimelineMessage(message) {
+    if (timelineEl) {
+        timelineEl.textContent = message;
+        timelineEl.style.opacity = '1';
+        setTimeout(() => {
+            if (timelineEl.textContent === message) {
+                timelineEl.style.opacity = '0.5';
             }
-          }, 800);
-          
-          currentFrameNumber = totalFrames;
-          return;
-        }
-      }
-      
-      for (const scene of SCENES) {
-        if (currentFrameNumber >= scene.start && currentFrameNumber <= scene.end) {
-          if (background) {
-            background.style.backgroundImage = `url("backgrounds/${scene.bg}")`;
-          }
-          
-          for (const step of scene.steps) {
-            if (currentFrameNumber >= step.from && currentFrameNumber <= step.to) {
-              if (currentStep !== step) {
-                currentAnimation = ANIMATIONS[step.animation];
-                currentAnimationName = step.animation;
-                currentStep = step;
-                animationFrameIndex = 0;
-              }
-              
-              // CONTROLE DE FUNDO PARA hand_box (frames 10-39)
-              if (step.animation === "hand_box") {
-                const frameWithinHandBox = currentFrameNumber - step.from;
+        }, 4000);
+    }
+}
+
+// ==========================================
+= LOOP DO JOGO
+// ==========================================
+
+function startGameLoop() {
+    function gameLoop() {
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+}
+
+function update() {
+    if (player.moving) {
+        player.x += player.vx || 0;
+        player.y += player.vy || 0;
+        
+        player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+        player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+        
+        for (let point of convergencePoints) {
+            if (!point.activated) {
+                const dx = player.x - point.x;
+                const dy = player.y - point.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (frameWithinHandBox >= 10 && frameWithinHandBox <= 39) {
-                  bgSpeed = 0;
-                } else {
-                  bgSpeed = 2;
+                if (distance < point.radius + 30) {
+                    increaseConvergence(1.5);
+                    point.activationProgress = Math.min(100, point.activationProgress + 2);
+                    
+                    if (point.activationProgress >= 100 && !point.activated) {
+                        activateConvergencePoint(convergencePoints.indexOf(point));
+                    }
                 }
-              } else {
-                bgSpeed = 2;
-              }
-              
-              break;
             }
-          }
-          break;
-        }
-      }
-      
-      bgX -= bgSpeed;
-      if (bgX <= -3000) {
-        bgX = 0;
-      }
-      
-      if (background) {
-        background.style.backgroundPositionX = bgX + "px";
-      }
-      
-      if (currentAnimation && currentAnimation[animationFrameIndex] && character) {
-        character.src = currentAnimation[animationFrameIndex];
-      }
-      
-      if (currentStep && (currentStep.loop || animationFrameIndex < currentAnimation.length - 1)) {
-        animationFrameIndex++;
-        if (animationFrameIndex >= currentAnimation.length) {
-          animationFrameIndex = currentStep.loop ? 0 : currentAnimation.length - 1;
-        }
-      }
-      
-      // ==================================================
-      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 5)
-      // ==================================================
-      const characterElement = document.getElementById('character');
-      if (characterElement) {
-        let removeFloat = false;
-        
-        if (currentStep && currentStep.animation === "dog_entering") {
-          removeFloat = true;
-        }
-        if (currentStep && currentStep.animation === "dog_leaving") {
-          removeFloat = true;
         }
         
-        if (removeFloat) {
-          characterElement.style.animation = 'none';
+        if (Math.random() < 0.02) {
+            collectSeed();
+        }
+    }
+}
+
+function draw() {
+    if (!ctx) return;
+    
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
+    
+    ctx.strokeStyle = '#ffaa44';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([20, 30]);
+    for (let y = canvas.height / 2 - 30; y <= canvas.height / 2 + 30; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
+    for (let point of convergencePoints) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+        
+        if (point.activated) {
+            ctx.fillStyle = `rgba(0, 255, 100, ${0.3 + Math.sin(Date.now() * 0.005) * 0.1})`;
+            ctx.fill();
+            ctx.strokeStyle = '#00ff66';
         } else {
-          characterElement.style.animation = 'float 6s ease-in-out infinite';
+            ctx.fillStyle = `rgba(100, 100, 200, ${0.2 + point.activationProgress / 500})`;
+            ctx.fill();
+            ctx.strokeStyle = '#6688ff';
         }
-      }
-      
-    } catch (error) {
-      console.error('Erro no loop principal:', error);
-      clearInterval(mainInterval);
-      setTimeout(() => {
-        startMainLoop();
-      }, 1000);
+        ctx.stroke();
+        
+        if (point.activationProgress > 0 && !point.activated) {
+            ctx.fillStyle = '#ffaa44';
+            ctx.fillRect(point.x - 20, point.y - 35, 40 * (point.activationProgress / 100), 4);
+        }
+        
+        ctx.fillStyle = point.activated ? '#00ff88' : '#88aaff';
+        ctx.font = '9px monospace';
+        ctx.fillText(point.name, point.x - 40, point.y - 40);
+        
+        if (point.activated) {
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText('✓ CONVERGIDO', point.x - 35, point.y + 35);
+        }
     }
-  }, frameSpeed);
-  
-  return mainInterval;
+    
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(carPosition.x - 20, carPosition.y - 10, 40, 20);
+    ctx.fillStyle = '#ff8888';
+    ctx.fillRect(carPosition.x - 15, carPosition.y - 15, 30, 5);
+    ctx.fillStyle = '#ffff00';
+    ctx.beginPath();
+    ctx.arc(carPosition.x - 15, carPosition.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(carPosition.x + 15, carPosition.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    if (dogPosition.following || dogPosition.x) {
+        ctx.fillStyle = '#aa8866';
+        ctx.beginPath();
+        ctx.ellipse(dogPosition.x, dogPosition.y, 12, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#886644';
+        ctx.beginPath();
+        ctx.ellipse(dogPosition.x + 8, dogPosition.y - 3, 5, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(dogPosition.x + 10, dogPosition.y - 4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    for (let follower of followers) {
+        ctx.fillStyle = `rgba(100, 200, 255, ${0.3 + follower.convergenceLevel * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(follower.position.x, follower.position.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#88aaff';
+        ctx.font = '8px monospace';
+        ctx.fillText(formatAddress(follower.address), follower.position.x - 20, follower.position.y - 15);
+        
+        if (convergenceLevel > 50) {
+            const dx = player.x - follower.position.x;
+            const dy = player.y - follower.position.y;
+            follower.position.x += dx * 0.01;
+            follower.position.y += dy * 0.01;
+        }
+    }
+    
+    ctx.shadowBlur = convergenceLevel / 5;
+    ctx.shadowColor = '#00ff88';
+    
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 3;
+    
+    ctx.beginPath();
+    ctx.arc(player.x, player.y - 15, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y - 5);
+    ctx.lineTo(player.x, player.y + 15);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x - 12, player.y + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x + 12, player.y + 8);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x - 10, player.y + 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x + 10, player.y + 30);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(player.x - 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(player.x + 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    
+    if (convergenceLevel > 0) {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y - 10, 25, 0, (convergenceLevel / 100) * Math.PI * 2);
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
 }
 
-// ==================================================
-// LIMPEZA DE INTERVALOS
-// ==================================================
-function cleanupIntervals() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-    mainInterval = null;
-  }
-  
-  if (loreInterval) {
-    clearInterval(loreInterval);
-    loreInterval = null;
-  }
-  
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
+// ==========================================
+= CONTROLES
+// ==========================================
 
-// ==================================================
-// INICIALIZAÇÃO
-// ==================================================
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 BBP Ritual - Cena 5 iniciada');
-  
-  if (overlay) {
-    overlay.addEventListener('click', function(event) {
-      if (event.target === overlay) {
-        closeOverlay();
-      }
+function setupControls() {
+    window.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'w': player.moving = true; player.vy = -3; break;
+            case 'ArrowDown': case 's': player.moving = true; player.vy = 3; break;
+            case 'ArrowLeft': case 'a': player.moving = true; player.vx = -3; break;
+            case 'ArrowRight': case 'd': player.moving = true; player.vx = 3; break;
+        }
     });
-  }
-  
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-      isMoving = !isMoving;
+    
+    window.addEventListener('keyup', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'ArrowDown': case 'w': case 's': player.vy = 0; break;
+            case 'ArrowLeft': case 'ArrowRight': case 'a': case 'd': player.vx = 0; break;
+        }
+        if (!player.vx && !player.vy) player.moving = false;
+    });
+    
+    if (canvas) {
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const dx = clickX - player.x;
+            const dy = clickY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.min(30, Math.floor(distance / 10));
+            
+            if (steps > 0) {
+                const stepX = dx / steps;
+                const stepY = dy / steps;
+                let step = 0;
+                const interval = setInterval(() => {
+                    if (step >= steps) {
+                        clearInterval(interval);
+                        player.moving = false;
+                        return;
+                    }
+                    player.x += stepX;
+                    player.y += stepY;
+                    step++;
+                    if (Math.random() < 0.05) collectSeed();
+                }, 50);
+            }
+        });
     }
-  });
-  
-  window.addEventListener('beforeunload', cleanupIntervals);
-  
-  if (seedText) {
-    seedText.innerText = accumulatedSeeds;
-  }
-  
-  preloadAllImages().then(() => {
-    startMainLoop();
-  });
-  
-  window.closeOverlay = closeOverlay;
-  window.closeNotification = closeNotification;
+}
+
+function updateStatus(message, type = 'info') {
+    if (statusEl) {
+        statusEl.innerHTML = message;
+        statusEl.className = `status-${type}`;
+    }
+    if (typeof showLog === 'function') showLog(message, type);
+}
+
+function addAnimationStyles() {
+    if (document.getElementById('bbp-scene-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'bbp-scene-styles';
+    style.textContent = `
+        @keyframes convergeExpand {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+        .status-success { color: #00ff88; }
+        .status-warning { color: #ffaa00; }
+        .status-error { color: #ff0000; }
+        .next-scene-btn:hover { background: #ffb347; transform: translateY(-1px); }
+    `;
+    document.head.appendChild(style);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    addAnimationStyles();
+    init();
 });

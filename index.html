@@ -29,7 +29,6 @@
     overflow-x: hidden;
   }
 
-  /* ── GRID BACKGROUND ── */
   .grid-bg {
     position: fixed; inset: 0; z-index: 0;
     background-image:
@@ -39,7 +38,6 @@
     opacity: 0.4;
   }
 
-  /* ── SCANLINE OVERLAY ── */
   .scanlines {
     position: fixed; inset: 0; z-index: 1; pointer-events: none;
     background: repeating-linear-gradient(
@@ -51,7 +49,6 @@
     );
   }
 
-  /* ── VIGNETTE ── */
   .vignette {
     position: fixed; inset: 0; z-index: 2; pointer-events: none;
     background: radial-gradient(ellipse at center,
@@ -60,14 +57,12 @@
     );
   }
 
-  /* ── LAYOUT ── */
   .wrapper {
     position: relative; z-index: 10;
     min-height: 100vh;
     display: flex; flex-direction: column;
   }
 
-  /* ── TOP BAR ── */
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px;
@@ -86,7 +81,6 @@
   }
   .topbar-right a:hover { color: var(--orange); }
 
-  /* ── HERO ── */
   .hero {
     flex: 1;
     display: flex; flex-direction: column;
@@ -96,7 +90,6 @@
     gap: 0;
   }
 
-  /* ── BONEQUINHO ANIMADO ── */
   .figure-wrap {
     margin-bottom: 40px;
     position: relative;
@@ -122,7 +115,6 @@
     50%       { width: 28px; opacity: 0.2; }
   }
 
-  /* ── LABEL ACIMA DO TÍTULO ── */
   .eyebrow {
     font-family: 'Share Tech Mono', monospace;
     font-size: 11px;
@@ -133,7 +125,6 @@
     animation: fadein 0.6s 0.3s forwards;
   }
 
-  /* ── TÍTULO PRINCIPAL ── */
   .title {
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(72px, 12vw, 140px);
@@ -146,7 +137,6 @@
   }
   .title span { color: var(--orange); }
 
-  /* ── SUBTÍTULO ── */
   .subtitle {
     font-family: 'Share Tech Mono', monospace;
     font-size: clamp(11px, 1.5vw, 13px);
@@ -157,7 +147,6 @@
     animation: fadein 0.8s 0.7s forwards;
   }
 
-  /* ── TEXTO RITUAL ── */
   .ritual-text {
     max-width: 540px;
     margin-bottom: 56px;
@@ -173,7 +162,6 @@
   }
   .ritual-text p + p { margin-top: 8px; }
 
-  /* ── CENAS GRID ── */
   .scenes {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -233,7 +221,6 @@
     margin-top: 4px;
   }
 
-  /* ── CTA ── */
   .cta-wrap {
     display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
     opacity: 0;
@@ -276,7 +263,6 @@
   }
   .btn-secondary:hover { color: var(--white); border-color: var(--dim); }
 
-  /* ── STATUS BAR ── */
   .status-bar {
     border-top: 1px solid var(--border);
     padding: 12px 24px;
@@ -301,7 +287,6 @@
     50%       { opacity: 0; }
   }
 
-  /* ── TICKER ── */
   .ticker-wrap {
     overflow: hidden;
     white-space: nowrap;
@@ -316,13 +301,11 @@
     to   { transform: translateX(-100%); }
   }
 
-  /* ── ANIMATIONS ── */
   @keyframes fadein {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── CORNER DECORATIONS ── */
   .corner {
     position: fixed;
     width: 24px; height: 24px;
@@ -337,7 +320,6 @@
   .corner-br { bottom: 40px; right: 8px;
     border-bottom: 1px solid var(--orange); border-right: 1px solid var(--orange); }
 
-  /* ── RESPONSIVE ── */
   @media (max-width: 600px) {
     .scenes { grid-template-columns: repeat(2, 1fr); }
     .topbar-right { display: none; }
@@ -353,7 +335,6 @@
 <div class="scanlines"></div>
 <div class="vignette"></div>
 
-<!-- Corner decorations -->
 <div class="corner corner-tl"></div>
 <div class="corner corner-tr"></div>
 <div class="corner corner-bl"></div>
@@ -361,7 +342,6 @@
 
 <div class="wrapper">
 
-  <!-- TOP BAR -->
   <header class="topbar">
     <span class="topbar-left">BBP // BITCOIN BLUEPRINT PROTOCOL</span>
     <nav class="topbar-right">
@@ -371,31 +351,23 @@
     </nav>
   </header>
 
-  <!-- HERO -->
   <main class="hero">
 
-    <!-- Bonequinho -->
     <div class="figure-wrap">
       <svg class="figure-svg" viewBox="0 0 100 120" fill="none"
            xmlns="http://www.w3.org/2000/svg" stroke="#e8e8e8" stroke-width="3"
            stroke-linecap="round" stroke-linejoin="round">
-        <!-- cabeça -->
         <circle cx="50" cy="18" r="10"/>
-        <!-- corpo -->
         <line x1="50" y1="28" x2="50" y2="70"/>
-        <!-- braço esquerdo -->
         <line x1="50" y1="40" x2="24" y2="55"/>
-        <!-- braço direito levantado -->
         <line x1="50" y1="40" x2="74" y2="30"/>
-        <!-- perna esquerda -->
         <line x1="50" y1="70" x2="32" y2="95"/>
-        <!-- perna direita -->
         <line x1="50" y1="70" x2="68" y2="95"/>
       </svg>
       <div class="figure-shadow"></div>
     </div>
 
-    <p class="eyebrow">&#9632; PROTOCOLO VIVO &#9632; BITCOIN &#9632; RITUAL COLETIVO &#9632;</p>
+    <p class="eyebrow">■ PROTOCOLO VIVO ■ BITCOIN ■ RITUAL COLETIVO ■</p>
 
     <h1 class="title">
       BITCOIN<br><span>BLUEPRINT</span><br>PROTOCOL
@@ -409,7 +381,6 @@
       <p>O ritual não começa com luz — começa com intenção.</p>
     </div>
 
-    <!-- CENAS -->
     <div class="scenes">
       <a href="scene_1/" class="scene-card">
         <span class="scene-num">CENA 01 //</span>
@@ -449,32 +420,37 @@
       </a>
     </div>
 
-    <!-- CTAs -->
     <div class="cta-wrap">
-      <a href="scene_1/" class="btn-primary">&#9654; ENTRAR NO RITUAL</a>
+      <a href="scene_1/" class="btn-primary">▶ ENTRAR NO RITUAL</a>
       <a href="#" class="btn-secondary">LER O PROTOCOLO</a>
     </div>
 
   </main>
 
-  <!-- STATUS BAR -->
   <footer class="status-bar">
     <span><span class="status-dot"></span>REDE ATIVA</span>
     <div class="ticker-wrap">
       <span class="ticker">
-        BBP:id:art:fredo:0001 &nbsp;&#9632;&nbsp;
-        BBP:id:identity:global:genesis &nbsp;&#9632;&nbsp;
-        BBP:id:token:bitcoin:btc &nbsp;&#9632;&nbsp;
-        RITUAL EM PROGRESSO &nbsp;&#9632;&nbsp;
-        60.000 SEEDS ATÉ A ATIVAÇÃO &nbsp;&#9632;&nbsp;
-        BITCOIN BLUEPRINT PROTOCOL &nbsp;&#9632;&nbsp;
-        QUALQUER ATIVO. QUALQUER REDE. &nbsp;&#9632;&nbsp;
+        BBP:id:art:fredo:0001  ■ 
+        BBP:id:identity:global:genesis  ■ 
+        BBP:id:token:bitcoin:btc  ■ 
+        RITUAL EM PROGRESSO  ■ 
+        60.000 SEEDS ATÉ A ATIVAÇÃO  ■ 
+        BITCOIN BLUEPRINT PROTOCOL  ■ 
+        QUALQUER ATIVO. QUALQUER REDE.  ■ 
       </span>
     </div>
     <span>v1.0 // TESTNET</span>
   </footer>
 
 </div>
+
+<!-- Scripts da rede P2P (adicionar se quiser conectar o index também) -->
+<!-- 
+<script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1236/gun.js"></script>
+<script src="shared/config.js"></script>
+<script src="shared/gun-realtime.js"></script>
+-->
 
 </body>
 </html>

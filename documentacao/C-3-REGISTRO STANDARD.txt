@@ -1,14 +1,19 @@
 BBP-0003 – Registry Standard
+
 Esse documento resolve um problema enorme em protocolos:
 caos semântico.
+
 Sem um registry, cada projeto escreve coisas diferentes.
+
 Exemplo ruim:
 creator
 artist
 author
 maker
+
 Tudo significa a mesma coisa.
 Indexadores ficam perdidos.
+
 ________________________________________
 
 **BBP-0003 — Registry Standard**
@@ -55,6 +60,7 @@ Exemplos:
 | ticket         | TICKET           | Ingressos digitais |
 | license        | LICENSE          | Licenças digitais |
 | membership     | MEMBERSHIP       | Associações e acessos |
+| **ritual_seed**| **RITUAL_SEED**  | **Participante do ritual BBP (NOVO)** |
 
 Exemplos de DNAs válidos:
 BBP:id:art:fredo:2654
@@ -62,7 +68,7 @@ BBP:id:domain:leo
 BBP:id:game_asset:sword:001
 BBP:id:token:usdc:main
 BBP:id:rwa:property:001
-text
+**BBP:id:ritual_seed:scene_1:bc1p...xyz (NOVO)**
 
 Isso **não muda o DNA**, apenas padroniza interpretação.
 
@@ -83,6 +89,8 @@ Exemplos:
 | license    | string   | Tipo de licença |
 | description| string   | Descrição do ativo |
 | image      | string   | Hash ou URI da imagem |
+| **bbp_network_version** | **string** | **Versão da rede BBP (ex: "2.0") (NOVO)** |
+| **distribution_method** | **string** | **Método de distribuição ("automatic" / "manual") (NOVO)** |
 
 Exemplo dentro do manifesto:
 
@@ -90,12 +98,15 @@ Exemplo dentro do manifesto:
 "attributes": {
   "creator": "leo",
   "collection": "fredo_genesis",
-  "rarity": "legendary"
+  "rarity": "legendary",
+  "bbp_network_version": "2.0",
+  "distribution_method": "automatic"
 }
-________________________________________
 4. Relations Registry
 Define relações entre ativos.
+
 Exemplos:
+
 Relation	Descrição
 derived_from	Ativo derivado de outro
 contains	Ativo contém outro
@@ -103,13 +114,16 @@ references	Ativo referencia outro
 tokenizes	Ativo tokeniza outro
 controls	Ativo controla outro
 represents	Ativo representa outro
+registered_on	Ativo registrado em uma rede específica (NOVO)
 Exemplo:
-text
 Fredo NFT derived_from Fredo Collection
-________________________________________
+Seed registered_on BBPNetwork (NOVO)
+
 5. Events Registry
 Define eventos observáveis nas redes.
+
 Exemplos:
+
 Event	Descrição
 mint	Ativo foi criado
 transfer	Ativo foi transferido
@@ -118,11 +132,15 @@ sale	Ativo foi vendido
 bridge	Ativo foi bridgeado para outra rede
 stake	Ativo foi staked
 unstake	Ativo foi unstaked
+seed_activated	Participante conectou carteira e se tornou seed ativa (NOVO)
+fraction_distributed	Frações do protocolo foram distribuídas (NOVO)
 Esses eventos são usados no módulo events do manifesto.
-________________________________________
+
 6. Estrutura de entrada do Registry
 Cada item do registry segue formato simples.
+
 Exemplo:
+
 json
 {
   "id": "creator",
@@ -130,24 +148,76 @@ json
   "type": "string",
   "description": "Creator of the asset"
 }
-________________________________________
+NOVO - Exemplo para seed_activated:
+
+json
+{
+  "id": "seed_activated",
+  "category": "event",
+  "type": "object",
+  "description": "Participant connected wallet and became an active seed",
+  "properties": {
+    "wallet_address": "string",
+    "scene_id": "number",
+    "timestamp": "number"
+  }
+}
 7. Registry extensível
 Projetos podem criar extensões usando namespaces.
+
 Exemplos:
-•	game.attack_power
-•	game.defense
-•	ai.model_type
-•	ai.training_dataset
-•	rwa.location
-•	rwa.legal_document
+
+game.attack_power
+
+game.defense
+
+ai.model_type
+
+ai.training_dataset
+
+rwa.location
+
+rwa.legal_document
+
+bbp.network_version (NOVO)
+
+bbp.distribution_method (NOVO)
+
 Isso mantém o protocolo flexível e escalável.
-________________________________________
+
 8. Onde o Registry é usado
 O registry influencia:
-•	manifestos
-•	indexadores
-•	resolvers
-•	marketplaces
-•	templates
+
+manifestos
+
+indexadores
+
+resolvers
+
+marketplaces
+
+templates
+
+BBPNetwork (NOVO)
+
 Ele garante que todos interpretem os dados da mesma forma.
 
+9. REGISTRO DE ALTERAÇÕES (NOVO)
+Versão	Data	Alterações
+1.0	Março 2026	Versão original
+1.1	Abril 2026	Adicionado type "ritual_seed"; Adicionado attributes "bbp_network_version", "distribution_method"; Adicionado relation "registered_on"; Adicionado events "seed_activated", "fraction_distributed"; Adicionado namespace "bbp.*"
+text
+
+---
+
+## Resumo das adições:
+
+| Categoria | Item adicionado |
+|-----------|-----------------|
+| **Types** | `ritual_seed` (participante do ritual) |
+| **Attributes** | `bbp_network_version`, `distribution_method` |
+| **Relations** | `registered_on` |
+| **Events** | `seed_activated`, `fraction_distributed` |
+| **Namespaces** | `bbp.network_version`, `bbp.distribution_method` |
+
+---

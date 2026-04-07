@@ -1,858 +1,742 @@
 // ==================================================
-// CONFIGURAÇÕES DA CENA 6
+// CENA 6 - FASE DA MANIFESTAÇÃO
+// COM BBP RITUAL NETWORK
 // ==================================================
-let currentFrameNumber = 0;
-const totalFrames = 4385; // Total de frames da Cena 6 (seu ritual completo)
-let totalSeeds = 4385; // Seeds desta cena específica
-let accumulatedTotalSeeds = 30000; // TOTAL ACUMULADO de todas as cenas (2k+4k+6k+8k+10k+4.385k ≈ 30k)
-const frameSpeed = 100;
-let isMoving = true;
-let overlayShown = false;
-let accumulatedSeeds = 1;
-let inEternalLoop = false;
-let mainInterval = null;
-let countdownInterval = null;
-let notificationTimeout = null;
 
-// ==================================================
-// INTEGRAÇÃO COM TIMELINE
-// ==================================================
-let timelineData = window.Timeline ? window.Timeline.data : null;
+const SCENE_ID = 6;
+const SCENE_NAME = 'Fase da Manifestação';
+const SEEDS_REQUIRED = 10000;
 
-if (timelineData && timelineData.phases) {
-  const currentPhase = timelineData.phases.find(p => p.status === 'active');
-  if (currentPhase && currentPhase.seeds) {
-    totalSeeds = currentPhase.seeds;
-    console.log(`🎯 Total de seeds atualizado para: ${totalSeeds}`);
-  }
-}
+let player = { x: 100, y: 100, moving: false };
+let seedsCollected = 0;
+let manifestationPoints = [];
+let energyParticles = [];
+let animationId = null;
+let walletAddress = null;
+let currentTimelineIndex = 0;
+let manifestationLevel = 0;
+let switchActivated = false;
+let finalCountdown = 0;
 
-// ==================================================
-// SISTEMA DE TEXTO AUTOMÁTICO
-// ==================================================
-let currentLoreIndex = 0;
-let loreInterval = null;
-let loreCarouselActive = false;
+let canvas, ctx, timelineEl, seedCountEl, statusEl, manifestationEl, manifestationBar, finalMessageEl;
 
-// FUNÇÃO PARA MUDAR TEXTO COM ANIMAÇÃO
-function changeLoreText(nextIndex) {
-  const texts = document.querySelectorAll('.lore-text');
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.remove('active');
-  }
-  
-  currentLoreIndex = nextIndex;
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.add('active');
-  }
-}
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
 
-// FUNÇÃO PARA INICIAR CARROSSEL AUTOMÁTICO
-function startLoreCarousel() {
-  if (loreCarouselActive) return;
-  
-  console.log('🌀 Iniciando carrossel automático de textos');
-  loreCarouselActive = true;
-  
-  changeLoreText(1);
-  
-  loreInterval = setInterval(() => {
-    const availableTexts = [1, 2, 3, 4];
-    let nextIndex;
+async function init() {
+    console.log('🔌 Iniciando Cena 6 - FASE FINAL:', SCENE_NAME);
     
-    do {
-      nextIndex = availableTexts[Math.floor(Math.random() * availableTexts.length)];
-    } while (nextIndex === currentLoreIndex && availableTexts.length > 1);
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    timelineEl = document.getElementById('timelineText');
+    seedCountEl = document.getElementById('seedCount');
+    statusEl = document.getElementById('connectionStatus');
+    manifestationEl = document.getElementById('manifestationText');
+    manifestationBar = document.getElementById('manifestationBar');
+    finalMessageEl = document.getElementById('finalMessage');
     
-    changeLoreText(nextIndex);
-  }, 8000);
-}
-
-// ==================================================
-// ELEMENTOS DO DOM
-// ==================================================
-const character = document.getElementById("character");
-const background = document.getElementById("background");
-const seedText = document.getElementById("seedCount");
-const overlay = document.getElementById("sceneOverlay");
-const eternalMsg = document.getElementById("eternalRitualMsg");
-const ritualPhase = document.querySelector('.ritual-phase');
-const loreTitle = document.getElementById('loreTitle');
-const seedBeforeOverlay = document.getElementById('seedBeforeOverlay');
-const fragmentBeforeOverlay = document.getElementById('fragmentBeforeOverlay');
-const nftStatus = document.getElementById('nftStatus');
-const fragmentStatus = document.getElementById('fragmentStatus');
-const nftCountdown = document.getElementById('nftCountdown');
-const fragmentCountdown = document.getElementById('fragmentCountdown');
-const notificationOverlay = document.getElementById('notificationOverlay');
-
-// ==================================================
-// FUNÇÃO PARA DESATIVAR CLIQUE NA IMAGEM DA SEED
-// ==================================================
-function disableSeedImageClick() {
-  const seedImage = document.querySelector('.seed-image');
-  if (seedImage) {
-    seedImage.style.cursor = 'default';
-    seedImage.style.opacity = '0.6';
-    seedImage.style.filter = 'grayscale(70%)';
-    seedImage.onclick = null;
-    seedImage.title = 'Limite de seeds atingido';
-    seedImage.style.boxShadow = '0 0 8px rgba(255, 68, 68, 0.5)';
-    seedImage.style.borderColor = '#ff4444';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA AGENDAR NOTIFICAÇÃO
-// ==================================================
-function scheduleNotification() {
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-  }
-  
-  notificationTimeout = setTimeout(() => {
-    showNotification();
-  }, 9000);
-}
-
-// ==================================================
-// FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO
-// ==================================================
-function showNotification() {
-  console.log('📢 Mostrando overlay de notificação');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'flex';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA FECHAR NOTIFICAÇÃO
-// ==================================================
-function closeNotification() {
-  console.log('Fechando notificação...');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'none';
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
-
-// ==================================================
-// FUNÇÃO ORGÂNICA: CONVERTE FRAME PARA SEED
-// ==================================================
-function frameToSeedOrganic(frame) {
-  const progress = frame / totalFrames;
-  const curvedProgress = progress < 0.5 
-    ? 2 * progress * progress
-    : 1 - 2 * (1 - progress) * (1 - progress);
-  
-  const seeds = Math.round(totalSeeds * curvedProgress);
-  return frame >= totalFrames ? totalSeeds : seeds;
-}
-
-// ==================================================
-// FUNÇÃO PARA REINICIAR CENA EM LOOP ETERNO
-// ==================================================
-function startEternalRitualLoop() {
-  console.log('📜 Ritual da Manifestação eterno iniciado');
-  inEternalLoop = true;
-  
-  // 1. MUDA O TÍTULO DA TABELA CENTRAL
-  if (loreTitle) {
-    loreTitle.textContent = 'A MANIFESTAÇÃO É ETERNA';
-    loreTitle.style.color = '#ffaa33';
-  }
-  
-  // 2. INICIA CARROSSEL AUTOMÁTICO DE TEXTOS
-  startLoreCarousel();
-  
-  // 3. MOSTRA MENSAGEM SIMPLES
-  if (eternalMsg) {
-    eternalMsg.style.display = 'flex';
-  }
-  
-  // 4. ESCONDE CONTEÚDO ANTES DO OVERLAY DOS CARDS
-  if (seedBeforeOverlay) {
-    seedBeforeOverlay.style.display = 'none';
-  }
-  
-  if (fragmentBeforeOverlay) {
-    fragmentBeforeOverlay.style.display = 'none';
-  }
-  
-  // 5. MOSTRA STATUS DOS CARDS
-  if (nftStatus) {
-    nftStatus.style.display = 'flex';
-  }
-  
-  if (fragmentStatus) {
-    fragmentStatus.style.display = 'flex';
-  }
-  
-  // 6. DESATIVA CLIQUE NA IMAGEM DA SEED
-  disableSeedImageClick();
-  
-  // 7. INICIA OS COUNTDOWNS NOS CARDS
-  startAllCountdowns();
-  
-  // 8. ATUALIZA O HUD
-  if (ritualPhase) {
-    ritualPhase.textContent = '📜 Cena 6: Manifestação Bem Sucedida';
-  }
-  
-  // 9. RESETA ANIMAÇÃO PARA INÍCIO
-  currentFrameNumber = 1;
-  animationFrameIndex = 0;
-  accumulatedSeeds = totalSeeds;
-  bgX = 0;
-  
-  if (seedText) {
-    seedText.innerText = accumulatedTotalSeeds.toLocaleString(); // Mostra 30.000
-  }
-  
-  // 10. REATIVA MOVIMENTO
-  isMoving = true;
-  
-  // 11. AGENDA NOTIFICAÇÃO PARA 9 SEGUNDOS DEPOIS
-  scheduleNotification();
-}
-
-// ==================================================
-// FUNÇÕES DO OVERLAY
-// ==================================================
-function closeOverlay() {
-  console.log('Fechando overlay...');
-  
-  if (overlay) {
-    overlay.style.display = 'none';
-  }
-  
-  if (!inEternalLoop) {
-    startEternalRitualLoop();
-  } else {
-    isMoving = true;
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA ATUALIZAR TODOS OS COUNTDOWNS
-// ==================================================
-function updateAllCountdowns() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0);
-  
-  const targetTime = tomorrow.getTime();
-  
-  function updateCountdown(element) {
-    if (!element) return;
+    canvas.width = 800;
+    canvas.height = 500;
     
-    const now = new Date().getTime();
-    const distance = targetTime - now;
+    await connectWalletIfNeeded();
     
-    if (distance < 0) {
-      element.textContent = "00:00:00";
-      return;
-    }
-    
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    element.textContent = 
-      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-  
-  updateCountdown(nftCountdown);
-  updateCountdown(fragmentCountdown);
-  updateCountdown(document.getElementById('countdownTimer'));
-}
-
-// FUNÇÃO PARA INICIAR TODOS OS COUNTDOWNS
-function startAllCountdowns() {
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-  }
-  
-  updateAllCountdowns();
-  countdownInterval = setInterval(updateAllCountdowns, 1000);
-}
-
-// ==================================================
-// CARREGAR FRAMES (CENA 6 - ANIMAÇÃO COMPLETA)
-// ==================================================
-function loadFrames(path, prefix, start, end) {
-  const frames = [];
-  for (let i = start; i <= end; i++) {
-    frames.push(`${path}/${prefix}_${String(i).padStart(2, "0")}.png`);
-  }
-  return frames;
-}
-
-// ==================================================
-// ANIMAÇÕES DA CENA 6 (RITUAL COMPLETO)
-// ==================================================
-const ANIMATIONS = {
-  // Cena 1
-  walking: loadFrames("character/walking", "walking", 1, 16),
-  dog_entering: loadFrames("character/dog_entering", "dog_entering", 1, 16),
-  walking_dog: loadFrames("character/walking_dog", "walking_dog", 1, 16),
-  dog_leaving: loadFrames("character/dog_leaving", "dog_leaving", 1, 16),
-  
-  // Cena 2
-  banana_slip: loadFrames("character/banana_slip", "banana_slip", 1, 36),
-  stumble_stone: loadFrames("character/stumble_stone", "stumble_stone", 1, 30),
-  
-  // Cena 3
-  ball_obstacle: loadFrames("character/ball_obstacle", "ball_obstacle", 1, 16),
-  dog_skate: loadFrames("character/dog_skate", "dog_skate", 1, 14),
-  
-  // Cena 4
-  getting_scooter: loadFrames("character/getting_scooter", "getting_scooter", 1, 9),
-  scooter: loadFrames("character/scooter", "scooter", 1, 85),
-  hand_box: loadFrames("character/hand_box", "hand_box", 1, 45),
-  
-  // Cena 5
-  car: loadFrames("character/car", "car", 1, 8),
-  car_dog: loadFrames("character/car_dog", "car_dog", 1, 8),
-  
-  // Cenas UFO
-  abduction: loadFrames("character/abduction", "abduction", 1, 24),
-  ufo_flying: loadFrames("character/ufo_flying", "ufo_flying", 1, 25),
-  ufo_landing: loadFrames("character/ufo_landing", "ufo_landing", 1, 18),
-  
-  // Cenas finais
-  walk_activation_white: loadFrames("character/walk_activation_white", "walk_activation_white", 1, 38),
-  walk_activation_black: loadFrames("character/walk_activation_black", "walk_activation_black", 1, 47)
-};
-
-// ==================================================
-// VARIÁVEIS DE ANIMAÇÃO
-// ==================================================
-let currentAnimation = ANIMATIONS.walking;
-let currentAnimationName = "walking";
-let currentStep = null;
-let animationFrameIndex = 0;
-let bgX = 0;
-let bgSpeed = 2;
-let lastBg = "";
-let isInStaticScene = false;
-let isInHandBoxScene = false;
-
-// ==================================================
-// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
-// ==================================================
-let allImagesPreloaded = false;
-
-function preloadAllImages() {
-  return new Promise((resolve) => {
-    const allFrames = [
-      ...ANIMATIONS.walking,
-      ...ANIMATIONS.dog_entering,
-      ...ANIMATIONS.walking_dog,
-      ...ANIMATIONS.dog_leaving,
-      ...ANIMATIONS.banana_slip,
-      ...ANIMATIONS.stumble_stone,
-      ...ANIMATIONS.ball_obstacle,
-      ...ANIMATIONS.dog_skate,
-      ...ANIMATIONS.getting_scooter,
-      ...ANIMATIONS.scooter,
-      ...ANIMATIONS.hand_box,
-      ...ANIMATIONS.car,
-      ...ANIMATIONS.car_dog,
-      ...ANIMATIONS.abduction,
-      ...ANIMATIONS.ufo_flying,
-      ...ANIMATIONS.ufo_landing,
-      ...ANIMATIONS.walk_activation_white,
-      ...ANIMATIONS.walk_activation_black,
-    ];
-
-    const bgImages = [
-      'backgrounds/BG_01.png',
-      'backgrounds/BG_02.png',
-      'backgrounds/BG_08.png',
-      'backgrounds/BG_07.png',
-      'backgrounds/BG_09.png',
-      'backgrounds/BG_10.png',
-      'backgrounds/BG_11.png',
-      'backgrounds/BG_12.png',
-    ];
-    const allImages = [...allFrames, ...bgImages];
-
-    let loaded = 0;
-    const total = allImages.length;
-
-    if (total === 0) {
-      allImagesPreloaded = true;
-      resolve();
-      return;
-    }
-
-    console.log(`🖼️ Pré-carregando ${total} imagens...`);
-
-    allImages.forEach((src) => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === total) {
-          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
-          allImagesPreloaded = true;
-          resolve();
+    // REGISTRAR NA REDE BBP RITUAL
+    if (typeof BBPRitual !== 'undefined') {
+        BBPRitual.setCurrentScene(SCENE_ID);
+        
+        if (walletAddress) {
+            await BBPRitual.registerSeed(walletAddress);
+            // Cena 6 não tem NFT, só frações
+            await BBPRitual.distributeProtocolFractions(10, walletAddress);
+            showLog('✅ Registrado na rede BBP', 'success');
         }
-      };
-      img.src = src;
-    });
-  });
+    } else {
+        showLog('⚠️ BBPRitual não carregado', 'warning');
+    }
+    
+    loadProgress();
+    generateManifestationPoints();
+    startTimeline();
+    startGameLoop();
+    setupControls();
+    startManifestationEffect();
+    checkAllScenesCompleted();
 }
 
+// ==========================================
+// CONEXÃO COM CARTEIRA
+// ==========================================
 
+async function connectWalletIfNeeded() {
+    const savedAddress = loadFromLocalStorage('wallet_address');
+    
+    if (savedAddress && savedAddress !== 'null') {
+        walletAddress = savedAddress;
+        updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+        showLog(`Carteira conectada: ${walletAddress}`, 'info');
+        return true;
+    }
+    
+    updateStatus('⚠️ Conecte sua carteira Bitcoin', 'warning');
+    
+    if (typeof connectWallet === 'function') {
+        const wallet = await connectWallet();
+        if (wallet && wallet.address) {
+            walletAddress = wallet.address;
+            updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+            return true;
+        }
+    }
+    
+    return false;
+}
 
-// ==================================================
-// CENA 6 - RITUAL COMPLETO (COM CONTROLE DE CENAS ESTÁTICAS E HAND_BOX)
-// ==================================================
-const SCENES = [
-  // ========== PARTE 1 (BG_01) ==========
-  {
-    start: 1,
-    end: 500,
-    bg: "BG_01.png",
-    steps: [
-      { from: 1, to: 200, animation: "walking", loop: true },
-      { from: 201, to: 216, animation: "dog_entering", loop: false },
-      { from: 217, to: 408, animation: "walking_dog", loop: true },
-      { from: 409, to: 424, animation: "dog_leaving", loop: false },
-      { from: 425, to: 500, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 2 (BG_02) ==========
-  {
-    start: 501,
-    end: 1250,
-    bg: "BG_02.png",
-    steps: [
-      { from: 501, to: 700, animation: "walking", loop: true },
-      { from: 701, to: 736, animation: "banana_slip", loop: false },
-      { from: 737, to: 938, animation: "walking", loop: true },
-      { from: 939, to: 968, animation: "stumble_stone", loop: false },
-      { from: 969, to: 1250, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 3 (BG_08) ==========
-  {
-    start: 1251,
-    end: 1970,
-    bg: "BG_08.png",
-    steps: [
-      { from: 1251, to: 1400, animation: "walking", loop: true },
-      { from: 1401, to: 1416, animation: "ball_obstacle", loop: false },
-      { from: 1417, to: 1480, animation: "walking", loop: true },
-      { from: 1481, to: 1650, animation: "dog_skate", loop: true },
-      { from: 1651, to: 1970, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 4 (BG_07) ==========
-  {
-    start: 1971,
-    end: 2600,
-    bg: "BG_07.png",
-    steps: [
-      { from: 1971, to: 2170, animation: "walking", loop: true },
-      { from: 2171, to: 2179, animation: "getting_scooter", loop: false },
-      { from: 2180, to: 2420, animation: "scooter", loop: true },
-      { from: 2421, to: 2500, animation: "walking", loop: true },
-      { from: 2501, to: 2545, animation: "hand_box", loop: false, special: "pause_bg" },
-      { from: 2546, to: 2600, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 5 (BG_09) ==========
-  {
-    start: 2601,
-    end: 4000,
-    bg: "BG_09.png",
-    steps: [
-      { from: 2601, to: 2700, animation: "walking", loop: true },
-      { from: 2701, to: 3000, animation: "car", loop: true },
-      { from: 3001, to: 3400, animation: "walking", loop: true },
-      { from: 3401, to: 3416, animation: "dog_entering", loop: false },
-      { from: 3417, to: 3550, animation: "walking_dog", loop: true },
-      { from: 3551, to: 3566, animation: "dog_leaving", loop: false },
-      { from: 3567, to: 3620, animation: "walking", loop: true },
-      { from: 3621, to: 3930, animation: "car_dog", loop: true },
-      { from: 3931, to: 4000, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 6 (BG_10) ==========
-  {
-    start: 4001,
-    end: 4300,
-    bg: "BG_10.png",
-    steps: [
-      { from: 4001, to: 4024, animation: "abduction", loop: false },
-      { from: 4025, to: 4200, animation: "ufo_flying", loop: true },
-      { from: 4201, to: 4218, animation: "ufo_landing", loop: false },
-      { from: 4219, to: 4300, animation: "walking", loop: true }
-    ]
-  },
-  
-  // ========== PARTE 7 (BG_11 - ESTÁTICO) ==========
-  {
-    start: 4301,
-    end: 4338,
-    bg: "BG_11.png",
-    steps: [
-      { from: 4301, to: 4338, animation: "walk_activation_white", loop: false }
-    ],
-    isStatic: true // PROPRIEDADE: cena estática
-  },
-  
-  // ========== PARTE 8 (BG_12 - ESTÁTICO) ==========
-  {
-    start: 4339,
-    end: 4385,
-    bg: "BG_12.png",
-    steps: [
-      { from: 4339, to: 4385, animation: "walk_activation_black", loop: false }
-    ],
-    isStatic: true // PROPRIEDADE: cena estática
-  }
+// ==========================================
+= MANIFESTAÇÃO
+// ==========================================
+
+function generateManifestationPoints() {
+    const pointPositions = [
+        { x: 200, y: 150, name: 'NÓ CENTRAL', radius: 30, activated: false, required: true },
+        { x: 500, y: 100, name: 'PORTA DE ENTRADA', radius: 30, activated: false, required: true },
+        { x: 650, y: 300, name: 'INTERRUPTOR PRINCIPAL', radius: 35, activated: false, required: true },
+        { x: 150, y: 400, name: 'GERADOR DE ENERGIA', radius: 30, activated: false, required: true },
+        { x: 400, y: 350, name: 'PAINEL DE CONTROLE', radius: 30, activated: false, required: true }
+    ];
+    
+    manifestationPoints = pointPositions.map((point, index) => ({
+        ...point,
+        id: index,
+        activated: false,
+        activationProgress: 0
+    }));
+}
+
+function startManifestationEffect() {
+    setInterval(() => {
+        if (manifestationLevel > 0) {
+            for (let i = 0; i < Math.floor(manifestationLevel / 10); i++) {
+                energyParticles.push({
+                    x: player.x + (Math.random() - 0.5) * 50,
+                    y: player.y + (Math.random() - 0.5) * 50,
+                    life: 1,
+                    size: Math.random() * 5 + 2,
+                    color: `hsl(${Math.random() * 60 + 20}, 100%, 50%)`
+                });
+            }
+        }
+        
+        energyParticles = energyParticles.filter(p => {
+            p.life -= 0.02;
+            p.x += (Math.random() - 0.5) * 2;
+            p.y += (Math.random() - 0.5) * 2 - 1;
+            return p.life > 0;
+        });
+    }, 100);
+    
+    setInterval(() => {
+        if (manifestationLevel >= 100 && finalCountdown > 0) {
+            finalCountdown--;
+            if (finalMessageEl) {
+                finalMessageEl.textContent = `MANIFESTAÇÃO EM ${finalCountdown}...`;
+            }
+            
+            if (finalCountdown <= 0) {
+                finalizeManifestation();
+            }
+        }
+    }, 1000);
+}
+
+function increaseManifestation(amount) {
+    manifestationLevel = Math.min(100, manifestationLevel + amount);
+    updateManifestationDisplay();
+    
+    if (manifestationBar) {
+        manifestationBar.style.width = `${manifestationLevel}%`;
+        manifestationBar.style.backgroundColor = `hsl(${manifestationLevel * 1.2}, 100%, 50%)`;
+    }
+    
+    if (manifestationLevel >= 20 && manifestationPoints[0] && !manifestationPoints[0].activated) {
+        activateManifestationPoint(0);
+    }
+    if (manifestationLevel >= 40 && manifestationPoints[1] && !manifestationPoints[1].activated) {
+        activateManifestationPoint(1);
+    }
+    if (manifestationLevel >= 60 && manifestationPoints[2] && !manifestationPoints[2].activated) {
+        activateManifestationPoint(2);
+    }
+    if (manifestationLevel >= 80 && manifestationPoints[3] && !manifestationPoints[3].activated) {
+        activateManifestationPoint(3);
+    }
+    if (manifestationLevel >= 100 && manifestationPoints[4] && !manifestationPoints[4].activated) {
+        activateManifestationPoint(4);
+        startFinalCountdown();
+    }
+}
+
+function activateManifestationPoint(pointId) {
+    if (manifestationPoints[pointId] && !manifestationPoints[pointId].activated) {
+        manifestationPoints[pointId].activated = true;
+        
+        showLog(`🔌 Ponto de manifestação ativado: ${manifestationPoints[pointId].name}`, 'success');
+        showTimelineMessage(`⚡ ${manifestationPoints[pointId].name} - a energia flui pelo protocolo`);
+        
+        for (let i = 0; i < 50; i++) {
+            collectSeed();
+        }
+    }
+}
+
+function startFinalCountdown() {
+    if (!switchActivated) {
+        switchActivated = true;
+        finalCountdown = 10;
+        showLog('🔘 INTERRUPTOR ATIVADO! Protocolo sendo manifestado...', 'success');
+        showTimelineMessage('🔴🔴🔴 O INTERRUPTOR FOI LIGADO. A REDE ESTÁ SENDO ATIVADA. 🔴🔴🔴');
+        
+        if (finalMessageEl) {
+            finalMessageEl.style.display = 'block';
+            finalMessageEl.style.animation = 'pulse 1s infinite';
+        }
+    }
+}
+
+async function finalizeManifestation() {
+    showLog('✨✨✨ PROTOCOLO MANIFESTADO COM SUCESSO! ✨✨✨', 'success');
+    showTimelineMessage('🎉🎉🎉 O BITCOIN BLUEPRINT PROTOCOL ESTÁ VIVO! 🎉🎉🎉');
+    
+    if (finalMessageEl) {
+        finalMessageEl.innerHTML = '🎉 PROTOCOLO MANIFESTADO! 🎉<br>VOCÊ FAZ PARTE DA HISTÓRIA DO BITCOIN';
+        finalMessageEl.style.background = 'linear-gradient(45deg, #ff8c00, #ff4400)';
+        finalMessageEl.style.color = '#000';
+        finalMessageEl.style.fontWeight = 'bold';
+    }
+    
+    saveToLocalStorage('bbp_protocol_manifested', true);
+    saveToLocalStorage('bbp_manifestation_date', Date.now());
+    
+    showClaimButton();
+    showCelebration();
+}
+
+function showClaimButton() {
+    const button = document.createElement('button');
+    button.textContent = '🏆 REIVINDICAR FRAÇÃO DO BBP 🏆';
+    button.className = 'claim-btn';
+    button.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(45deg, #ff8c00, #ff4400);
+        color: #000;
+        border: none;
+        padding: 16px 32px;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        z-index: 100;
+        clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+        animation: pulse 1s infinite;
+    `;
+    button.onclick = async () => {
+        button.disabled = true;
+        button.textContent = '🔄 REIVINDICANDO...';
+        
+        if (typeof generateStepToken === 'function') {
+            const token = await generateStepToken();
+            if (token) {
+                button.textContent = '✅ FRAÇÃO REIVINDICADA! ✅';
+                showNotification('Sua fração do BBP foi registrada! Guarde o token.');
+            } else {
+                button.textContent = '⚠️ ERRO - TENTE NOVAMENTE';
+                button.disabled = false;
+            }
+        }
+    };
+    document.body.appendChild(button);
+}
+
+function showCelebration() {
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const firework = document.createElement('div');
+            firework.style.cssText = `
+                position: fixed;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                width: ${Math.random() * 10 + 5}px;
+                height: ${Math.random() * 10 + 5}px;
+                background: radial-gradient(circle, #ff8c00, #ff4400, #ffff00);
+                border-radius: 50%;
+                pointer-events: none;
+                animation: explode 1s ease-out forwards;
+                z-index: 9999;
+            `;
+            document.body.appendChild(firework);
+            setTimeout(() => firework.remove(), 1000);
+        }, i * 100);
+    }
+}
+
+function updateManifestationDisplay() {
+    if (manifestationEl) {
+        manifestationEl.textContent = `Manifestação: ${Math.floor(manifestationLevel)}%`;
+    }
+    
+    const activeCount = manifestationPoints.filter(p => p.activated).length;
+    if (document.getElementById('activePoints')) {
+        document.getElementById('activePoints').textContent = `${activeCount}/${manifestationPoints.length}`;
+    }
+}
+
+function checkAllScenesCompleted() {
+    let completedScenes = 0;
+    for (let i = 1; i <= 5; i++) {
+        if (loadFromLocalStorage(`scene_${i}_completed`)) {
+            completedScenes++;
+        }
+    }
+    
+    if (completedScenes >= 5) {
+        showLog('🌟 Todas as cenas anteriores foram completadas! A manifestação final está próxima.', 'success');
+        increaseManifestation(20);
+    }
+}
+
+// ==========================================
+= PROGRESSO
+// ==========================================
+
+function loadProgress() {
+    const sceneCompleted = loadFromLocalStorage(`scene_${SCENE_ID}_completed`);
+    if (sceneCompleted) {
+        seedsCollected = SEEDS_REQUIRED;
+        updateSeedDisplay();
+        showLog('Você já completou a Manifestação do Protocolo', 'info');
+    }
+    
+    const savedSeeds = loadFromLocalStorage(`scene_${SCENE_ID}_seeds`);
+    if (savedSeeds && !sceneCompleted) {
+        seedsCollected = Math.min(savedSeeds, SEEDS_REQUIRED);
+        updateSeedDisplay();
+    }
+    
+    const savedPosition = loadFromLocalStorage(`scene_${SCENE_ID}_position`);
+    if (savedPosition) {
+        player.x = savedPosition.x;
+        player.y = savedPosition.y;
+    }
+    
+    const savedManifestation = loadFromLocalStorage(`scene_${SCENE_ID}_manifestation`);
+    if (savedManifestation) {
+        manifestationLevel = savedManifestation;
+        updateManifestationDisplay();
+        
+        manifestationPoints.forEach((point, idx) => {
+            if (idx === 0 && manifestationLevel >= 20) point.activated = true;
+            if (idx === 1 && manifestationLevel >= 40) point.activated = true;
+            if (idx === 2 && manifestationLevel >= 60) point.activated = true;
+            if (idx === 3 && manifestationLevel >= 80) point.activated = true;
+            if (idx === 4 && manifestationLevel >= 100) point.activated = true;
+        });
+    }
+}
+
+function saveProgress() {
+    saveToLocalStorage(`scene_${SCENE_ID}_seeds`, seedsCollected);
+    saveToLocalStorage(`scene_${SCENE_ID}_position`, { x: player.x, y: player.y });
+    saveToLocalStorage(`scene_${SCENE_ID}_manifestation`, manifestationLevel);
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
+    }
+}
+
+// ==========================================
+= COLETA
+// ==========================================
+
+function collectSeed() {
+    if (seedsCollected >= SEEDS_REQUIRED) return;
+    
+    seedsCollected++;
+    updateSeedDisplay();
+    saveProgress();
+    
+    showLog(`🌱 Seed coletada! ${seedsCollected}/${SEEDS_REQUIRED}`, 'success');
+    createSeedEffect();
+    
+    increaseManifestation(0.3);
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        showTimelineMessage('⚠️ Seeds coletadas! Agora ative o INTERRUPTOR PRINCIPAL.');
+    }
+}
+
+function updateSeedDisplay() {
+    if (seedCountEl) {
+        seedCountEl.textContent = `${seedsCollected}/${SEEDS_REQUIRED}`;
+    }
+}
+
+function createSeedEffect() {
+    const effect = document.createElement('div');
+    effect.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 30px;
+        height: 30px;
+        background: radial-gradient(circle, #ff8c00, #ffff00);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: manifestExpand 0.5s ease-out forwards;
+        z-index: 1000;
+    `;
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 500);
+}
+
+// ==========================================
+= TIMELINE
+// ==========================================
+
+const timelineMessages = [
+    "O momento final se aproxima.",
+    "O interruptor está ali. A rede espera.",
+    "Todas as seeds, todos os passos, todas as assinaturas.",
+    "Uma última ação separa o potencial da realidade.",
+    "O protocolo está prestes a nascer.",
+    "Aperte o interruptor. Manifeste o BBP."
 ];
 
-// ==================================================
-// FUNÇÃO PARA APLICAR/REMOVER ANIMAÇÃO FLOAT NO PERSONAGEM
-// ==================================================
-function updateCharacterAnimation() {
-  if (!character) return;
-  
-  // Remove todas as animações CSS existentes
-  character.style.animation = '';
-  character.style.transform = 'translateX(-50%)';
-  
-  // Aplica animação float APENAS se NÃO estiver em cena estática E NÃO estiver em hand_box
-  if (!isInStaticScene && !isInHandBoxScene) {
-    character.style.animation = 'float 6s ease-in-out infinite';
-    console.log('🌀 Animação FLOAT ATIVADA');
-  } else {
-    console.log('🌀 Animação FLOAT DESATIVADA (cena estática ou hand_box)');
-  }
+function startTimeline() {
+    currentTimelineIndex = 0;
+    showNextTimelineMessage();
 }
 
-// ==================================================
-// FUNÇÃO PARA ATUALIZAR CONTADOR DE SEEDS ACUMULADO
-// ==================================================
-function updateAccumulatedSeedCounter() {
-  if (!seedText) return;
-  
-  const progress = currentFrameNumber / totalFrames;
-  const curvedProgress = progress < 0.5 
-    ? 2 * progress * progress
-    : 1 - 2 * (1 - progress) * (1 - progress);
-  
-  // Calcula seeds acumulados baseado no progresso da animação atual
-  const currentSceneSeeds = Math.round(totalSeeds * curvedProgress);
-  
-  // Para a Cena 6, queremos mostrar o total acumulado (30.000)
-  // Mas ainda mostrar progresso durante a animação
-  const displayValue = accumulatedTotalSeeds; // Sempre 30.000
-  
-  seedText.innerText = displayValue.toLocaleString();
+function showNextTimelineMessage() {
+    if (currentTimelineIndex < timelineMessages.length) {
+        showTimelineMessage(timelineMessages[currentTimelineIndex]);
+        currentTimelineIndex++;
+        setTimeout(() => showNextTimelineMessage(), 5000);
+    }
 }
 
-// ==================================================
-// MOSTRAR OVERLAY
-// ==================================================
-function showRitualOverlay() {
-  if (overlayShown) return;
-  
-  console.log('📜 Mostrando overlay da Cena 6');
-  overlayShown = true;
-  isMoving = false;
-  
-  const countdownTimer = document.getElementById('countdownTimer');
-  if (countdownTimer) {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
+function showTimelineMessage(message) {
+    if (timelineEl) {
+        timelineEl.textContent = message;
+        timelineEl.style.opacity = '1';
+        setTimeout(() => {
+            if (timelineEl.textContent === message) {
+                timelineEl.style.opacity = '0.5';
+            }
+        }, 4000);
+    }
+}
+
+// ==========================================
+= LOOP DO JOGO
+// ==========================================
+
+function startGameLoop() {
+    function gameLoop() {
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+}
+
+function update() {
+    if (player.moving) {
+        player.x += player.vx || 0;
+        player.y += player.vy || 0;
+        
+        player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+        player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+        
+        for (let point of manifestationPoints) {
+            if (!point.activated) {
+                const dx = player.x - point.x;
+                const dy = player.y - point.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < point.radius + 30) {
+                    increaseManifestation(1);
+                    point.activationProgress = Math.min(100, point.activationProgress + 1.5);
+                    
+                    if (point.activationProgress >= 100 && !point.activated) {
+                        activateManifestationPoint(manifestationPoints.indexOf(point));
+                    }
+                }
+            }
+        }
+        
+        const switchPoint = manifestationPoints[2];
+        if (switchPoint && switchPoint.activated && !switchActivated && seedsCollected >= SEEDS_REQUIRED) {
+            const dx = player.x - switchPoint.x;
+            const dy = player.y - switchPoint.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 50) {
+                startFinalCountdown();
+            }
+        }
+        
+        if (Math.random() < 0.02) {
+            collectSeed();
+        }
+    }
+}
+
+function draw() {
+    if (!ctx) return;
     
-    const targetTime = tomorrow.getTime();
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#0a0a2a');
+    gradient.addColorStop(1, '#1a0a2a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    function updateOverlayCountdown() {
-      const now = new Date().getTime();
-      const distance = targetTime - now;
-      
-      if (distance < 0) {
-        countdownTimer.textContent = "00:00:00";
-        return;
-      }
-      
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      
-      countdownTimer.textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    for (let i = 0; i < 50; i++) {
+        ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.sin(Date.now() * 0.001 + i) * 100)}, 0, 0.1)`;
+        ctx.beginPath();
+        ctx.arc((Date.now() * 0.01 + i * 50) % canvas.width, (Date.now() * 0.005 + i * 30) % canvas.height, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
     
-    updateOverlayCountdown();
-    setInterval(updateOverlayCountdown, 1000);
-  }
-  
-  if (overlay) {
-    overlay.style.display = 'flex';
-  }
-}
-
-// ==================================================
-// LOOP PRINCIPAL OTIMIZADO (COM CORREÇÕES COMPLETAS)
-// ==================================================
-function startMainLoop() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-  }
-  
-  mainInterval = setInterval(() => {
-    try {
-      if (!isMoving) return;
-      
-      if (inEternalLoop && currentFrameNumber >= totalFrames) {
-        currentFrameNumber = 1;
-        animationFrameIndex = 0;
-        bgX = 0;
-        isInStaticScene = false;
-        isInHandBoxScene = false;
-        updateCharacterAnimation();
-      }
-      
-      currentFrameNumber++;
-      
-      // ATUALIZA CONTADOR DE SEEDS ACUMULADO
-      updateAccumulatedSeedCounter();
-      
-      if (!inEternalLoop) {
-        const targetSeeds = frameToSeedOrganic(currentFrameNumber);
+    for (let point of manifestationPoints) {
+        const pulseScale = point.activated ? 1 + Math.sin(Date.now() * 0.01) * 0.2 : 1;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, point.radius * pulseScale, 0, Math.PI * 2);
         
-        if (accumulatedSeeds < targetSeeds) {
-          const remaining = targetSeeds - accumulatedSeeds;
-          const increment = Math.max(1, Math.ceil(remaining / (totalFrames - currentFrameNumber + 1)));
-          accumulatedSeeds = Math.min(accumulatedSeeds + increment, targetSeeds);
+        if (point.activated) {
+            const gradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, point.radius);
+            gradient.addColorStop(0, '#ffaa00');
+            gradient.addColorStop(1, '#ff4400');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = '#ffff00';
+        } else {
+            ctx.fillStyle = `rgba(100, 50, 150, ${0.3 + point.activationProgress / 200})`;
+            ctx.fill();
+            ctx.strokeStyle = '#aa66ff';
+        }
+        ctx.stroke();
+        
+        if (point.activationProgress > 0 && !point.activated) {
+            ctx.fillStyle = '#ffaa44';
+            ctx.fillRect(point.x - 25, point.y - 45, 50 * (point.activationProgress / 100), 4);
         }
         
-        if (currentFrameNumber >= totalFrames && !overlayShown) {
-          accumulatedSeeds = totalSeeds;
-          
-          setTimeout(() => {
-            if (!overlayShown) {
-              showRitualOverlay();
-            }
-          }, 800);
-          
-          currentFrameNumber = totalFrames;
-          return;
-        }
-      }
-      
-      // DETECTAR MUDANÇAS DE ESTADO
-      let sceneChanged = false;
-      let newIsInStaticScene = false;
-      let newIsInHandBoxScene = false;
-      let currentStepAnimation = "";
-      
-      for (const scene of SCENES) {
-        if (currentFrameNumber >= scene.start && currentFrameNumber <= scene.end) {
-          // VERIFICA SE O FUNDO MUDOU
-          if (lastBg !== scene.bg) {
-            sceneChanged = true;
-            lastBg = scene.bg;
-            
-            // CARREGA O FUNDO COM ANTECEDÊNCIA PARA EVITAR FLASH
-            const img = new Image();
-            img.src = `backgrounds/${scene.bg}`;
-            
-            // APLICA O FUNDO IMEDIATAMENTE
-            if (background) {
-              background.style.backgroundImage = `url("backgrounds/${scene.bg}")`;
-            }
-          }
-          
-          // VERIFICA SE É CENA ESTÁTICA
-          newIsInStaticScene = scene.isStatic === true;
-          
-          // VERIFICA SE ESTÁ NA ANIMAÇÃO hand_box
-          for (const step of scene.steps) {
-            if (currentFrameNumber >= step.from && currentFrameNumber <= step.to) {
-              currentStepAnimation = step.animation;
-              
-              // DETECTA hand_box (frames 2501-2545)
-              if (step.animation === "hand_box") {
-                newIsInHandBoxScene = true;
-              }
-              
-              if (currentStep !== step) {
-                currentAnimation = ANIMATIONS[step.animation];
-                currentAnimationName = step.animation;
-                currentStep = step;
-                animationFrameIndex = 0;
-              }
-              
-              break;
-            }
-          }
-          break;
-        }
-      }
-      
-      // ATUALIZA ESTADOS E ANIMAÇÃO DO PERSONAGEM
-      if (newIsInStaticScene !== isInStaticScene || newIsInHandBoxScene !== isInHandBoxScene) {
-        isInStaticScene = newIsInStaticScene;
-        isInHandBoxScene = newIsInHandBoxScene;
-        updateCharacterAnimation();
-      }
-      
-      // CONTROLE DE MOVIMENTO DO FUNDO
-      // Se estiver em cena estática OU na animação hand_box, para o fundo
-      if (isInStaticScene || isInHandBoxScene) {
-        bgSpeed = 0;
-        bgX = 0; // Centraliza o fundo
-      } else {
-        bgSpeed = 2;
-      }
-      
-      // Movimenta o fundo (exceto em cenas estáticas e hand_box)
-      if (!isInStaticScene && !isInHandBoxScene) {
-        bgX -= bgSpeed;
-        if (bgX <= -3000) {
-          bgX = 0;
-        }
-      }
-      
-      // Aplica posição do fundo
-      if (background) {
-        background.style.backgroundPositionX = bgX + "px";
-      }
-      
-      // VERIFICAÇÃO DE SEGURANÇA PARA ÍNDICE DE ANIMAÇÃO
-      if (animationFrameIndex >= currentAnimation.length) {
-        animationFrameIndex = currentAnimation.length - 1;
-      }
-      
-      // MOSTRA O FRAME DO PERSONAGEM
-      if (currentAnimation && currentAnimation[animationFrameIndex] && character) {
-        // CORREÇÃO: Usa requestAnimationFrame para evitar flicker
-        requestAnimationFrame(() => {
-          character.src = currentAnimation[animationFrameIndex];
-        });
-      }
-      
-      // AVANÇA O FRAME DA ANIMAÇÃO
-      if (currentStep && (currentStep.loop || animationFrameIndex < currentAnimation.length - 1)) {
-        animationFrameIndex++;
+        ctx.fillStyle = point.activated ? '#ffff00' : '#aa88ff';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(point.name, point.x - 40, point.y - 50);
         
-        if (animationFrameIndex >= currentAnimation.length) {
-          if (currentStep.loop) {
-            animationFrameIndex = 0;
-          } else {
-            animationFrameIndex = currentAnimation.length - 1;
-          }
+        if (point.activated) {
+            ctx.fillStyle = '#ffff00';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText('⚡ ATIVADO ⚡', point.x - 35, point.y + 40);
         }
-      }
-      
-    } catch (error) {
-      console.error('Erro no loop principal:', error);
-      clearInterval(mainInterval);
-      setTimeout(() => {
-        startMainLoop();
-      }, 1000);
+        
+        if (point.id === 2 && point.activated && !switchActivated && seedsCollected >= SEEDS_REQUIRED) {
+            ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, point.radius + 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff4400';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText('🔘 APERTE PARA LIGAR', point.x - 50, point.y - 65);
+        }
     }
-  }, frameSpeed);
-  
-  return mainInterval;
+    
+    for (let p of energyParticles) {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    const glowIntensity = manifestationLevel / 20;
+    ctx.shadowBlur = 20 + manifestationLevel / 2;
+    ctx.shadowColor = '#ff6600';
+    
+    ctx.strokeStyle = manifestationLevel >= 100 ? '#ffff00' : '#ff8c00';
+    ctx.lineWidth = 3;
+    
+    ctx.beginPath();
+    ctx.arc(player.x, player.y - 15, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y - 5);
+    ctx.lineTo(player.x, player.y + 15);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x - 12, player.y + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x + 12, player.y + 8);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x - 10, player.y + 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x + 10, player.y + 30);
+    ctx.stroke();
+    
+    ctx.fillStyle = manifestationLevel >= 100 ? '#ffff00' : '#ff8c00';
+    ctx.beginPath();
+    ctx.arc(player.x - 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(player.x + 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    
+    if (manifestationLevel > 0) {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y - 10, 30, 0, (manifestationLevel / 100) * Math.PI * 2);
+        ctx.strokeStyle = `hsl(${manifestationLevel * 1.2}, 100%, 50%)`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+    }
+    
+    if (finalCountdown > 0 && finalCountdown < 10) {
+        ctx.fillStyle = '#ff4400';
+        ctx.font = 'bold 48px monospace';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff0000';
+        ctx.fillText(finalCountdown, canvas.width / 2 - 20, canvas.height / 2);
+        ctx.shadowBlur = 0;
+    }
 }
 
-// ==================================================
-// LIMPEZA DE INTERVALOS
-// ==================================================
-function cleanupIntervals() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-    mainInterval = null;
-  }
-  
-  if (loreInterval) {
-    clearInterval(loreInterval);
-    loreInterval = null;
-  }
-  
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
+// ==========================================
+= CONTROLES
+// ==========================================
 
-// ==================================================
-// INICIALIZAÇÃO
-// ==================================================
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 BBP Ritual - Cena 6 iniciada');
-  console.log('📊 RITUAL COMPLETO - 30.000 seeds acumulados');
-  console.log('   Cena 1: 2.000 seeds');
-  console.log('   Cena 2: 4.000 seeds');
-  console.log('   Cena 3: 6.000 seeds');
-  console.log('   Cena 4: 8.000 seeds');
-  console.log('   Cena 5: 10.000 seeds');
-  console.log('   Cena 6: 4.385 seeds');
-  console.log('   TOTAL: 30.000 seeds');
-  console.log('🎯 CORREÇÕES APLICADAS:');
-  console.log('  1. Mostrando total acumulado de 30.000 seeds');
-  console.log('  2. Animação "float" removida durante BG_11 e BG_12');
-  console.log('  3. Animação "float" removida durante hand_box (mão e caixa)');
-  console.log('  4. Prevenção de flash entre transições de fundo');
-  
-  if (overlay) {
-    overlay.addEventListener('click', function(event) {
-      if (event.target === overlay) {
-        closeOverlay();
-      }
+function setupControls() {
+    window.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'w': player.moving = true; player.vy = -3; break;
+            case 'ArrowDown': case 's': player.moving = true; player.vy = 3; break;
+            case 'ArrowLeft': case 'a': player.moving = true; player.vx = -3; break;
+            case 'ArrowRight': case 'd': player.moving = true; player.vx = 3; break;
+            case ' ':
+                if (switchActivated === false && seedsCollected >= SEEDS_REQUIRED) {
+                    const switchPoint = manifestationPoints[2];
+                    if (switchPoint && switchPoint.activated) {
+                        const dx = player.x - switchPoint.x;
+                        const dy = player.y - switchPoint.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 60) {
+                            startFinalCountdown();
+                        }
+                    }
+                }
+                break;
+        }
     });
-  }
-  
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-      isMoving = !isMoving;
-      console.log(isMoving ? '▶️ Ritual continuando' : '⏸️ Ritual pausado');
+    
+    window.addEventListener('keyup', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'ArrowDown': case 'w': case 's': player.vy = 0; break;
+            case 'ArrowLeft': case 'ArrowRight': case 'a': case 'd': player.vx = 0; break;
+        }
+        if (!player.vx && !player.vy) player.moving = false;
+    });
+    
+    if (canvas) {
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const switchPoint = manifestationPoints[2];
+            if (switchPoint && switchPoint.activated && !switchActivated && seedsCollected >= SEEDS_REQUIRED) {
+                const dx = clickX - switchPoint.x;
+                const dy = clickY - switchPoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 50) {
+                    startFinalCountdown();
+                    return;
+                }
+            }
+            
+            const dx = clickX - player.x;
+            const dy = clickY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.min(30, Math.floor(distance / 10));
+            
+            if (steps > 0) {
+                const stepX = dx / steps;
+                const stepY = dy / steps;
+                let step = 0;
+                const interval = setInterval(() => {
+                    if (step >= steps) {
+                        clearInterval(interval);
+                        player.moving = false;
+                        return;
+                    }
+                    player.x += stepX;
+                    player.y += stepY;
+                    step++;
+                    if (Math.random() < 0.05) collectSeed();
+                }, 50);
+            }
+        });
     }
-  });
-  
-  window.addEventListener('beforeunload', cleanupIntervals);
-  
-  if (seedText) {
-    seedText.innerText = accumulatedTotalSeeds.toLocaleString();
-  }
-  
-  // Inicializa a animação do personagem
-  updateCharacterAnimation();
-  
-  preloadAllImages().then(() => {
-    startMainLoop();
-  });
-  
-  window.closeOverlay = closeOverlay;
-  window.closeNotification = closeNotification;
+}
+
+function updateStatus(message, type = 'info') {
+    if (statusEl) {
+        statusEl.innerHTML = message;
+        statusEl.className = `status-${type}`;
+    }
+    if (typeof showLog === 'function') showLog(message, type);
+}
+
+function addAnimationStyles() {
+    if (document.getElementById('bbp-scene-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'bbp-scene-styles';
+    style.textContent = `
+        @keyframes manifestExpand {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+        }
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        .status-success { color: #00ff88; }
+        .status-warning { color: #ffaa00; }
+        .status-error { color: #ff0000; }
+        .claim-btn:hover { transform: translateX(-50%) scale(1.05); }
+    `;
+    document.head.appendChild(style);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    addAnimationStyles();
+    init();
 });

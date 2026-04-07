@@ -2,6 +2,7 @@
 BBP PROTOCOL - DOCUMENTAÇÃO OFICIAL
 REF: R-17-RITUAL-DISTRIBUICAO-FRACOES
 STATUS: FINAL
+VERSÃO: 1.1 (ATUALIZADA - ABRIL 2026)
 ================================================================================
 
 1. RELAÇÃO COM O DOCUMENTO N-13
@@ -10,6 +11,9 @@ STATUS: FINAL
    Este documento (R-17) descreve a ECONOMIA e os ATIVOS distribuídos.
    
    Ambos são complementares e devem ser lidos em conjunto.
+
+   **ATUALIZAÇÃO:** O N-13 foi atualizado para versão 1.1, substituindo
+   GUN.js por BBPNetwork. Este documento reflete as mesmas mudanças.
 
 2. O DNA DO PROTOCOLO (A RAIZ DE TUDO)
 
@@ -66,15 +70,22 @@ STATUS: FINAL
         | 6    | (nenhuma - NFT único do protocolo) | 10              |
 
    4.2. Bônus de conclusão:
-        - Participante que completar TODAS as cenas (1 a 6): +50 BBP Fractions
-        - Total máximo por participante: 110 BBP Fractions
+        - Participante que completar TODAS as cenas (1 a 6): **+10 BBP Fractions**
+        - Total máximo por participante: **70 BBP Fractions**
 
-   4.3. Mecanismo de distribuição:
+        **ALTERAÇÃO:** Original era +50 e total 110. Após revisão dos códigos,
+        o valor foi ajustado para +10 e total 70, mantendo consistência com
+        a distribuição automática implementada em bbp-network.js.
+
+   4.3. Mecanismo de distribuição (**ATUALIZADO**):
         - Ao conectar a carteira em cada cena, o sistema verifica:
           a) Se o participante já reivindicou esta cena
           b) Se ainda há frações disponíveis
-        - Se positivo, gera o DNA Binding e a assinatura
-        - Registra no P2P (gun-integration.js) a participação
+        - Se positivo, **BBPRitual.distributeSceneNFT()** gera o DNA Binding
+        - **BBPRitual.distributeProtocolFractions()** distribui as 10 frações
+        - Registra no **BBPNetwork (bbp-network.js)** a participação
+        - **NOVO:** A distribuição é AUTOMÁTICA ao conectar a carteira,
+          não requer clique adicional do participante.
 
 5. ESTRUTURA DOS NFTS DAS CENAS
 
@@ -114,14 +125,18 @@ STATUS: FINAL
         | Participar de uma cena                 | 10            |
         | Primeiros 100 de cada cena             | +50           |
         | Compartilhar em redes sociais          | +5 (max 3x)   |
-        | Concluir as 5 cenas                    | +100          |
+        | Concluir as 6 cenas                    | **+10**       |
         | Convidar amigo que participar          | +10           |
 
-    6.3.1. Como o sistema detecta cada ação:
+        **ALTERAÇÃO:** "Concluir as 5 cenas" foi alterado para "Concluir as 6 cenas",
+        pois o bônus agora é aplicado ao completar todas as 6 cenas, consistente
+        com a função checkCompletionBonus() em bbp-network.js.
+
+    6.3.1. Como o sistema detecta cada ação (**ATUALIZADO**):
         - Compartilhar: botão na cena gera link com parâmetro da carteira
         - Convidar amigo: link único; quando amigo conecta, sistema associa
-        - Primeiros 100: ordem de chegada registrada no P2P
-        - Concluir cenas: registro de participação em cada cena
+        - Primeiros 100: ordem de chegada registrada no **BBPNetwork**
+        - Concluir cenas: registro de participação em cada cena via localStorage
 
    6.4. Utilidades (futuras, sujeitas à governança):
         - Votação em propostas do protocolo
@@ -144,9 +159,9 @@ STATUS: FINAL
 7. O QUE NÃO ESTÁ NESTE DOCUMENTO (REMETIDO AO N-13)
 
    - Como as cenas funcionam (animações, bonequinho, frames)
-   - Como o P2P sincroniza os acessos
+   - Como o P2P sincroniza os acessos **(agora via BBPNetwork)**
    - Como o participante conecta a carteira
-   - Como o living_wallet.py assina as mensagens
+   - Como o **BBPRitual** assina as mensagens
    - Como o viewer resolve os DNA Bindings
 
 8. NÚMEROS DE FRAMES (REFERÊNCIA)
@@ -186,6 +201,23 @@ STATUS: FINAL
     11.3. Teste do fluxo completo com participantes reais
     11.4. Lançamento do ritual
 
-================================================================================
-FIM DO DOCUMENTO
-================================================================================
+**================================================================================**
+**REGISTRO DE ALTERAÇÕES (VERSÃO 1.1)**
+**================================================================================**
+
+| Item | Original (v1.0) | Atualizado (v1.1) |
+|------|-----------------|-------------------|
+| Bônus de conclusão | +50 BBP Fractions | +10 BBP Fractions |
+| Total máximo | 110 BBP Fractions | 70 BBP Fractions |
+| Condição do bônus | Concluir 5 cenas | Concluir 6 cenas |
+| Mecanismo de distribuição | Manual (clique) | Automático ao conectar carteira |
+| Camada P2P | GUN.js | BBPNetwork (bbp-network.js) |
+| Registro de participação | gun-integration.js | bbp-network.js |
+
+**Motivo das alterações:** Alinhamento com a implementação real nos códigos
+(scene_X/main.js e shared/bbp-network.js), que automatizou a distribuição
+e ajustou os valores para consistência operacional.
+
+**================================================================================**
+**FIM DO DOCUMENTO**
+**================================================================================**

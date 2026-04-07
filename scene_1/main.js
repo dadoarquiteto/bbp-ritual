@@ -1,601 +1,457 @@
 // ==================================================
-// CONFIGURAÇÕES DA CENA 1
+// CENA 1 - FASE DO SILÊNCIO
+// COM BBP RITUAL NETWORK
 // ==================================================
-let currentFrameNumber = 0;
-const totalFrames = 500; // Total de frames da Cena 1
-let totalSeeds = 2000; // 2.000 seeds para Cena 1
-const frameSpeed = 100;
-let isMoving = true;
-let overlayShown = false;
-let accumulatedSeeds = 4;
-let inEternalLoop = false;
-let mainInterval = null;
-let countdownInterval = null;
-let notificationTimeout = null;
 
-// ==================================================
-// INTEGRAÇÃO COM TIMELINE
-// ==================================================
-let timelineData = window.Timeline ? window.Timeline.data : null;
+const SCENE_ID = 1;
+const SCENE_NAME = 'Fase do Silêncio';
+const SEEDS_REQUIRED = 2000;
 
-if (timelineData && timelineData.phases) {
-  const currentPhase = timelineData.phases.find(p => p.status === 'active');
-  if (currentPhase && currentPhase.seeds) {
-    totalSeeds = currentPhase.seeds;
-    console.log(`🎯 Total de seeds atualizado para: ${totalSeeds}`);
-  }
-}
+let player = { x: 100, y: 100, moving: false };
+let seedsCollected = 0;
+let animationId = null;
+let currentTimelineIndex = 0;
+let walletAddress = null;
 
-// ==================================================
-// SISTEMA DE TEXTO AUTOMÁTICO
-// ==================================================
-let currentLoreIndex = 0;
-let loreInterval = null;
-let loreCarouselActive = false;
+let canvas, ctx, timelineEl, seedCountEl, statusEl;
 
-function changeLoreText(nextIndex) {
-  const texts = document.querySelectorAll('.lore-text');
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.remove('active');
-  }
-  
-  currentLoreIndex = nextIndex;
-  
-  if (texts[currentLoreIndex]) {
-    texts[currentLoreIndex].classList.add('active');
-  }
-}
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
 
-function startLoreCarousel() {
-  if (loreCarouselActive) return;
-  
-  console.log('🌀 Iniciando carrossel automático de textos');
-  loreCarouselActive = true;
-  
-  changeLoreText(1);
-  
-  loreInterval = setInterval(() => {
-    const availableTexts = [1, 2, 3];
-    let nextIndex;
+async function init() {
+    console.log('🎮 Iniciando Cena 1:', SCENE_NAME);
     
-    do {
-      nextIndex = availableTexts[Math.floor(Math.random() * availableTexts.length)];
-    } while (nextIndex === currentLoreIndex && availableTexts.length > 1);
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    timelineEl = document.getElementById('timelineText');
+    seedCountEl = document.getElementById('seedCount');
+    statusEl = document.getElementById('connectionStatus');
     
-    changeLoreText(nextIndex);
-  }, 8000);
-}
-
-// ==================================================
-// ELEMENTOS DO DOM
-// ==================================================
-const character = document.getElementById("character");
-const background = document.getElementById("background");
-const seedText = document.getElementById("seedCount");
-const overlay = document.getElementById("sceneOverlay");
-const eternalMsg = document.getElementById("eternalRitualMsg");
-const ritualPhase = document.querySelector('.ritual-phase');
-const loreTitle = document.getElementById('loreTitle');
-const seedBeforeOverlay = document.getElementById('seedBeforeOverlay');
-const fragmentBeforeOverlay = document.getElementById('fragmentBeforeOverlay');
-const nftStatus = document.getElementById('nftStatus');
-const fragmentStatus = document.getElementById('fragmentStatus');
-const nftCountdown = document.getElementById('nftCountdown');
-const fragmentCountdown = document.getElementById('fragmentCountdown');
-const notificationOverlay = document.getElementById('notificationOverlay');
-
-// ==================================================
-// FUNÇÃO PARA DESATIVAR CLIQUE NA IMAGEM DA SEED
-// ==================================================
-function disableSeedImageClick() {
-  const seedImage = document.querySelector('.seed-image');
-  if (seedImage) {
-    seedImage.style.cursor = 'default';
-    seedImage.style.opacity = '0.6';
-    seedImage.style.filter = 'grayscale(70%)';
-    seedImage.onclick = null;
-    seedImage.title = 'Limite de seeds atingido';
-    seedImage.style.boxShadow = '0 0 8px rgba(255, 68, 68, 0.5)';
-    seedImage.style.borderColor = '#ff4444';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA AGENDAR NOTIFICAÇÃO
-// ==================================================
-function scheduleNotification() {
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-  }
-  
-  notificationTimeout = setTimeout(() => {
-    showNotification();
-  }, 9000);
-}
-
-// ==================================================
-// FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO
-// ==================================================
-function showNotification() {
-  console.log('📢 Mostrando overlay de notificação');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'flex';
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA FECHAR NOTIFICAÇÃO
-// ==================================================
-function closeNotification() {
-  console.log('Fechando notificação...');
-  
-  if (notificationOverlay) {
-    notificationOverlay.style.display = 'none';
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
-
-// ==================================================
-// FUNÇÃO ORGÂNICA: CONVERTE FRAME PARA SEED
-// ==================================================
-function frameToSeedOrganic(frame) {
-  const progress = frame / totalFrames;
-  const curvedProgress = progress < 0.5 
-    ? 2 * progress * progress
-    : 1 - 2 * (1 - progress) * (1 - progress);
-  
-  const seeds = Math.round(totalSeeds * curvedProgress);
-  return frame >= totalFrames ? totalSeeds : seeds;
-}
-
-// ==================================================
-// FUNÇÃO PARA REINICIAR CENA EM LOOP ETERNO
-// ==================================================
-function startEternalRitualLoop() {
-  console.log('🌙 Ritual do Silêncio eterno iniciado');
-  inEternalLoop = true;
-  
-  if (loreTitle) {
-    loreTitle.textContent = 'O SILÊNCIO É ETERNO';
-    loreTitle.style.color = '#ffaa33';
-  }
-  
-  startLoreCarousel();
-  
-  if (eternalMsg) {
-    eternalMsg.style.display = 'flex';
-  }
-  
-  if (seedBeforeOverlay) {
-    seedBeforeOverlay.style.display = 'none';
-  }
-  
-  if (fragmentBeforeOverlay) {
-    fragmentBeforeOverlay.style.display = 'none';
-  }
-  
-  if (nftStatus) {
-    nftStatus.style.display = 'flex';
-  }
-  
-  if (fragmentStatus) {
-    fragmentStatus.style.display = 'flex';
-  }
-  
-  disableSeedImageClick();
-  startAllCountdowns();
-  
-  if (ritualPhase) {
-    ritualPhase.textContent = '🌙 Cena 1: Silêncio Bem Sucedido';
-  }
-  
-  currentFrameNumber = 1;
-  animationFrameIndex = 0;
-  accumulatedSeeds = totalSeeds;
-  bgX = 0;
-  
-  if (seedText) {
-    seedText.innerText = totalSeeds;
-  }
-  
-  isMoving = true;
-  scheduleNotification();
-}
-
-// ==================================================
-// FUNÇÕES DO OVERLAY
-// ==================================================
-function closeOverlay() {
-  console.log('Fechando overlay...');
-  
-  if (overlay) {
-    overlay.style.display = 'none';
-  }
-  
-  if (!inEternalLoop) {
-    startEternalRitualLoop();
-  } else {
-    isMoving = true;
-  }
-}
-
-// ==================================================
-// FUNÇÃO PARA ATUALIZAR TODOS OS COUNTDOWNS
-// ==================================================
-function updateAllCountdowns() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0);
-  
-  const targetTime = tomorrow.getTime();
-  
-  function updateCountdown(element) {
-    if (!element) return;
+    canvas.width = 800;
+    canvas.height = 500;
     
-    const now = new Date().getTime();
-    const distance = targetTime - now;
+    await connectWalletIfNeeded();
     
-    if (distance < 0) {
-      element.textContent = "00:00:00";
-      return;
-    }
-    
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    element.textContent = 
-      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-  
-  updateCountdown(nftCountdown);
-  updateCountdown(fragmentCountdown);
-  updateCountdown(document.getElementById('countdownTimer'));
-}
-
-function startAllCountdowns() {
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-  }
-  
-  updateAllCountdowns();
-  countdownInterval = setInterval(updateAllCountdowns, 1000);
-}
-
-// ==================================================
-// CARREGAR FRAMES (CENA 1)
-// ==================================================
-function loadFrames(path, prefix, start, end) {
-  const frames = [];
-  for (let i = start; i <= end; i++) {
-    frames.push(`${path}/${prefix}_${String(i).padStart(2, "0")}.png`);
-  }
-  return frames;
-}
-
-// ==================================================
-// ANIMAÇÕES DA CENA 1
-// ==================================================
-const ANIMATIONS = {
-  walking: loadFrames("character/walking", "walking", 1, 16),
-  dog_entering: loadFrames("character/dog_entering", "dog_entering", 1, 16),
-  walking_dog: loadFrames("character/walking_dog", "walking_dog", 1, 16),
-  dog_leaving: loadFrames("character/dog_leaving", "dog_leaving", 1, 16)
-};
-
-// ==================================================
-// VARIÁVEIS DE ANIMAÇÃO
-// ==================================================
-let currentAnimation = ANIMATIONS.walking;
-let currentAnimationName = "walking";
-let currentStep = null;
-let animationFrameIndex = 0;
-let bgX = 0;
-let bgSpeed = 2;
-
-// ==================================================
-// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
-// Garante que todas as imagens sejam baixadas antes
-// da animação começar — elimina travamento na troca
-// de frames em produção.
-// ==================================================
-let allImagesPreloaded = false;
-
-function preloadAllImages() {
-  return new Promise((resolve) => {
-    const allFrames = [
-      ...ANIMATIONS.walking,
-      ...ANIMATIONS.dog_entering,
-      ...ANIMATIONS.walking_dog,
-      ...ANIMATIONS.dog_leaving
-    ];
-
-    // Também pré-carrega o background
-    const bgImages = ['backgrounds/BG_01.png'];
-    const allImages = [...allFrames, ...bgImages];
-
-    let loaded = 0;
-    const total = allImages.length;
-
-    if (total === 0) {
-      allImagesPreloaded = true;
-      resolve();
-      return;
-    }
-
-    console.log(`🖼️ Pré-carregando ${total} imagens...`);
-
-    allImages.forEach((src) => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === total) {
-          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
-          allImagesPreloaded = true;
-          resolve();
+    // REGISTRAR NA REDE BBP RITUAL
+    if (typeof BBPRitual !== 'undefined') {
+        BBPRitual.setCurrentScene(SCENE_ID);
+        
+        if (walletAddress) {
+            await BBPRitual.registerSeed(walletAddress);
+            await BBPRitual.distributeSceneNFT(SCENE_ID, walletAddress);
+            await BBPRitual.distributeProtocolFractions(10, walletAddress);
+            showLog('✅ Registrado na rede BBP', 'success');
         }
-      };
-      img.src = src;
-    });
-  });
+    } else {
+        showLog('⚠️ BBPRitual não carregado', 'warning');
+    }
+    
+    loadProgress();
+    startTimeline();
+    startGameLoop();
+    setupControls();
 }
 
+// ==========================================
+// CONEXÃO COM CARTEIRA
+// ==========================================
 
+async function connectWalletIfNeeded() {
+    const savedAddress = loadFromLocalStorage('wallet_address');
+    
+    if (savedAddress && savedAddress !== 'null') {
+        walletAddress = savedAddress;
+        updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+        showLog(`Carteira conectada: ${walletAddress}`, 'info');
+        return true;
+    }
+    
+    updateStatus('⚠️ Conecte sua carteira Bitcoin', 'warning');
+    
+    if (typeof connectWallet === 'function') {
+        const wallet = await connectWallet();
+        if (wallet && wallet.address) {
+            walletAddress = wallet.address;
+            updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
+            return true;
+        }
+    }
+    
+    return false;
+}
 
-// ==================================================
-// CENA 1
-// ==================================================
-const SCENES = [
-  {
-    start: 1,
-    end: 500,
-    bg: "BG_01.png",
-    steps: [
-      { from: 1, to: 200, animation: "walking", loop: true },
-      { from: 201, to: 216, animation: "dog_entering", loop: false },
-      { from: 217, to: 408, animation: "walking_dog", loop: true },
-      { from: 409, to: 424, animation: "dog_leaving", loop: false },
-      { from: 425, to: 500, animation: "walking", loop: true }
-    ]
-  }
+// ==========================================
+// PROGRESSO
+// ==========================================
+
+function loadProgress() {
+    const sceneCompleted = loadFromLocalStorage(`scene_${SCENE_ID}_completed`);
+    if (sceneCompleted) {
+        seedsCollected = SEEDS_REQUIRED;
+        updateSeedDisplay();
+        showLog('Você já completou esta cena anteriormente', 'info');
+        showTimelineMessage('Você já despertou as seeds do silêncio. O protocolo te reconhece.');
+    }
+    
+    const savedSeeds = loadFromLocalStorage(`scene_${SCENE_ID}_seeds`);
+    if (savedSeeds && !sceneCompleted) {
+        seedsCollected = Math.min(savedSeeds, SEEDS_REQUIRED);
+        updateSeedDisplay();
+    }
+    
+    const savedPosition = loadFromLocalStorage(`scene_${SCENE_ID}_position`);
+    if (savedPosition) {
+        player.x = savedPosition.x;
+        player.y = savedPosition.y;
+    }
+}
+
+function saveProgress() {
+    saveToLocalStorage(`scene_${SCENE_ID}_seeds`, seedsCollected);
+    saveToLocalStorage(`scene_${SCENE_ID}_position`, { x: player.x, y: player.y });
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
+    }
+}
+
+// ==========================================
+// COLETA DE SEEDS
+// ==========================================
+
+function collectSeed() {
+    if (seedsCollected >= SEEDS_REQUIRED) return;
+    
+    seedsCollected++;
+    updateSeedDisplay();
+    saveProgress();
+    
+    showLog(`🌱 Seed coletada! ${seedsCollected}/${SEEDS_REQUIRED}`, 'success');
+    showTimelineMessage(`✨ Você coletou uma seed. ${seedsCollected}/${SEEDS_REQUIRED} seeds despertaram.`);
+    
+    createSeedEffect();
+    
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        completeScene();
+    }
+}
+
+function updateSeedDisplay() {
+    if (seedCountEl) {
+        seedCountEl.textContent = `${seedsCollected}/${SEEDS_REQUIRED}`;
+    }
+}
+
+function createSeedEffect() {
+    const effect = document.createElement('div');
+    effect.className = 'seed-effect';
+    effect.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        background: #ff8c00;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: seedPulse 0.5s ease-out forwards;
+        z-index: 1000;
+    `;
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 500);
+}
+
+// ==========================================
+= CONCLUSÃO DA CENA
+// ==========================================
+
+async function completeScene() {
+    if (seedsCollected >= SEEDS_REQUIRED) {
+        showLog(`✅ Cena ${SCENE_ID} completa!`, 'success');
+        showTimelineMessage('🎉 O silêncio foi quebrado. O protocolo reconhece sua intenção.');
+        
+        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
+        
+        showNextSceneButton();
+        return true;
+    }
+    return false;
+}
+
+function showNextSceneButton() {
+    const button = document.createElement('button');
+    button.textContent = '▶ PRÓXIMA CENA - FASE DA IGNIÇÃO';
+    button.className = 'next-scene-btn';
+    button.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #ff8c00;
+        color: #0d0d0d;
+        border: none;
+        padding: 12px 24px;
+        font-family: monospace;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 100;
+        clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    `;
+    button.onclick = () => {
+        window.location.href = '../scene_2/';
+    };
+    document.body.appendChild(button);
+}
+
+// ==========================================
+= TIMELINE NARRATIVA
+// ==========================================
+
+const timelineMessages = [
+    "No silêncio, algo se move...",
+    "As primeiras seeds despertam, ainda sem forma.",
+    "O bonequinho dá os primeiros passos no vazio.",
+    "Cada passo é uma intenção. Cada intenção, uma seed.",
+    "O protocolo começa a ganhar forma.",
+    "O silêncio é quebrado. O ritual começou."
 ];
 
-// ==================================================
-// MOSTRAR OVERLAY
-// ==================================================
-function showRitualOverlay() {
-  if (overlayShown) return;
-  
-  console.log('🌙 Mostrando overlay da Cena 1');
-  overlayShown = true;
-  isMoving = false;
-  
-  const countdownTimer = document.getElementById('countdownTimer');
-  if (countdownTimer) {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
+function startTimeline() {
+    currentTimelineIndex = 0;
+    showNextTimelineMessage();
+}
+
+function showNextTimelineMessage() {
+    if (currentTimelineIndex < timelineMessages.length) {
+        showTimelineMessage(timelineMessages[currentTimelineIndex]);
+        currentTimelineIndex++;
+        setTimeout(() => showNextTimelineMessage(), 5000);
+    }
+}
+
+function showTimelineMessage(message) {
+    if (timelineEl) {
+        timelineEl.textContent = message;
+        timelineEl.style.opacity = '1';
+        setTimeout(() => {
+            if (timelineEl.textContent === message) {
+                timelineEl.style.opacity = '0.5';
+            }
+        }, 4000);
+    }
+}
+
+// ==========================================
+= LOOP DO JOGO
+// ==========================================
+
+function startGameLoop() {
+    function gameLoop() {
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+}
+
+function update() {
+    if (player.moving) {
+        player.x += player.vx || 0;
+        player.y += player.vy || 0;
+        
+        player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+        player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+        
+        if (Math.random() < 0.01) {
+            collectSeed();
+        }
+    }
+}
+
+function draw() {
+    if (!ctx) return;
     
-    const targetTime = tomorrow.getTime();
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    function updateOverlayCountdown() {
-      const now = new Date().getTime();
-      const distance = targetTime - now;
-      
-      if (distance < 0) {
-        countdownTimer.textContent = "00:00:00";
-        return;
-      }
-      
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      
-      countdownTimer.textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
     }
     
-    updateOverlayCountdown();
-    setInterval(updateOverlayCountdown, 1000);
-  }
-  
-  if (overlay) {
-    overlay.style.display = 'flex';
-  }
-}
-
-// ==================================================
-// LOOP PRINCIPAL
-// ==================================================
-function startMainLoop() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-  }
-  
-  mainInterval = setInterval(() => {
-    try {
-      if (!isMoving) return;
-      
-      if (inEternalLoop && currentFrameNumber >= totalFrames) {
-        currentFrameNumber = 1;
-        animationFrameIndex = 0;
-        bgX = 0;
-      }
-      
-      currentFrameNumber++;
-      
-      if (!inEternalLoop) {
-        const targetSeeds = frameToSeedOrganic(currentFrameNumber);
-        
-        if (accumulatedSeeds < targetSeeds) {
-          const remaining = targetSeeds - accumulatedSeeds;
-          const increment = Math.max(1, Math.ceil(remaining / (totalFrames - currentFrameNumber + 1)));
-          accumulatedSeeds = Math.min(accumulatedSeeds + increment, targetSeeds);
-          
-          if (seedText) {
-            seedText.innerText = accumulatedSeeds;
-          }
+    for (let i = 0; i < 10; i++) {
+        if (seedsCollected < SEEDS_REQUIRED) {
+            ctx.fillStyle = '#ff8c00';
+            ctx.beginPath();
+            ctx.arc(100 + i * 60, 400, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px monospace';
+            ctx.fillText(`${i + 1}`, 96 + i * 60, 404);
         }
-        
-        if (currentFrameNumber >= totalFrames && !overlayShown) {
-          accumulatedSeeds = totalSeeds;
-          
-          if (seedText) {
-            seedText.innerText = totalSeeds;
-          }
-          
-          setTimeout(() => {
-            if (!overlayShown) {
-              showRitualOverlay();
-            }
-          }, 800);
-          
-          currentFrameNumber = totalFrames;
-          return;
-        }
-      }
-      
-      for (const scene of SCENES) {
-        if (currentFrameNumber >= scene.start && currentFrameNumber <= scene.end) {
-          if (background) {
-            background.style.backgroundImage = `url("backgrounds/${scene.bg}")`;
-          }
-          
-          for (const step of scene.steps) {
-            if (currentFrameNumber >= step.from && currentFrameNumber <= step.to) {
-              if (currentStep !== step) {
-                currentAnimation = ANIMATIONS[step.animation];
-                currentAnimationName = step.animation;
-                currentStep = step;
-                animationFrameIndex = 0;
-              }
-              break;
-            }
-          }
-          break;
-        }
-      }
-      
-      bgX -= bgSpeed;
-      if (bgX <= -3000) {
-        bgX = 0;
-      }
-      
-      if (background) {
-        background.style.backgroundPositionX = bgX + "px";
-      }
-      
-      if (currentAnimation && currentAnimation[animationFrameIndex] && character) {
-        character.src = currentAnimation[animationFrameIndex];
-      }
-      
-      if (currentStep && (currentStep.loop || animationFrameIndex < currentAnimation.length - 1)) {
-        animationFrameIndex++;
-        if (animationFrameIndex >= currentAnimation.length) {
-          animationFrameIndex = currentStep.loop ? 0 : currentAnimation.length - 1;
-        }
-      }
-      
-      // ==================================================
-      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 1)
-      // ==================================================
-      const characterElement = document.getElementById('character');
-      if (characterElement) {
-        let removeFloat = false;
-        
-        // Remove float durante dog_entering (cão entrando)
-        if (currentStep && currentStep.animation === "dog_entering") {
-          removeFloat = true;
-        }
-        
-        // Remove float durante dog_leaving (cão saindo)
-        if (currentStep && currentStep.animation === "dog_leaving") {
-          removeFloat = true;
-        }
-        
-        if (removeFloat) {
-          characterElement.style.animation = 'none';
-        } else {
-          characterElement.style.animation = 'float 6s ease-in-out infinite';
-        }
-      }
-      
-    } catch (error) {
-      console.error('Erro no loop principal:', error);
-      clearInterval(mainInterval);
-      setTimeout(() => {
-        startMainLoop();
-      }, 1000);
     }
-  }, frameSpeed);
-  
-  return mainInterval;
+    
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 3;
+    
+    ctx.beginPath();
+    ctx.arc(player.x, player.y - 15, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y - 5);
+    ctx.lineTo(player.x, player.y + 15);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x - 12, player.y + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x + 12, player.y + 8);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x - 10, player.y + 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + 15);
+    ctx.lineTo(player.x + 10, player.y + 30);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#ff8c00';
+    ctx.beginPath();
+    ctx.arc(player.x - 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(player.x + 4, player.y - 18, 2, 0, Math.PI * 2);
+    ctx.fill();
 }
 
-// ==================================================
-// LIMPEZA DE INTERVALOS
-// ==================================================
-function cleanupIntervals() {
-  if (mainInterval) {
-    clearInterval(mainInterval);
-    mainInterval = null;
-  }
-  
-  if (loreInterval) {
-    clearInterval(loreInterval);
-    loreInterval = null;
-  }
-  
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-  }
-}
+// ==========================================
+= CONTROLES
+// ==========================================
 
-// ==================================================
-// INICIALIZAÇÃO
-// ==================================================
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 BBP Ritual - Cena 1 iniciada');
-  
-  if (overlay) {
-    overlay.addEventListener('click', function(event) {
-      if (event.target === overlay) {
-        closeOverlay();
-      }
+function setupControls() {
+    window.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'ArrowUp':
+            case 'w':
+                player.moving = true;
+                player.vy = -3;
+                break;
+            case 'ArrowDown':
+            case 's':
+                player.moving = true;
+                player.vy = 3;
+                break;
+            case 'ArrowLeft':
+            case 'a':
+                player.moving = true;
+                player.vx = -3;
+                break;
+            case 'ArrowRight':
+            case 'd':
+                player.moving = true;
+                player.vx = 3;
+                break;
+        }
     });
-  }
-  
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-      isMoving = !isMoving;
+    
+    window.addEventListener('keyup', (e) => {
+        switch(e.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+            case 'w':
+            case 's':
+                player.vy = 0;
+                break;
+            case 'ArrowLeft':
+            case 'ArrowRight':
+            case 'a':
+            case 'd':
+                player.vx = 0;
+                break;
+        }
+        if (!player.vx && !player.vy) {
+            player.moving = false;
+        }
+    });
+    
+    if (canvas) {
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const dx = clickX - player.x;
+            const dy = clickY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.min(30, Math.floor(distance / 10));
+            
+            if (steps > 0) {
+                const stepX = dx / steps;
+                const stepY = dy / steps;
+                let step = 0;
+                const interval = setInterval(() => {
+                    if (step >= steps) {
+                        clearInterval(interval);
+                        player.moving = false;
+                        return;
+                    }
+                    player.x += stepX;
+                    player.y += stepY;
+                    step++;
+                    if (Math.random() < 0.05) collectSeed();
+                }, 50);
+            }
+        });
     }
-  });
-  
-  window.addEventListener('beforeunload', cleanupIntervals);
-  
-  if (seedText) {
-    seedText.innerText = accumulatedSeeds;
-  }
-  
-  // Aguarda preload de todas as imagens antes de iniciar o loop
-  preloadAllImages().then(() => {
-    startMainLoop();
-  });
-  
-  window.closeOverlay = closeOverlay;
-  window.closeNotification = closeNotification;
+}
+
+function updateStatus(message, type = 'info') {
+    if (statusEl) {
+        statusEl.innerHTML = message;
+        statusEl.className = `status-${type}`;
+    }
+    if (typeof showLog === 'function') showLog(message, type);
+}
+
+function addAnimationStyles() {
+    if (document.getElementById('bbp-scene-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'bbp-scene-styles';
+    style.textContent = `
+        @keyframes seedPulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        }
+        .status-success { color: #00ff00; }
+        .status-warning { color: #ffaa00; }
+        .status-error { color: #ff0000; }
+        .next-scene-btn:hover {
+            background: #ffb347;
+            transform: translateY(-1px);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    addAnimationStyles();
+    init();
 });
