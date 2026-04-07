@@ -348,6 +348,8 @@ function preloadAllImages() {
   });
 }
 
+
+
 // ==================================================
 // CENA 2
 // ==================================================
@@ -551,10 +553,12 @@ function startMainLoop() {
       if (characterElement) {
         let removeFloat = false;
         
+        // Remove float durante banana_slip (escorregando)
         if (currentStep && currentStep.animation === "banana_slip") {
           removeFloat = true;
         }
         
+        // Remove float durante stumble_stone (tropeçando)
         if (currentStep && currentStep.animation === "stumble_stone") {
           removeFloat = true;
         }

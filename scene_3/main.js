@@ -346,6 +346,8 @@ function preloadAllImages() {
   });
 }
 
+
+
 // ==================================================
 // CENA 3
 // ==================================================
@@ -549,6 +551,7 @@ function startMainLoop() {
       if (characterElement) {
         let removeFloat = false;
         
+        // Remove float durante ball_obstacle
         if (currentStep && currentStep.animation === "ball_obstacle") {
           removeFloat = true;
         }
