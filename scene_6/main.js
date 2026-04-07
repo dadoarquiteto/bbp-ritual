@@ -15,11 +15,6 @@ let countdownInterval = null;
 let notificationTimeout = null;
 
 // ==================================================
-// VARIÁVEIS DA REDE P2P (NOVO)
-// ==================================================
-let walletAddress = null;
-
-// ==================================================
 // INTEGRAÇÃO COM TIMELINE
 // ==================================================
 let timelineData = window.Timeline ? window.Timeline.data : null;
@@ -418,6 +413,8 @@ function preloadAllImages() {
   });
 }
 
+
+
 // ==================================================
 // CENA 6 - RITUAL COMPLETO (COM CONTROLE DE CENAS ESTÁTICAS E HAND_BOX)
 // ==================================================
@@ -619,46 +616,6 @@ function showRitualOverlay() {
 }
 
 // ==================================================
-// FUNÇÕES DA REDE P2P (NOVO - SÓ ADICIONADO)
-// ==================================================
-
-async function connectWalletIfNeeded() {
-  const savedAddress = loadFromLocalStorage('wallet_address');
-  
-  if (savedAddress && savedAddress !== 'null') {
-    walletAddress = savedAddress;
-    console.log(`✅ Carteira conectada: ${walletAddress}`);
-    
-    if (typeof BBPRitual !== 'undefined') {
-      BBPRitual.setCurrentScene(6);
-      await BBPRitual.registerSeed(walletAddress);
-      // Cena 6 não tem NFT, só frações
-      await BBPRitual.distributeProtocolFractions(10, walletAddress);
-      console.log('✅ Registrado na rede BBP');
-    }
-    return true;
-  }
-  
-  console.log('⚠️ Conecte sua carteira Bitcoin');
-  
-  if (typeof connectWallet === 'function') {
-    const wallet = await connectWallet();
-    if (wallet && wallet.address) {
-      walletAddress = wallet.address;
-      
-      if (typeof BBPRitual !== 'undefined') {
-        BBPRitual.setCurrentScene(6);
-        await BBPRitual.registerSeed(walletAddress);
-        await BBPRitual.distributeProtocolFractions(10, walletAddress);
-      }
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-// ==================================================
 // LOOP PRINCIPAL OTIMIZADO (COM CORREÇÕES COMPLETAS)
 // ==================================================
 function startMainLoop() {
@@ -852,7 +809,7 @@ function cleanupIntervals() {
 // ==================================================
 // INICIALIZAÇÃO
 // ==================================================
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 BBP Ritual - Cena 6 iniciada');
   console.log('📊 RITUAL COMPLETO - 30.000 seeds acumulados');
   console.log('   Cena 1: 2.000 seeds');
@@ -867,9 +824,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('  2. Animação "float" removida durante BG_11 e BG_12');
   console.log('  3. Animação "float" removida durante hand_box (mão e caixa)');
   console.log('  4. Prevenção de flash entre transições de fundo');
-  
-  // Conectar carteira e registrar na rede (NOVO)
-  await connectWalletIfNeeded();
   
   if (overlay) {
     overlay.addEventListener('click', function(event) {

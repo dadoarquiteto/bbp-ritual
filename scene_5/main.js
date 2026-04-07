@@ -14,11 +14,6 @@ let countdownInterval = null;
 let notificationTimeout = null;
 
 // ==================================================
-// VARIÁVEIS DA REDE P2P (NOVO)
-// ==================================================
-let walletAddress = null;
-
-// ==================================================
 // INTEGRAÇÃO COM TIMELINE
 // ==================================================
 let timelineData = window.Timeline ? window.Timeline.data : null;
@@ -352,6 +347,8 @@ function preloadAllImages() {
   });
 }
 
+
+
 // ==================================================
 // CENA 5
 // ==================================================
@@ -416,47 +413,6 @@ function showRitualOverlay() {
   if (overlay) {
     overlay.style.display = 'flex';
   }
-}
-
-// ==================================================
-// FUNÇÕES DA REDE P2P (NOVO - SÓ ADICIONADO)
-// ==================================================
-
-async function connectWalletIfNeeded() {
-  const savedAddress = loadFromLocalStorage('wallet_address');
-  
-  if (savedAddress && savedAddress !== 'null') {
-    walletAddress = savedAddress;
-    console.log(`✅ Carteira conectada: ${walletAddress}`);
-    
-    if (typeof BBPRitual !== 'undefined') {
-      BBPRitual.setCurrentScene(5);
-      await BBPRitual.registerSeed(walletAddress);
-      await BBPRitual.distributeSceneNFT(5, walletAddress);
-      await BBPRitual.distributeProtocolFractions(10, walletAddress);
-      console.log('✅ Registrado na rede BBP');
-    }
-    return true;
-  }
-  
-  console.log('⚠️ Conecte sua carteira Bitcoin');
-  
-  if (typeof connectWallet === 'function') {
-    const wallet = await connectWallet();
-    if (wallet && wallet.address) {
-      walletAddress = wallet.address;
-      
-      if (typeof BBPRitual !== 'undefined') {
-        BBPRitual.setCurrentScene(5);
-        await BBPRitual.registerSeed(walletAddress);
-        await BBPRitual.distributeSceneNFT(5, walletAddress);
-        await BBPRitual.distributeProtocolFractions(10, walletAddress);
-      }
-      return true;
-    }
-  }
-  
-  return false;
 }
 
 // ==================================================
@@ -626,11 +582,8 @@ function cleanupIntervals() {
 // ==================================================
 // INICIALIZAÇÃO
 // ==================================================
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 BBP Ritual - Cena 5 iniciada');
-  
-  // Conectar carteira e registrar na rede (NOVO)
-  await connectWalletIfNeeded();
   
   if (overlay) {
     overlay.addEventListener('click', function(event) {
