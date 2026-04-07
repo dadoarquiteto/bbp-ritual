@@ -504,9 +504,14 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- SCRIPTS NA ORDEM CORRETA -->
+  <!-- ========================================== -->
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/wallet-connector.js"></script>
+  <script src="../shared/bbp-network.js"></script>
   <script src="main.js"></script>
   <script src="timeline.js"></script>
-  
 
   <script>
     const VIDEOS_CONFIG = {
@@ -835,6 +840,5 @@
       setInterval(loadVideosGrid, 60000);
     });
   </script>
-<script src="../shared/bbp-network.js"></script>
 </body>
 </html>
