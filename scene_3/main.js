@@ -1,572 +1,635 @@
 // ==================================================
-// CENA 3 - FASE DA INSCRIÇÃO
-// COM BBP RITUAL NETWORK
+// CONFIGURAÇÕES DA CENA 3
 // ==================================================
+let currentFrameNumber = 0;
+const totalFrames = 570; // Total de frames da Cena 3
+let totalSeeds = 6000; // 6.000 seeds para Cena 3
+const frameSpeed = 100;
+let isMoving = true;
+let overlayShown = false;
+let accumulatedSeeds = 4;
+let inEternalLoop = false;
+let mainInterval = null;
+let countdownInterval = null;
+let notificationTimeout = null;
 
-const SCENE_ID = 3;
-const SCENE_NAME = 'Fase da Inscrição';
-const SEEDS_REQUIRED = 6000;
-
-let player = { x: 100, y: 100, moving: false };
-let seedsCollected = 0;
-let inscriptions = [];
-let animationId = null;
+// ==================================================
+// VARIÁVEIS DA REDE P2P (NOVO)
+// ==================================================
 let walletAddress = null;
-let currentTimelineIndex = 0;
-let inscriptionProgress = 0;
-let currentInscription = null;
 
-let canvas, ctx, timelineEl, seedCountEl, statusEl, inscriptionEl, inscriptionProgressEl;
+// ==================================================
+// INTEGRAÇÃO COM TIMELINE
+// ==================================================
+let timelineData = window.Timeline ? window.Timeline.data : null;
 
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
-
-async function init() {
-    console.log('📝 Iniciando Cena 3:', SCENE_NAME);
-    
-    canvas = document.getElementById('gameCanvas');
-    ctx = canvas.getContext('2d');
-    timelineEl = document.getElementById('timelineText');
-    seedCountEl = document.getElementById('seedCount');
-    statusEl = document.getElementById('connectionStatus');
-    inscriptionEl = document.getElementById('inscriptionText');
-    inscriptionProgressEl = document.getElementById('inscriptionProgress');
-    
-    canvas.width = 800;
-    canvas.height = 500;
-    
-    await connectWalletIfNeeded();
-    
-    // REGISTRAR NA REDE BBP RITUAL
-    if (typeof BBPRitual !== 'undefined') {
-        BBPRitual.setCurrentScene(SCENE_ID);
-        
-        if (walletAddress) {
-            await BBPRitual.registerSeed(walletAddress);
-            await BBPRitual.distributeSceneNFT(SCENE_ID, walletAddress);
-            await BBPRitual.distributeProtocolFractions(10, walletAddress);
-            showLog('✅ Registrado na rede BBP', 'success');
-        }
-    } else {
-        showLog('⚠️ BBPRitual não carregado', 'warning');
-    }
-    
-    loadProgress();
-    generateInscriptions();
-    startTimeline();
-    startGameLoop();
-    setupControls();
-    startInscriptionProcess();
+if (timelineData && timelineData.phases) {
+  const currentPhase = timelineData.phases.find(p => p.status === 'active');
+  if (currentPhase && currentPhase.seeds) {
+    totalSeeds = currentPhase.seeds;
+    console.log(`🎯 Total de seeds atualizado para: ${totalSeeds}`);
+  }
 }
 
-// ==========================================
-// CONEXÃO COM CARTEIRA
-// ==========================================
+// ==================================================
+// SISTEMA DE TEXTO AUTOMÁTICO
+// ==================================================
+let currentLoreIndex = 0;
+let loreInterval = null;
+let loreCarouselActive = false;
 
-async function connectWalletIfNeeded() {
-    const savedAddress = loadFromLocalStorage('wallet_address');
-    
-    if (savedAddress && savedAddress !== 'null') {
-        walletAddress = savedAddress;
-        updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
-        showLog(`Carteira conectada: ${walletAddress}`, 'info');
-        return true;
-    }
-    
-    updateStatus('⚠️ Conecte sua carteira Bitcoin', 'warning');
-    
-    if (typeof connectWallet === 'function') {
-        const wallet = await connectWallet();
-        if (wallet && wallet.address) {
-            walletAddress = wallet.address;
-            updateStatus(`✅ Carteira: ${formatAddress(walletAddress)}`, 'success');
-            return true;
-        }
-    }
-    
-    return false;
+function changeLoreText(nextIndex) {
+  const texts = document.querySelectorAll('.lore-text');
+  
+  if (texts[currentLoreIndex]) {
+    texts[currentLoreIndex].classList.remove('active');
+  }
+  
+  currentLoreIndex = nextIndex;
+  
+  if (texts[currentLoreIndex]) {
+    texts[currentLoreIndex].classList.add('active');
+  }
 }
 
-// ==========================================
-= INSCRIÇÕES
-// ==========================================
+function startLoreCarousel() {
+  if (loreCarouselActive) return;
+  
+  console.log('🌀 Iniciando carrossel automático de textos');
+  loreCarouselActive = true;
+  
+  changeLoreText(1);
+  
+  loreInterval = setInterval(() => {
+    const availableTexts = [1, 2, 3];
+    let nextIndex;
+    
+    do {
+      nextIndex = availableTexts[Math.floor(Math.random() * availableTexts.length)];
+    } while (nextIndex === currentLoreIndex && availableTexts.length > 1);
+    
+    changeLoreText(nextIndex);
+  }, 8000);
+}
 
-function generateInscriptions() {
-    const inscriptionTypes = [
-        { name: 'BBP:GENESIS', text: 'O primeiro registro do protocolo', seedsBonus: 1000, difficulty: 1 },
-        { name: 'BBP:IDENTITY', text: 'Identidade universal para ativos', seedsBonus: 1000, difficulty: 1 },
-        { name: 'BBP:RESOLVER', text: 'O resolvedor descentralizado', seedsBonus: 1000, difficulty: 1 },
-        { name: 'BBP:ORACLE', text: 'Rede de oráculos vivos', seedsBonus: 1000, difficulty: 1 },
-        { name: 'BBP:LIVING', text: 'Criptografia viva', seedsBonus: 1000, difficulty: 1 },
-        { name: 'BBP:QUANTUM', text: 'Segurança pós-quântica', seedsBonus: 1000, difficulty: 1 }
+// ==================================================
+// ELEMENTOS DO DOM
+// ==================================================
+const character = document.getElementById("character");
+const background = document.getElementById("background");
+const seedText = document.getElementById("seedCount");
+const overlay = document.getElementById("sceneOverlay");
+const eternalMsg = document.getElementById("eternalRitualMsg");
+const ritualPhase = document.querySelector('.ritual-phase');
+const loreTitle = document.getElementById('loreTitle');
+const seedBeforeOverlay = document.getElementById('seedBeforeOverlay');
+const fragmentBeforeOverlay = document.getElementById('fragmentBeforeOverlay');
+const nftStatus = document.getElementById('nftStatus');
+const fragmentStatus = document.getElementById('fragmentStatus');
+const nftCountdown = document.getElementById('nftCountdown');
+const fragmentCountdown = document.getElementById('fragmentCountdown');
+const notificationOverlay = document.getElementById('notificationOverlay');
+
+// ==================================================
+// FUNÇÃO PARA DESATIVAR CLIQUE NA IMAGEM DA SEED
+// ==================================================
+function disableSeedImageClick() {
+  const seedImage = document.querySelector('.seed-image');
+  if (seedImage) {
+    seedImage.style.cursor = 'default';
+    seedImage.style.opacity = '0.6';
+    seedImage.style.filter = 'grayscale(70%)';
+    seedImage.onclick = null;
+    seedImage.title = 'Limite de seeds atingido';
+    seedImage.style.boxShadow = '0 0 8px rgba(255, 68, 68, 0.5)';
+    seedImage.style.borderColor = '#ff4444';
+  }
+}
+
+// ==================================================
+// FUNÇÃO PARA AGENDAR NOTIFICAÇÃO
+// ==================================================
+function scheduleNotification() {
+  if (notificationTimeout) {
+    clearTimeout(notificationTimeout);
+  }
+  
+  notificationTimeout = setTimeout(() => {
+    showNotification();
+  }, 9000);
+}
+
+// ==================================================
+// FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO
+// ==================================================
+function showNotification() {
+  console.log('📢 Mostrando overlay de notificação');
+  
+  if (notificationOverlay) {
+    notificationOverlay.style.display = 'flex';
+  }
+}
+
+// ==================================================
+// FUNÇÃO PARA FECHAR NOTIFICAÇÃO
+// ==================================================
+function closeNotification() {
+  console.log('Fechando notificação...');
+  
+  if (notificationOverlay) {
+    notificationOverlay.style.display = 'none';
+  }
+  
+  if (notificationTimeout) {
+    clearTimeout(notificationTimeout);
+    notificationTimeout = null;
+  }
+}
+
+// ==================================================
+// FUNÇÃO ORGÂNICA: CONVERTE FRAME PARA SEED
+// ==================================================
+function frameToSeedOrganic(frame) {
+  const progress = frame / totalFrames;
+  const curvedProgress = progress < 0.5 
+    ? 2 * progress * progress
+    : 1 - 2 * (1 - progress) * (1 - progress);
+  
+  const seeds = Math.round(totalSeeds * curvedProgress);
+  return frame >= totalFrames ? totalSeeds : seeds;
+}
+
+// ==================================================
+// FUNÇÃO PARA REINICIAR CENA EM LOOP ETERNO
+// ==================================================
+function startEternalRitualLoop() {
+  console.log('📜 Ritual da Inscrição eterno iniciado');
+  inEternalLoop = true;
+  
+  if (loreTitle) {
+    loreTitle.textContent = 'A INSCRIÇÃO É ETERNA';
+    loreTitle.style.color = '#ffaa33';
+  }
+  
+  startLoreCarousel();
+  
+  if (eternalMsg) {
+    eternalMsg.style.display = 'flex';
+  }
+  
+  if (seedBeforeOverlay) {
+    seedBeforeOverlay.style.display = 'none';
+  }
+  
+  if (fragmentBeforeOverlay) {
+    fragmentBeforeOverlay.style.display = 'none';
+  }
+  
+  if (nftStatus) {
+    nftStatus.style.display = 'flex';
+  }
+  
+  if (fragmentStatus) {
+    fragmentStatus.style.display = 'flex';
+  }
+  
+  disableSeedImageClick();
+  startAllCountdowns();
+  
+  if (ritualPhase) {
+    ritualPhase.textContent = '📜 Cena 3: Inscrição Bem Sucedida';
+  }
+  
+  currentFrameNumber = 1;
+  animationFrameIndex = 0;
+  accumulatedSeeds = totalSeeds;
+  bgX = 0;
+  
+  if (seedText) {
+    seedText.innerText = totalSeeds;
+  }
+  
+  isMoving = true;
+  scheduleNotification();
+}
+
+// ==================================================
+// FUNÇÕES DO OVERLAY
+// ==================================================
+function closeOverlay() {
+  console.log('Fechando overlay...');
+  
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  
+  if (!inEternalLoop) {
+    startEternalRitualLoop();
+  } else {
+    isMoving = true;
+  }
+}
+
+// ==================================================
+// FUNÇÃO PARA ATUALIZAR TODOS OS COUNTDOWNS
+// ==================================================
+function updateAllCountdowns() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(9, 0, 0, 0);
+  
+  const targetTime = tomorrow.getTime();
+  
+  function updateCountdown(element) {
+    if (!element) return;
+    
+    const now = new Date().getTime();
+    const distance = targetTime - now;
+    
+    if (distance < 0) {
+      element.textContent = "00:00:00";
+      return;
+    }
+    
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    element.textContent = 
+      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  
+  updateCountdown(nftCountdown);
+  updateCountdown(fragmentCountdown);
+  updateCountdown(document.getElementById('countdownTimer'));
+}
+
+function startAllCountdowns() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  
+  updateAllCountdowns();
+  countdownInterval = setInterval(updateAllCountdowns, 1000);
+}
+
+// ==================================================
+// CARREGAR FRAMES (CENA 3)
+// ==================================================
+function loadFrames(path, prefix, start, end) {
+  const frames = [];
+  for (let i = start; i <= end; i++) {
+    frames.push(`${path}/${prefix}_${String(i).padStart(2, "0")}.png`);
+  }
+  return frames;
+}
+
+// ==================================================
+// ANIMAÇÕES DA CENA 3
+// ==================================================
+const ANIMATIONS = {
+  walking:      loadFrames("character/walking",      "walking",      1, 16),
+  ball_obstacle: loadFrames("character/ball_obstacle","ball_obstacle",1, 16),
+  dog_skate:    loadFrames("character/dog_skate",    "dog_skate",    1, 14)
+};
+
+// ==================================================
+// VARIÁVEIS DE ANIMAÇÃO
+// ==================================================
+let currentAnimation = ANIMATIONS.walking;
+let currentAnimationName = "walking";
+let currentStep = null;
+let animationFrameIndex = 0;
+let bgX = 0;
+let bgSpeed = 2;
+
+// ==================================================
+// PRÉ-CARREGAMENTO DE IMAGENS (FIX NETLIFY)
+// ==================================================
+let allImagesPreloaded = false;
+
+function preloadAllImages() {
+  return new Promise((resolve) => {
+    const allFrames = [
+      ...ANIMATIONS.walking,
+      ...ANIMATIONS.ball_obstacle,
+      ...ANIMATIONS.dog_skate,
     ];
-    
-    inscriptions = inscriptionTypes.map((ins, index) => ({
-        ...ins,
-        id: index,
-        x: 100 + (index % 3) * 200,
-        y: 150 + Math.floor(index / 3) * 150,
-        width: 160,
-        height: 80,
-        collected: false,
-        inscriptionData: {
-            type: 'bbp_protocol_inscription',
-            version: '1.0.0',
-            content: ins.text,
-            timestamp: Date.now()
+
+    const bgImages = ['backgrounds/BG_03.png'];
+    const allImages = [...allFrames, ...bgImages];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    if (total === 0) {
+      allImagesPreloaded = true;
+      resolve();
+      return;
+    }
+
+    console.log(`🖼️ Pré-carregando ${total} imagens...`);
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) {
+          console.log('✅ Todas as imagens pré-carregadas. Animação iniciando.');
+          allImagesPreloaded = true;
+          resolve();
         }
-    }));
+      };
+      img.src = src;
+    });
+  });
 }
 
-function startInscriptionProcess() {
-    setInterval(() => {
-        if (currentInscription && inscriptionProgress < 100) {
-            inscriptionProgress += 2;
-            updateInscriptionDisplay();
-            
-            if (inscriptionProgress >= 100) {
-                completeInscription();
-            }
-        }
-    }, 100);
-}
-
-function startInscription(inscription) {
-    if (currentInscription || inscription.collected) return;
-    
-    currentInscription = inscription;
-    inscriptionProgress = 0;
-    updateInscriptionDisplay();
-    
-    showTimelineMessage(`📝 Inscrevendo: ${inscription.name}...`);
-    showLog(`Iniciando inscrição de ${inscription.name}`, 'info');
-}
-
-function updateInscriptionDisplay() {
-    if (inscriptionProgressEl) {
-        inscriptionProgressEl.style.width = `${inscriptionProgress}%`;
-    }
-    
-    if (inscriptionEl && currentInscription) {
-        inscriptionEl.textContent = `${currentInscription.name}: ${inscriptionProgress}%`;
-    }
-}
-
-async function completeInscription() {
-    if (!currentInscription) return;
-    
-    showLog(`✅ Inscrição completa: ${currentInscription.name}`, 'success');
-    showTimelineMessage(`✨ ${currentInscription.name} inscrito no protocolo! +${currentInscription.seedsBonus} seeds`);
-    
-    currentInscription.collected = true;
-    
-    for (let i = 0; i < currentInscription.seedsBonus / 100; i++) {
-        collectSeed();
-    }
-    
-    currentInscription = null;
-    inscriptionProgress = 0;
-    
-    if (inscriptionEl) {
-        inscriptionEl.textContent = 'Aguardando nova inscrição...';
-    }
-}
-
-// ==========================================
-= PROGRESSO
-// ==========================================
-
-function loadProgress() {
-    const sceneCompleted = loadFromLocalStorage(`scene_${SCENE_ID}_completed`);
-    if (sceneCompleted) {
-        seedsCollected = SEEDS_REQUIRED;
-        updateSeedDisplay();
-        showLog('Você já completou a Fase da Inscrição', 'info');
-    }
-    
-    const savedSeeds = loadFromLocalStorage(`scene_${SCENE_ID}_seeds`);
-    if (savedSeeds && !sceneCompleted) {
-        seedsCollected = Math.min(savedSeeds, SEEDS_REQUIRED);
-        updateSeedDisplay();
-    }
-    
-    const savedPosition = loadFromLocalStorage(`scene_${SCENE_ID}_position`);
-    if (savedPosition) {
-        player.x = savedPosition.x;
-        player.y = savedPosition.y;
-    }
-    
-    const collectedInscriptions = loadFromLocalStorage(`scene_${SCENE_ID}_inscriptions`);
-    if (collectedInscriptions) {
-        inscriptions.forEach(ins => {
-            if (collectedInscriptions.includes(ins.id)) {
-                ins.collected = true;
-            }
-        });
-    }
-}
-
-function saveProgress() {
-    saveToLocalStorage(`scene_${SCENE_ID}_seeds`, seedsCollected);
-    saveToLocalStorage(`scene_${SCENE_ID}_position`, { x: player.x, y: player.y });
-    
-    const collectedIds = inscriptions.filter(ins => ins.collected).map(ins => ins.id);
-    saveToLocalStorage(`scene_${SCENE_ID}_inscriptions`, collectedIds);
-    
-    if (seedsCollected >= SEEDS_REQUIRED) {
-        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
-    }
-}
-
-// ==========================================
-= COLETA
-// ==========================================
-
-function collectSeed() {
-    if (seedsCollected >= SEEDS_REQUIRED) return;
-    
-    seedsCollected++;
-    updateSeedDisplay();
-    saveProgress();
-    
-    showLog(`🌱 Seed coletada! ${seedsCollected}/${SEEDS_REQUIRED}`, 'success');
-    createSeedEffect();
-    
-    if (seedsCollected >= SEEDS_REQUIRED) {
-        completeScene();
-    }
-}
-
-function updateSeedDisplay() {
-    if (seedCountEl) {
-        seedCountEl.textContent = `${seedsCollected}/${SEEDS_REQUIRED}`;
-    }
-}
-
-function createSeedEffect() {
-    const effect = document.createElement('div');
-    effect.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 25px;
-        height: 25px;
-        background: radial-gradient(circle, #00ff88, #008844);
-        border-radius: 50%;
-        pointer-events: none;
-        animation: inscriptionGlow 0.5s ease-out forwards;
-        z-index: 1000;
-    `;
-    document.body.appendChild(effect);
-    setTimeout(() => effect.remove(), 500);
-}
-
-// ==========================================
-= CONCLUSÃO
-// ==========================================
-
-async function completeScene() {
-    if (seedsCollected >= SEEDS_REQUIRED) {
-        showLog(`✅ Cena ${SCENE_ID} completa!`, 'success');
-        showTimelineMessage('🎉 O protocolo está inscrito. Cada passo agora é registro imutável.');
-        
-        saveToLocalStorage(`scene_${SCENE_ID}_completed`, true);
-        
-        showNextSceneButton();
-        return true;
-    }
-    return false;
-}
-
-function showNextSceneButton() {
-    const button = document.createElement('button');
-    button.textContent = '▶ PRÓXIMA CENA - FASE DA RESSONÂNCIA';
-    button.className = 'next-scene-btn';
-    button.style.cssText = `
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: #ff8c00;
-        color: #0d0d0d;
-        border: none;
-        padding: 12px 24px;
-        font-family: monospace;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 100;
-        clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
-    `;
-    button.onclick = () => {
-        window.location.href = '../scene_4/';
-    };
-    document.body.appendChild(button);
-}
-
-// ==========================================
-= TIMELINE
-// ==========================================
-
-const timelineMessages = [
-    "O protocolo começa a ganhar forma escrita.",
-    "Cada movimento é um caractere, cada passo uma inscrição.",
-    "O bonequinho não anda mais — ele registra.",
-    "As primeiras inscrições aparecem no vazio digital.",
-    "O BBP começa a ser inscrito no tecido da rede.",
-    "O registro é imutável. O protocolo respira."
+// ==================================================
+// CENA 3
+// ==================================================
+const SCENES = [
+  {
+    start: 1,
+    end: 570,
+    bg: "BG_03.png",
+    steps: [
+      { from: 1,   to: 200, animation: "walking",      loop: true  },
+      { from: 201, to: 216, animation: "ball_obstacle", loop: false },
+      { from: 217, to: 280, animation: "walking",      loop: true  },
+      { from: 281, to: 450, animation: "dog_skate",    loop: true  },
+      { from: 451, to: 570, animation: "walking",      loop: true  }
+    ]
+  }
 ];
 
-function startTimeline() {
-    currentTimelineIndex = 0;
-    showNextTimelineMessage();
-}
-
-function showNextTimelineMessage() {
-    if (currentTimelineIndex < timelineMessages.length) {
-        showTimelineMessage(timelineMessages[currentTimelineIndex]);
-        currentTimelineIndex++;
-        setTimeout(() => showNextTimelineMessage(), 5000);
+// ==================================================
+// MOSTRAR OVERLAY
+// ==================================================
+function showRitualOverlay() {
+  if (overlayShown) return;
+  
+  console.log('📜 Mostrando overlay da Cena 3');
+  overlayShown = true;
+  isMoving = false;
+  
+  const countdownTimer = document.getElementById('countdownTimer');
+  if (countdownTimer) {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    
+    const targetTime = tomorrow.getTime();
+    
+    function updateOverlayCountdown() {
+      const now = new Date().getTime();
+      const distance = targetTime - now;
+      
+      if (distance < 0) {
+        countdownTimer.textContent = "00:00:00";
+        return;
+      }
+      
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      
+      countdownTimer.textContent = 
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
+    
+    updateOverlayCountdown();
+    setInterval(updateOverlayCountdown, 1000);
+  }
+  
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
 }
 
-function showTimelineMessage(message) {
-    if (timelineEl) {
-        timelineEl.textContent = message;
-        timelineEl.style.opacity = '1';
-        setTimeout(() => {
-            if (timelineEl.textContent === message) {
-                timelineEl.style.opacity = '0.5';
-            }
-        }, 4000);
+// ==================================================
+// FUNÇÕES DA REDE P2P (NOVO - SÓ ADICIONADO)
+// ==================================================
+
+async function connectWalletIfNeeded() {
+  const savedAddress = loadFromLocalStorage('wallet_address');
+  
+  if (savedAddress && savedAddress !== 'null') {
+    walletAddress = savedAddress;
+    console.log(`✅ Carteira conectada: ${walletAddress}`);
+    
+    if (typeof BBPRitual !== 'undefined') {
+      BBPRitual.setCurrentScene(3);
+      await BBPRitual.registerSeed(walletAddress);
+      await BBPRitual.distributeSceneNFT(3, walletAddress);
+      await BBPRitual.distributeProtocolFractions(10, walletAddress);
+      console.log('✅ Registrado na rede BBP');
     }
-}
-
-// ==========================================
-= LOOP DO JOGO
-// ==========================================
-
-function startGameLoop() {
-    function gameLoop() {
-        update();
-        draw();
-        animationId = requestAnimationFrame(gameLoop);
+    return true;
+  }
+  
+  console.log('⚠️ Conecte sua carteira Bitcoin');
+  
+  if (typeof connectWallet === 'function') {
+    const wallet = await connectWallet();
+    if (wallet && wallet.address) {
+      walletAddress = wallet.address;
+      
+      if (typeof BBPRitual !== 'undefined') {
+        BBPRitual.setCurrentScene(3);
+        await BBPRitual.registerSeed(walletAddress);
+        await BBPRitual.distributeSceneNFT(3, walletAddress);
+        await BBPRitual.distributeProtocolFractions(10, walletAddress);
+      }
+      return true;
     }
-    gameLoop();
+  }
+  
+  return false;
 }
 
-function update() {
-    if (player.moving) {
-        player.x += player.vx || 0;
-        player.y += player.vy || 0;
+// ==================================================
+// LOOP PRINCIPAL
+// ==================================================
+function startMainLoop() {
+  if (mainInterval) {
+    clearInterval(mainInterval);
+  }
+  
+  mainInterval = setInterval(() => {
+    try {
+      if (!isMoving) return;
+      
+      if (inEternalLoop && currentFrameNumber >= totalFrames) {
+        currentFrameNumber = 1;
+        animationFrameIndex = 0;
+        bgX = 0;
+      }
+      
+      currentFrameNumber++;
+      
+      if (!inEternalLoop) {
+        const targetSeeds = frameToSeedOrganic(currentFrameNumber);
         
-        player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
-        player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
-        
-        for (let ins of inscriptions) {
-            if (!ins.collected && 
-                player.x > ins.x && player.x < ins.x + ins.width &&
-                player.y > ins.y && player.y < ins.y + ins.height) {
-                startInscription(ins);
-                break;
-            }
+        if (accumulatedSeeds < targetSeeds) {
+          const remaining = targetSeeds - accumulatedSeeds;
+          const increment = Math.max(1, Math.ceil(remaining / (totalFrames - currentFrameNumber + 1)));
+          accumulatedSeeds = Math.min(accumulatedSeeds + increment, targetSeeds);
+          
+          if (seedText) {
+            seedText.innerText = accumulatedSeeds;
+          }
         }
         
-        if (Math.random() < 0.015) {
-            collectSeed();
+        if (currentFrameNumber >= totalFrames && !overlayShown) {
+          accumulatedSeeds = totalSeeds;
+          
+          if (seedText) {
+            seedText.innerText = totalSeeds;
+          }
+          
+          setTimeout(() => {
+            if (!overlayShown) {
+              showRitualOverlay();
+            }
+          }, 800);
+          
+          currentFrameNumber = totalFrames;
+          return;
         }
-    }
-}
-
-function draw() {
-    if (!ctx) return;
-    
-    ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.strokeStyle = '#1a3a5a';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 30) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
-        ctx.stroke();
-    }
-    
-    ctx.fillStyle = '#2a6a9a';
-    ctx.font = '12px monospace';
-    for (let i = 0; i < 20; i++) {
-        const char = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        ctx.fillText(char, (Date.now() * 0.001 + i * 37) % canvas.width, (i * 25) % canvas.height);
-    }
-    
-    for (let ins of inscriptions) {
-        if (ins.collected) {
-            ctx.fillStyle = '#00aa44';
-            ctx.strokeStyle = '#00ff88';
-        } else if (currentInscription === ins) {
-            ctx.fillStyle = '#ffaa00';
-            ctx.strokeStyle = '#ffcc44';
+      }
+      
+      for (const scene of SCENES) {
+        if (currentFrameNumber >= scene.start && currentFrameNumber <= scene.end) {
+          if (background) {
+            background.style.backgroundImage = `url("backgrounds/${scene.bg}")`;
+          }
+          
+          for (const step of scene.steps) {
+            if (currentFrameNumber >= step.from && currentFrameNumber <= step.to) {
+              if (currentStep !== step) {
+                currentAnimation = ANIMATIONS[step.animation];
+                currentAnimationName = step.animation;
+                currentStep = step;
+                animationFrameIndex = 0;
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+      
+      bgX -= bgSpeed;
+      if (bgX <= -3000) {
+        bgX = 0;
+      }
+      
+      if (background) {
+        background.style.backgroundPositionX = bgX + "px";
+      }
+      
+      if (currentAnimation && currentAnimation[animationFrameIndex] && character) {
+        character.src = currentAnimation[animationFrameIndex];
+      }
+      
+      if (currentStep && (currentStep.loop || animationFrameIndex < currentAnimation.length - 1)) {
+        animationFrameIndex++;
+        if (animationFrameIndex >= currentAnimation.length) {
+          animationFrameIndex = currentStep.loop ? 0 : currentAnimation.length - 1;
+        }
+      }
+      
+      // ==================================================
+      // CONTROLE DA ANIMAÇÃO FLOAT DO BONECO (CENA 3)
+      // ==================================================
+      const characterElement = document.getElementById('character');
+      if (characterElement) {
+        let removeFloat = false;
+        
+        if (currentStep && currentStep.animation === "ball_obstacle") {
+          removeFloat = true;
+        }
+        
+        if (removeFloat) {
+          characterElement.style.animation = 'none';
         } else {
-            ctx.fillStyle = '#1a2a3a';
-            ctx.strokeStyle = '#3a6a9a';
+          characterElement.style.animation = 'float 6s ease-in-out infinite';
         }
-        
-        ctx.fillRect(ins.x, ins.y, ins.width, ins.height);
-        ctx.strokeRect(ins.x, ins.y, ins.width, ins.height);
-        
-        ctx.fillStyle = ins.collected ? '#00ff88' : '#88aaff';
-        ctx.font = '10px monospace';
-        ctx.fillText(ins.name, ins.x + 10, ins.y + 25);
-        
-        ctx.font = '8px monospace';
-        ctx.fillStyle = '#88aaff';
-        ctx.fillText(ins.text.substring(0, 18), ins.x + 10, ins.y + 45);
-        
-        if (ins.collected) {
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText('✓ INSCRITO', ins.x + 10, ins.y + 65);
-        }
+      }
+      
+    } catch (error) {
+      console.error('Erro no loop principal:', error);
+      clearInterval(mainInterval);
+      setTimeout(() => {
+        startMainLoop();
+      }, 1000);
     }
-    
-    ctx.strokeStyle = '#88aaff';
-    ctx.lineWidth = 3;
-    
-    ctx.beginPath();
-    ctx.arc(player.x, player.y - 15, 10, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y - 5);
-    ctx.lineTo(player.x, player.y + 15);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(player.x - 12, player.y + 8);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(player.x + 12, player.y + 8);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y + 15);
-    ctx.lineTo(player.x - 10, player.y + 30);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y + 15);
-    ctx.lineTo(player.x + 10, player.y + 30);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(player.x + 12, player.y + 5);
-    ctx.lineTo(player.x + 22, player.y);
-    ctx.stroke();
-    
-    ctx.fillStyle = '#88aaff';
-    ctx.beginPath();
-    ctx.arc(player.x - 4, player.y - 18, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(player.x + 4, player.y - 18, 2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    if (currentInscription && inscriptionProgress > 0 && inscriptionProgress < 100) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(player.x - 50, player.y - 40, 100, 10);
-        ctx.fillStyle = '#ffaa00';
-        ctx.fillRect(player.x - 50, player.y - 40, inscriptionProgress, 10);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '8px monospace';
-        ctx.fillText(`${inscriptionProgress}%`, player.x - 10, player.y - 42);
-    }
+  }, frameSpeed);
+  
+  return mainInterval;
 }
 
-// ==========================================
-= CONTROLES
-// ==========================================
+// ==================================================
+// LIMPEZA DE INTERVALOS
+// ==================================================
+function cleanupIntervals() {
+  if (mainInterval) {
+    clearInterval(mainInterval);
+    mainInterval = null;
+  }
+  
+  if (loreInterval) {
+    clearInterval(loreInterval);
+    loreInterval = null;
+  }
+  
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  
+  if (notificationTimeout) {
+    clearTimeout(notificationTimeout);
+    notificationTimeout = null;
+  }
+}
 
-function setupControls() {
-    window.addEventListener('keydown', (e) => {
-        switch(e.key) {
-            case 'ArrowUp': case 'w': player.moving = true; player.vy = -3; break;
-            case 'ArrowDown': case 's': player.moving = true; player.vy = 3; break;
-            case 'ArrowLeft': case 'a': player.moving = true; player.vx = -3; break;
-            case 'ArrowRight': case 'd': player.moving = true; player.vx = 3; break;
-        }
+// ==================================================
+// INICIALIZAÇÃO
+// ==================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('🚀 BBP Ritual - Cena 3 iniciada');
+  
+  // Conectar carteira e registrar na rede (NOVO)
+  await connectWalletIfNeeded();
+  
+  if (overlay) {
+    overlay.addEventListener('click', function(event) {
+      if (event.target === overlay) {
+        closeOverlay();
+      }
     });
-    
-    window.addEventListener('keyup', (e) => {
-        switch(e.key) {
-            case 'ArrowUp': case 'ArrowDown': case 'w': case 's': player.vy = 0; break;
-            case 'ArrowLeft': case 'ArrowRight': case 'a': case 'd': player.vx = 0; break;
-        }
-        if (!player.vx && !player.vy) player.moving = false;
-    });
-    
-    if (canvas) {
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const clickX = (e.clientX - rect.left) * scaleX;
-            const clickY = (e.clientY - rect.top) * scaleY;
-            
-            const dx = clickX - player.x;
-            const dy = clickY - player.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const steps = Math.min(30, Math.floor(distance / 10));
-            
-            if (steps > 0) {
-                const stepX = dx / steps;
-                const stepY = dy / steps;
-                let step = 0;
-                const interval = setInterval(() => {
-                    if (step >= steps) {
-                        clearInterval(interval);
-                        player.moving = false;
-                        return;
-                    }
-                    player.x += stepX;
-                    player.y += stepY;
-                    step++;
-                    if (Math.random() < 0.05) collectSeed();
-                }, 50);
-            }
-        });
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      isMoving = !isMoving;
     }
-}
-
-function updateStatus(message, type = 'info') {
-    if (statusEl) {
-        statusEl.innerHTML = message;
-        statusEl.className = `status-${type}`;
-    }
-    if (typeof showLog === 'function') showLog(message, type);
-}
-
-function addAnimationStyles() {
-    if (document.getElementById('bbp-scene-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'bbp-scene-styles';
-    style.textContent = `
-        @keyframes inscriptionGlow {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
-        }
-        .status-success { color: #00ff88; }
-        .status-warning { color: #ffaa00; }
-        .status-error { color: #ff0000; }
-        .next-scene-btn:hover { background: #ffb347; transform: translateY(-1px); }
-    `;
-    document.head.appendChild(style);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    addAnimationStyles();
-    init();
+  });
+  
+  window.addEventListener('beforeunload', cleanupIntervals);
+  
+  if (seedText) {
+    seedText.innerText = accumulatedSeeds;
+  }
+  
+  preloadAllImages().then(() => {
+    startMainLoop();
+  });
+  
+  window.closeOverlay = closeOverlay;
+  window.closeNotification = closeNotification;
 });
