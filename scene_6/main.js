@@ -5,7 +5,7 @@ let currentFrameNumber = 0;
 const totalFrames = 4385; // Total de frames da Cena 6 (seu ritual completo)
 let totalSeeds = 4385; // Seeds desta cena específica
 let accumulatedTotalSeeds = 30000; // TOTAL ACUMULADO de todas as cenas (2k+4k+6k+8k+10k+4.385k ≈ 30k)
-const frameSpeed = 100;
+let frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
 let accumulatedSeeds = 1;
@@ -855,4 +855,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
+});
+
+// ==================================================
+// CONTROLE DE VELOCIDADE VIA FIREBASE
+// ==================================================
+
+window.addEventListener('bbp:frameSpeedChange', (event) => {
+    if (event.detail && event.detail.speed) {
+        frameSpeed = event.detail.speed;
+        console.log(`🎬 Velocidade ajustada para: ${frameSpeed}ms`);
+    }
 });

@@ -45,14 +45,10 @@ async function connectWallet() {
     
     showLog(`✅ Carteira conectada: ${formatAddress(currentAddress)}`, 'success');
     
-    // Salva localmente
     saveToLocalStorage('wallet_address', currentAddress);
     saveToLocalStorage('wallet_pubkey', currentPubkey);
     
-    // Atualiza UI
     updateWalletUI();
-    
-    // Verifica participações anteriores
     await checkExistingParticipations();
     
     return {
@@ -123,7 +119,6 @@ async function checkExistingParticipations() {
     if (participated) {
       showLog(`✓ Você já participou da Cena ${i}`, 'info');
       
-      // Recupera fração se existir
       const fraction = loadFromLocalStorage(`scene_${i}_fraction`);
       if (fraction) {
         showLog(`  → Fração #${fraction.fraction_number} disponível`, 'info');
@@ -131,14 +126,16 @@ async function checkExistingParticipations() {
     }
   }
   
-  const fragments = await getProtocolFragments(currentAddress);
+  // Temporário - função será implementada depois
+  const fragments = 0;
+  
   if (fragments > 0) {
     showLog(`💎 Você possui ${formatNumber(fragments)} fragmentos do protocolo`, 'success');
   }
 }
 
 // ==========================================
-// ASSINAR MENSAGEM (PARA FUTURO CLAIM)
+// ASSINAR MENSAGEM
 // ==========================================
 async function signMessage(message) {
   if (!currentWallet) {
@@ -157,63 +154,10 @@ async function signMessage(message) {
 }
 
 // ==========================================
-// GERAR STEP TOKEN (CERTIFICADO DE PARTICIPAÇÃO)
-// ==========================================
-async function generateStepToken() {
-  if (!currentAddress) {
-    showLog('Conecte a carteira primeiro', 'error');
-    return null;
-  }
-  
-  const tokenData = {
-    address: currentAddress,
-    timestamp: Date.now(),
-    total_seeds: currentSeedCount,
-    scenes: []
-  };
-  
-  for (let i = 1; i <= 6; i++) {
-    const participated = await hasParticipatedInScene(currentAddress, i);
-    if (participated) {
-      tokenData.scenes.push(i);
-    }
-  }
-  
-  const message = JSON.stringify(tokenData);
-  const signature = await signMessage(message);
-  
-  if (signature) {
-    const stepToken = {
-      ...tokenData,
-      signature: signature,
-      pubkey: currentPubkey
-    };
-    
-    saveToLocalStorage('step_token', stepToken);
-    showLog('✨ Step Token gerado! Guarde este certificado.', 'success');
-    
-    return stepToken;
-  }
-  
-  return null;
-}
-
-// ==========================================
 // EXPORTA
 // ==========================================
-if (typeof window !== 'undefined') {
-  window.getBitcoinProvider = getBitcoinProvider;
-  window.connectWallet = connectWallet;
-  window.disconnectWallet = disconnectWallet;
-  window.signMessage = signMessage;
-  window.generateStepToken = generateStepToken;
-  window.checkExistingParticipations = checkExistingParticipations;
-  
-  // Tenta reconectar se já havia conexão
-  const savedAddress = loadFromLocalStorage('wallet_address');
-  if (savedAddress) {
-    setTimeout(() => {
-      connectWallet();
-    }, 1000);
-  }
-}
+window.getBitcoinProvider = getBitcoinProvider;
+window.connectWallet = connectWallet;
+window.disconnectWallet = disconnectWallet;
+window.signMessage = signMessage;
+window.checkExistingParticipations = checkExistingParticipations;

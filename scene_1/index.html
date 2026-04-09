@@ -15,7 +15,7 @@
 
   <!-- HUD FIXO -->
   <div id="hud">
-    <span class="ritual-phase">Cena 1: Fase do Silêncio </span>
+    <span class="ritual-phase">Cena 1: Fase do Silêncio — Invocação Inicial</span>
     
     <span class="seed-counter">
       ACTIVE SEEDS: <span id="seedCount">4</span> / 2000
@@ -504,9 +504,20 @@
     </div>
   </div>
 
-  <script src="main.js"></script>
-  <script src="timeline.js"></script>
-  <script src="p2p.js"></script>
+  <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="../shared/firebase-init.js"></script>
+
+<!-- Shared utilities -->
+<script src="../shared/utils.js"></script>
+<script src="../shared/wallet-connector.js"></script>
+<script src="../shared/bbp-network.js"></script>
+
+<!-- Cena 1 específico -->
+<script src="p2p.js"></script>
+<script src="main.js"></script>
+<script src="timeline.js"></script>
 
   <script>
     // Sistema de vídeos progressivos - CONFIGURADO PARA CENA 1

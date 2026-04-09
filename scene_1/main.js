@@ -4,7 +4,7 @@
 let currentFrameNumber = 0;
 const totalFrames = 500; // Total de frames da Cena 1
 let totalSeeds = 2000; // 2.000 seeds para Cena 1
-const frameSpeed = 100;
+let frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
 let accumulatedSeeds = 4;
@@ -598,4 +598,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
+});
+
+// ==================================================
+// CONTROLE DE VELOCIDADE VIA FIREBASE
+// ==================================================
+
+window.addEventListener('bbp:frameSpeedChange', (event) => {
+    if (event.detail && event.detail.speed) {
+        frameSpeed = event.detail.speed;
+        console.log(`🎬 Velocidade ajustada para: ${frameSpeed}ms`);
+    }
 });

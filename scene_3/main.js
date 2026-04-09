@@ -4,7 +4,7 @@
 let currentFrameNumber = 0;
 const totalFrames = 570; // Total de frames da Cena 3
 let totalSeeds = 6000; // 6.000 seeds para Cena 3
-const frameSpeed = 100;
+let frameSpeed = 100;
 let isMoving = true;
 let overlayShown = false;
 let accumulatedSeeds = 4;
@@ -586,4 +586,26 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.closeOverlay = closeOverlay;
   window.closeNotification = closeNotification;
+});
+
+// ==================================================
+// CONTROLE DE VELOCIDADE VIA FIREBASE
+// ==================================================
+
+window.addEventListener('bbp:frameSpeedChange', (event) => {
+    if (event.detail && event.detail.speed) {
+        frameSpeed = event.detail.speed;
+        console.log(`\ud83c\udfac Velocidade ajustada para: ${frameSpeed}ms`);
+    }
+});
+
+// ==================================================
+// CONTROLE DE VELOCIDADE VIA FIREBASE
+// ==================================================
+
+window.addEventListener('bbp:frameSpeedChange', (event) => {
+    if (event.detail && event.detail.speed) {
+        frameSpeed = event.detail.speed;
+        console.log(`🎬 Velocidade ajustada para: ${frameSpeed}ms`);
+    }
 });
