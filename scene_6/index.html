@@ -156,49 +156,49 @@
 
   <!-- OVERLAY RITUALÍSTICO -->
   <div id="sceneOverlay" class="overlay" style="display:none;">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>📜 CENA 6 CONCLUÍDA</h2>
-        <div class="ritual-seal">⚡</div>
+    <div class="overlay-content" style="max-width:540px; text-align:center;">
+      <div class="overlay-header" style="justify-content:center; flex-direction:column; gap:12px;">
+        <div style="font-size:48px; line-height:1;">⚡</div>
+        <h2 style="font-size:clamp(20px,3vw,28px); letter-spacing:0.15em;">
+          MANIFESTAÇÃO CONCLUÍDA
+        </h2>
       </div>
-      
-      <div class="overlay-message">
-        <p class="main-text">
+
+      <div class="overlay-message" style="display:flex; flex-direction:column; align-items:center; gap:20px;">
+
+        <p class="main-text" style="font-size:clamp(13px,1.6vw,16px); line-height:1.8; max-width:420px;">
           A Manifestação foi alcançada.<br>
-          <strong>30.000 sementes</strong> executadas nesta cena.
+          <strong style="color:#f7931a;">30.000 sementes</strong> executadas nesta cena.<br>
+          <span style="color:#aaa; font-size:0.9em;">O protocolo está vivo.</span>
         </p>
-        
-        <div class="status-box">
-          <div class="status-item">
-            <span class="status-label">SEMENTES DA MANIFESTAÇÃO:</span>
-            <span class="status-value sold-out">LIMITE ATINGIDO</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">FRAGMENTOS DA MANIFESTAÇÃO:</span>
-            <span class="status-value available">DISPONÍVEL</span>
-          </div>
-        </div>
-        
-        <p class="instruction">
-          Você ainda pode coletar um <strong>Fragmento da Manifestação</strong>.<br>
-          A Cena 7 será liberada <strong>amanhã às 9:00</strong>.
+
+        <div style="width:100%; height:1px; background:linear-gradient(90deg,transparent,#f7931a,transparent);"></div>
+
+        <p style="font-size:clamp(11px,1.3vw,13px); color:#888; letter-spacing:0.05em; line-height:1.7;">
+          Você faz parte do registro imutável.<br>
+          Suas frações do protocolo estão na carteira.<br>
+          Agora testemunhe a rede se tornar realidade.
         </p>
-        
-        <div class="countdown">
-          ⏳ Próxima cena em: <span id="countdownTimer">23:59:47</span>
-        </div>
-        
-        <div class="overlay-buttons">
-          <button onclick="closeOverlay()" class="btn-close">
-            Testemunhar o Ritual Eterno
+
+        <div class="overlay-buttons" style="flex-direction:column; gap:12px; width:100%; max-width:320px;">
+          <button onclick="window.location.href='../transition/transition.html'"
+            class="btn-close"
+            style="background:linear-gradient(135deg,#f7931a,#e8820a); border:none;
+                   color:#000; font-weight:bold; font-size:clamp(12px,1.5vw,15px);
+                   padding:16px 24px; border-radius:6px; cursor:pointer;
+                   letter-spacing:0.1em; width:100%;
+                   box-shadow:0 0 20px rgba(247,147,26,0.4);">
+            ⚡ ACESSAR A REDE BBP
           </button>
-          <a href="https://x.com/BitcoinBBP" target="_blank" class="btn-notify">
-            <svg class="x-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 8px;">
+          <a href="https://x.com/BitcoinBBP" target="_blank" class="btn-notify"
+             style="text-align:center; width:100%; box-sizing:border-box;">
+            <svg class="x-icon" viewBox="0 0 24 24" style="width:14px;height:14px;margin-right:8px;">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
             Siga o BBP no X
           </a>
         </div>
+
       </div>
     </div>
   </div>

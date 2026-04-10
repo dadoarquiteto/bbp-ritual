@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBP — ATIVANDO REDE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ff41;
+    }
+
+    #scanlines {
+      position: fixed; inset: 0; z-index: 2;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px
+      );
+    }
+
+    #vignette {
+      position: fixed; inset: 0; z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center,
+        transparent 50%, rgba(0,0,0,0.9) 100%
+      );
+    }
+
+    #glitch-overlay {
+      position: fixed; inset: 0; z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(0,255,65,0.06);
+      mix-blend-mode: screen;
+      transition: opacity 0.05s;
+    }
+
+    #terminal {
+      position: relative; z-index: 5;
+      width: min(820px, 92vw);
+      margin: 0 auto;
+      padding: clamp(24px, 6vh, 70px) 0 clamp(24px, 4vh, 50px);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .term-header {
+      font-size: clamp(9px, 1.1vw, 12px);
+      color: #004d13;
+      margin-bottom: 28px;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid #001a07;
+      padding-bottom: 10px;
+    }
+
+    #log-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-line {
+      font-size: clamp(11px, 1.35vw, 14px);
+      line-height: 1.95;
+      letter-spacing: 0.03em;
+      min-height: 1.95em;
+      white-space: pre;
+    }
+
+    .dim    { color: #006618; }
+    .normal { color: #00b82e; }
+    .bright { color: #00ff41; }
+    .warn   { color: #ffcc00; }
+    .error  { color: #ff3333; text-shadow: 0 0 6px #ff3333; }
+    .white  { color: #ffffff; }
+    .cyan   { color: #00eeff; text-shadow: 0 0 8px rgba(0,238,255,0.4); }
+
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: #00ff41;
+      vertical-align: text-bottom;
+      animation: blink 0.65s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #progress-section {
+      margin-top: 24px;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    #progress-section.show { opacity: 1; }
+
+    .prog-label {
+      font-size: clamp(9px, 1.1vw, 12px);
+      color: #006618;
+      margin-bottom: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    .prog-track {
+      width: 100%;
+      height: 20px;
+      border: 1px solid #00ff41;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+    .prog-track::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        90deg, transparent 0px, transparent 18px,
+        rgba(0,255,65,0.04) 18px, rgba(0,255,65,0.04) 20px
+      );
+    }
+
+    .prog-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #001a07, #00ff41);
+      box-shadow: 0 0 14px rgba(0,255,65,0.8);
+      position: relative;
+      transition: width 0.06s linear;
+    }
+    .prog-fill::after {
+      content: '';
+      position: absolute; right: 0; top: 0; bottom: 0; width: 30px;
+      background: linear-gradient(90deg, transparent, rgba(0,255,65,0.7));
+    }
+
+    .prog-status {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: clamp(9px, 1.1vw, 12px);
+    }
+    .prog-status .left { color: #004d13; }
+    .prog-status .right { color: #00ff41; }
+
+    #final-msg {
+      margin-top: 40px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.8s;
+    }
+    #final-msg.show { opacity: 1; }
+
+    .final-big {
+      font-size: clamp(22px, 4vw, 42px);
+      color: #fff;
+      letter-spacing: 0.3em;
+      text-shadow:
+        0 0 20px rgba(0,255,65,0.9),
+        0 0 50px rgba(0,255,65,0.4),
+        0 0 100px rgba(0,255,65,0.15);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { text-shadow: 0 0 20px rgba(0,255,65,0.8), 0 0 50px rgba(0,255,65,0.3); }
+      50%      { text-shadow: 0 0 35px rgba(0,255,65,1),   0 0 80px rgba(0,255,65,0.6); }
+    }
+
+    .final-sub {
+      font-size: clamp(9px, 1.1vw, 12px);
+      color: #004d13;
+      letter-spacing: 0.2em;
+      margin-top: 12px;
+    }
+
+    #fade {
+      position: fixed; inset: 0; z-index: 100;
+      background: #000; opacity: 0;
+      pointer-events: none;
+      transition: opacity 2s ease-in;
+    }
+    #fade.active { opacity: 1; pointer-events: all; }
+  </style>
+</head>
+<body>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+  <div id="glitch-overlay"></div>
+  <div id="fade"></div>
+
+  <div id="terminal">
+    <div class="term-header">
+      BBP PROTOCOL v1.0 &nbsp;|&nbsp; BOOT SEQUENCE &nbsp;|&nbsp; <span id="ts"></span>
+    </div>
+    <div id="log-area"></div>
+
+    <div id="progress-section">
+      <div class="prog-label">SINCRONIZANDO COM A REDE BITCOIN</div>
+      <div class="prog-track">
+        <div class="prog-fill" id="prog-fill"></div>
+      </div>
+      <div class="prog-status">
+        <span class="left" id="prog-step">AGUARDANDO...</span>
+        <span class="right" id="prog-pct">0%</span>
+      </div>
+    </div>
+
+    <div id="final-msg">
+      <div class="final-big">REDE BBP ONLINE</div>
+      <div class="final-sub">ABRINDO VIEWER &mdash; AGUARDE</div>
+    </div>
+  </div>
+
+  <script>
+    // ── AJUSTE: caminho para o viewer ──
+    const VIEWER_URL = '../viewer/viewer.html';
+
+    document.getElementById('ts').textContent =
+      new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+
+    // ────────────────────────────────────────────────
+    // MOTOR DE DIGITAÇÃO LETRA A LETRA
+    // ────────────────────────────────────────────────
+    const logArea = document.getElementById('log-area');
+    let globalCursor = null;
+    let printQueue = [];
+    let queueRunning = false;
+
+    function getCursor() {
+      if (!globalCursor) {
+        globalCursor = document.createElement('span');
+        globalCursor.className = 'cursor';
+      }
+      return globalCursor;
+    }
+
+    function typeText(el, text, charDelay) {
+      return new Promise(resolve => {
+        let i = 0;
+        const cursor = getCursor();
+        el.appendChild(cursor);
+
+        function next() {
+          if (i >= text.length) { resolve(); return; }
+          el.insertBefore(document.createTextNode(text[i]), cursor);
+          i++;
+          cursor.scrollIntoView({ block: 'nearest' });
+          setTimeout(next, charDelay);
+        }
+        next();
+      });
+    }
+
+    function enqueueLine(cls, text, charDelay, pauseAfter) {
+      // charDelay padrão aumentado para 55ms — texto mais lento
+      printQueue.push({ cls, text, charDelay: charDelay || 55, pauseAfter: pauseAfter || 0 });
+    }
+
+    async function runQueue() {
+      if (queueRunning) return;
+      queueRunning = true;
+      while (printQueue.length > 0) {
+        const { cls, text, charDelay, pauseAfter } = printQueue.shift();
+        const el = document.createElement('div');
+        el.className = 'log-line ' + cls;
+        logArea.appendChild(el);
+        if (text !== '') await typeText(el, text, charDelay);
+        if (pauseAfter > 0) await new Promise(r => setTimeout(r, pauseAfter));
+      }
+      queueRunning = false;
+    }
+
+    // ────────────────────────────────────────────────
+    // SEQUÊNCIA DE LOGS
+    // enqueueLine(classe, texto, ms_por_char, pausa_depois_ms)
+    // ────────────────────────────────────────────────
+    async function runSequence() {
+
+      // -- Boot inicial
+      enqueueLine('dim',    '> INICIALIZANDO BBP PROTOCOL v1.0...', 45, 200);
+      enqueueLine('normal', '> VERIFICANDO INTEGRIDADE DO DNA...', 48, 150);
+      enqueueLine('bright', '  DNA: BBP:PROTOCOL:CORE              [ OK ]', 36, 350);
+
+      // -- Bitcoin anchor
+      enqueueLine('normal', '> CONSULTANDO ÂNCORA BITCOIN...', 50, 250);
+      enqueueLine('bright', '  BLOCO #901234  HASH: 0000000000000000abc1...  [ OK ]', 28, 450);
+
+      // -- Seeds do ritual
+      enqueueLine('normal', '> CARREGANDO FRAGMENTOS DO RITUAL...', 46, 300);
+      enqueueLine('dim',    '  CENA 1 ........... 2.000 seeds   [ ✓ ]', 32, 100);
+      enqueueLine('dim',    '  CENA 2 ........... 4.000 seeds   [ ✓ ]', 32, 100);
+      enqueueLine('dim',    '  CENA 3 ........... 6.000 seeds   [ ✓ ]', 32, 100);
+      enqueueLine('dim',    '  CENA 4 ........... 8.000 seeds   [ ✓ ]', 32, 100);
+      enqueueLine('dim',    '  CENA 5 ........... 10.000 seeds  [ ✓ ]', 32, 100);
+      enqueueLine('dim',    '  CENA 6 ........... 10.000 seeds  [ ✓ ]', 32, 250);
+      enqueueLine('bright', '  TOTAL: 40.000 SEEDS CONFIRMADAS   [ OK ]', 36, 550);
+
+      // -- Criptografia — com falha dramática
+      enqueueLine('normal', '> VALIDANDO ASSINATURAS CRIPTOGRÁFICAS...', 46, 250);
+      enqueueLine('error',  '  SHA3-256 VERIFICANDO...            [ ERRO ]', 30, 1000);
+      enqueueLine('warn',   '  TENTATIVA 2/3...', 55, 1100);
+      enqueueLine('bright', '  SHA3-256 VERIFICADO                [ OK ]', 36, 450);
+
+      // -- Peers P2P — com falha e reconexão
+      enqueueLine('normal', '> CONECTANDO AOS NÓS DA REDE P2P...', 48, 300);
+      enqueueLine('dim',    '  bbp-peer-01.netlify.app           [ ✓ ]', 32, 130);
+      enqueueLine('dim',    '  bbp-peer-02.vercel.app            [ ✓ ]', 32, 130);
+      enqueueLine('dim',    '  bbp-peer-03.netlify.app           [ ✓ ]', 32, 130);
+      enqueueLine('error',  '  bbp-peer-04.workers.dev           [ FALHA ]', 30, 900);
+      enqueueLine('warn',   '  RECONECTANDO bbp-peer-04...', 55, 1300);
+      enqueueLine('bright', '  bbp-peer-04.workers.dev           [ ✓ ]', 36, 500);
+
+      // -- Arweave — com falha de gravação
+      enqueueLine('normal', '> DISTRIBUINDO 400.000 BBP FRACTIONS...', 44, 250);
+      enqueueLine('error',  '  ARWEAVE: TIMEOUT NA GRAVAÇÃO...    [ ERRO ]', 30, 900);
+      enqueueLine('warn',   '  RETENTANDO VIA NÓ SECUNDÁRIO...', 55, 1200);
+      enqueueLine('bright', '  FRAGMENTOS REGISTRADOS NO ARWEAVE  [ OK ]', 36, 450);
+
+      // -- Living Cryptography
+      enqueueLine('normal', '> ATIVANDO LIVING CRYPTOGRAPHY LAYER...', 44, 300);
+      enqueueLine('cyan',   '  GENESIS_SEED GRAVADO               [ IMUTÁVEL ]', 36, 450);
+
+      // -- Viewer
+      enqueueLine('normal', '> PREPARANDO VIEWER DE ATIVOS...', 48, 300);
+      enqueueLine('bright', '  TEMPLATES CARREGADOS: 16           [ OK ]', 36, 400);
+
+      // -- Falha crítica final — o mais dramático
+      enqueueLine('normal', '> VERIFICAÇÃO FINAL DO SISTEMA...', 50, 400);
+      enqueueLine('error',  '  FALHA CRÍTICA: SINCRONIZAÇÃO INTERROMPIDA', 28, 800);
+      enqueueLine('warn',   '  REINICIANDO PROTOCOLO...', 55, 1600);
+      enqueueLine('error',  '  TENTATIVA 1/1...', 50, 1100);
+      enqueueLine('cyan',   '  PROTOCOLO RESTAURADO               [ OK ]', 36, 500);
+      enqueueLine('white',  '  PROTOCOLO ÍNTEGRO. REDE PRONTA.', 44, 450);
+      enqueueLine('dim',    '────────────────────────────────────────────────', 16, 0);
+
+      await runQueue();
+
+      if (globalCursor) globalCursor.remove();
+      showProgress();
+    }
+
+    // ────────────────────────────────────────────────
+    // BARRA DE PROGRESSO NÃO-LINEAR
+    // ────────────────────────────────────────────────
+    const PROG_STEPS = [
+      { label: 'INICIANDO HANDSHAKE...', target: 18, ms: 800 },
+      { label: 'VERIFICANDO BLOCO ÂNCORA...', target: 35, ms: 600 },
+      { label: 'SINCRONIZANDO SEEDS...', target: 52, ms: 500 },
+      { label: 'AGUARDANDO CONFIRMAÇÃO...', target: 53, ms: 1600 },
+      { label: 'PROPAGANDO NA REDE...', target: 74, ms: 700 },
+      { label: 'VALIDANDO FRAGMENTOS...', target: 88, ms: 500 },
+      { label: 'FINALIZANDO...', target: 99, ms: 600 },
+      { label: 'FINALIZANDO...', target: 99, ms: 2000 },
+      { label: 'REDE ATIVA.', target: 100, ms: 250 },
+    ];
+
+    function showProgress() {
+      document.getElementById('progress-section').classList.add('show');
+      runProgressSteps(0, 0);
+    }
+
+    function runProgressSteps(stepIdx, currentPct) {
+      if (stepIdx >= PROG_STEPS.length) { setTimeout(showFinal, 400); return; }
+      const step = PROG_STEPS[stepIdx];
+      const startPct = currentPct;
+      const startTime = performance.now();
+      document.getElementById('prog-step').textContent = step.label;
+
+      function tick(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / step.ms, 1);
+        const eased = t < 0.5 ? 2*t*t : 1 - 2*(1-t)*(1-t);
+        const pct = Math.round(startPct + (step.target - startPct) * eased);
+        document.getElementById('prog-fill').style.width = pct + '%';
+        document.getElementById('prog-pct').textContent = pct + '%';
+        if (t < 1) requestAnimationFrame(tick);
+        else runProgressSteps(stepIdx + 1, step.target);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // ────────────────────────────────────────────────
+    // MENSAGEM FINAL E REDIRECT
+    // ────────────────────────────────────────────────
+    function showFinal() {
+      document.getElementById('final-msg').classList.add('show');
+      let f = 0;
+      const fl = setInterval(() => {
+        document.getElementById('terminal').style.opacity = f % 2 === 0 ? '0.2' : '1';
+        f++;
+        if (f >= 6) { clearInterval(fl); document.getElementById('terminal').style.opacity = '1'; }
+      }, 130);
+
+      setTimeout(() => {
+        document.getElementById('fade').classList.add('active');
+        setTimeout(() => { window.location.href = VIEWER_URL; }, 2100);
+      }, 3000);
+    }
+
+    // ────────────────────────────────────────────────
+    // GLITCH ALEATÓRIO
+    // ────────────────────────────────────────────────
+    function randomGlitch() {
+      const ov = document.getElementById('glitch-overlay');
+      ov.style.opacity = (Math.random() * 0.15 + 0.02).toString();
+      const shakeX = (Math.random() - 0.5) * 5;
+      const shakeY = (Math.random() - 0.5) * 2;
+      document.getElementById('terminal').style.transform =
+        `translate(${shakeX}px, ${shakeY}px)`;
+      setTimeout(() => {
+        ov.style.opacity = '0';
+        document.getElementById('terminal').style.transform = 'translate(0,0)';
+      }, 55 + Math.random() * 70);
+      setTimeout(randomGlitch, 500 + Math.random() * 2000);
+    }
+
+    // ────────────────────────────────────────────────
+    // ARRANQUE
+    // ────────────────────────────────────────────────
+    setTimeout(randomGlitch, 1200);
+    runSequence();
+  </script>
+</body>
+</html>

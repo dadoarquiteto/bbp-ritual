@@ -67,23 +67,34 @@ const BBPRitual = (function() {
         const success = await registerSeedInFirebase(walletAddress, currentScene);
 
         if (success) {
-            await distributeSceneNFT(currentScene, walletAddress);
+            // Cena 6: sem NFT fracionado — o Genesis pertence ao protocolo
+            if (currentScene < 6) {
+                await distributeSceneNFT(currentScene, walletAddress);
+            }
             await distributeProtocolFractions(10, walletAddress);
             localStorage.setItem('scene_' + currentScene + '_completed', 'true');
 
-            // Toast 1 — imediato
-            showBBPToast('✅ Participação Registrada!<br>🌱 Seed ativa na rede BBP', 3000);
-
-            // Toast 2 — após 3.5s
-            setTimeout(function() {
-                showBBPToast('🎨 NFT da Cena ' + currentScene + ' recebido!', 3000);
-            }, 3500);
-
-            // Toast 3 — após 7s
-            setTimeout(function() {
-                var fractions = localStorage.getItem('bbp_fractions_' + walletAddress) || '0';
-                showBBPToast('💎 +10 BBP Fractions!<br>Saldo total: ' + fractions + ' BBP', 4000);
-            }, 7000);
+            if (currentScene < 6) {
+                // Toasts padrão para cenas 1-5
+                showBBPToast('✅ Participação Registrada!<br>🌱 Seed ativa na rede BBP', 3000);
+                setTimeout(function() {
+                    showBBPToast('🎨 NFT da Cena ' + currentScene + ' recebido!', 3000);
+                }, 3500);
+                setTimeout(function() {
+                    var fractions = localStorage.getItem('bbp_fractions_' + walletAddress) || '0';
+                    showBBPToast('💎 +10 BBP Fractions!<br>Saldo total: ' + fractions + ' BBP', 4000);
+                }, 7000);
+            } else {
+                // Toasts especiais para Cena 6
+                showBBPToast('⚡ Carteira ativada na rede BBP!<br>Você faz parte da Manifestação.', 3500);
+                setTimeout(function() {
+                    showBBPToast('🌐 NFT Genesis pertence ao protocolo.<br>Você testemunhou o nascimento.', 3500);
+                }, 4000);
+                setTimeout(function() {
+                    var fractions = localStorage.getItem('bbp_fractions_' + walletAddress) || '0';
+                    showBBPToast('💎 +10 BBP Fractions na sua carteira.<br>Saldo total: ' + fractions + ' BBP', 4000);
+                }, 8000);
+            }
         }
 
         return wallet;

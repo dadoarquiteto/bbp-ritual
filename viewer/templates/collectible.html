@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Colecionável</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .attribute-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .attribute-item input:first-child { flex: 1; min-width: 150px; }
+  .attribute-item input:nth-child(2) { flex: 2; }
+  .image-preview { max-width: 200px; max-height: 200px; margin-top: 8px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: cover; }
+  
+  .royalty-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalty-item input:first-child {
+    flex: 2;
+    font-family: monospace;
+  }
+  .royalty-item input:nth-child(2) {
+    width: 100px;
+  }
+  .royalties-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalties-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .payout-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .payout-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Colecionável Digital</h1>
+  <p class="small">Configure seu item colecionável. A página gera o manifesto de configuração.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="collectibleForm">
+
+    <div class="card section">
+      <h2>Informações básicas</h2>
+      <label>Nome do item *</label>
+      <input id="itemName" placeholder="Ex: Dragon Card #001" />
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição do item colecionável"></textarea>
+      
+      <label>Imagem principal</label>
+      <div class="upload-area" onclick="document.getElementById('mainImage').click()">
+        🖼️ Clique para selecionar imagem
+      </div>
+      <input type="file" id="mainImage" accept="image/*" style="display: none;" onchange="handleImageUpload(this)" />
+      <div id="imagePreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Informações da coleção</h2>
+      <label>Série / Coleção</label>
+      <input id="series" placeholder="Ex: Legendary Dragons Series" />
+      <label>Número da edição</label>
+      <input id="edition" placeholder="Ex: 1/100, 42, Open Edition" />
+      <label>Raridade</label>
+      <select id="rarity">
+        <option value="common">Common</option>
+        <option value="uncommon">Uncommon</option>
+        <option value="rare">Rare</option>
+        <option value="epic">Epic</option>
+        <option value="legendary">Legendary</option>
+        <option value="mythic">Mythic</option>
+      </select>
+    </div>
+
+    <div class="card section">
+      <h2>Atributos personalizados</h2>
+      <p class="small">Adicione características específicas do seu item (ex: poder, elemento, ano, etc.)</p>
+      <div id="attributesContainer"></div>
+      <button onclick="addAttributeRow()">+ Adicionar atributo</button>
+    </div>
+
+    <div class="card section">
+      <h2>Links e redes sociais</h2>
+      <label>Website</label><input id="website" placeholder="https://" />
+      <label>Twitter</label><input id="twitter" placeholder="@colecionavel" />
+      <label>Discord</label><input id="discord" placeholder="https://discord.gg/..." />
+      <label>Instagram</label><input id="instagram" placeholder="@colecionavel" />
+    </div>
+
+    <div class="card section">
+      <h2>Configurações adicionais</h2>
+      
+      <div class="royalties-section">
+        <h4>💰 Royalties (múltiplos destinatários)</h4>
+        <p class="small">Defina os destinatários dos royalties em basis points (bps). 10000 bps = 100%.</p>
+        
+        <div style="margin-bottom: 16px;">
+          <strong>Venda Primária (Mint)</strong>
+          <div id="primaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addPrimaryRoyalty()" style="margin-top: 4px;">+ Adicionar destinatário primário</button>
+        </div>
+
+        <div>
+          <strong>Venda Secundária (Resale)</strong>
+          <div id="secondaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addSecondaryRoyalty()">+ Adicionar destinatário secundário</button>
+        </div>
+      </div>
+
+      <div class="payout-section">
+        <h4>💰 Regras de Pagamento</h4>
+        <label>Endereço de pagamento (creator wallet)</label>
+        <input id="paymentAddress" placeholder="bc1... ou 1..." />
+        
+        <div style="margin-top: 16px;">
+          <label>Payout mínimo (satoshis)</label>
+          <input type="number" id="minimumPayout" value="546" placeholder="546" />
+          <p class="small">Valores abaixo deste limite serão acumulados ou ignorados para evitar dust.</p>
+        </div>
+      </div>
+
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="explicitContent"> Conteúdo explícito</label>
+        <label><input type="checkbox" id="transferable" checked> Transferível</label>
+      </div>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color:#64748b;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section"><button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button></div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;"><div class="modal-overlay" onclick="closeAddNetworkModal(event)"><div class="modal-content"><h3>Adicionar representação em rede</h3><label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option></select><label>Tipo</label><select id="modalType"><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select><label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." /><div style="display:flex; gap:12px; margin-top:20px;"><button class="small" onclick="closeAddNetworkModal()">Cancelar</button><button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button></div></div></div></div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'collectible') document.getElementById('collectibleForm').classList.remove('hidden');
+
+let imageFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleImageUpload(input) { const file = input.files[0]; if(file){ imageFile = file; document.getElementById('imagePreviewContainer').innerHTML = `<div class="file-item"><span>🖼️ ${file.name}</span><button class="small danger" onclick="removeImage()">×</button></div>`; } }
+function removeImage() { imageFile = null; document.getElementById('imagePreviewContainer').innerHTML = ''; document.getElementById('mainImage').value = ''; }
+
+function addAttributeRow() { const container = document.getElementById('attributesContainer'); const row = document.createElement('div'); row.className = 'attribute-item'; row.innerHTML = `<input placeholder="Atributo" /><input placeholder="Valor" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+
+function addPrimaryRoyalty() {
+  const container = document.getElementById('primaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function addSecondaryRoyalty() {
+  const container = document.getElementById('secondaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function getRoyaltiesFromUI() {
+  const onPrimary = [];
+  document.querySelectorAll('#primaryRoyaltiesContainer .royalty-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) onPrimary.push({ address, bps });
+    }
+  });
+  const onSecondary = [];
+  document.querySelectorAll('#secondaryRoyaltiesContainer .royalty-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) onSecondary.push({ address, bps });
+    }
+  });
+  return { onPrimary, onSecondary };
+}
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  window.networks[network].push({ type, identifier });
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'collectible';
+  const itemName = document.getElementById('itemName')?.value || "Item Colecionável";
+  const identifier = itemName.toLowerCase().replace(/\s+/g, '_');
+  
+  const customAttributes = {};
+  document.querySelectorAll('#attributesContainer .attribute-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) customAttributes[inputs[0].value.trim()] = inputs[1].value.trim(); });
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:name:${itemName.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('series').value) dnaAttributes.push(`BBP:attr:${namespace}:series:${document.getElementById('series').value.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('edition').value) dnaAttributes.push(`BBP:attr:${namespace}:edition:${document.getElementById('edition').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:rarity:${document.getElementById('rarity').value}`);
+  for (const [k,v] of Object.entries(customAttributes)) dnaAttributes.push(`BBP:attr:${namespace}:${k}:${v.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:transferable:${document.getElementById('transferable').checked}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:explicit:${document.getElementById('explicitContent').checked}`);
+  
+  const assets = imageFile ? { image: `./assets/images/${imageFile.name}` } : {};
+  const social = { website: document.getElementById('website')?.value, twitter: document.getElementById('twitter')?.value, discord: document.getElementById('discord')?.value, instagram: document.getElementById('instagram')?.value };
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  const { onPrimary, onSecondary } = getRoyaltiesFromUI();
+  const minimumPayout = parseInt(document.getElementById('minimumPayout').value) || 546;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:${namespace}:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "collectible",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: itemName,
+      description: document.getElementById('description')?.value,
+      creator: root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "Collectible"
+    },
+    royalties: {
+      on_primary: onPrimary,
+      on_secondary: onSecondary
+    },
+    payout_rules: {
+      precision: 10000,
+      minimum_payout_sats: minimumPayout
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      name: itemName,
+      series: document.getElementById('series').value,
+      edition: document.getElementById('edition').value,
+      rarity: document.getElementById('rarity').value,
+      transferable: document.getElementById('transferable').checked,
+      explicit: document.getElementById('explicitContent').checked,
+      ...customAttributes
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    social,
+    capabilities: ["collectible", document.getElementById('transferable').checked ? "tradeable" : "soulbound"],
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <p><strong>💰 Royalties Primários:</strong> ${onPrimary.length} destinatários</p>
+    <p><strong>💰 Royalties Secundários:</strong> ${onSecondary.length} destinatários</p>
+    <p><strong>💵 Payout mínimo:</strong> ${minimumPayout} sats</p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${itemName} | ${document.getElementById('rarity').value} | ${Object.keys(customAttributes).length} atributos</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  if(imageFile) alert(`⚠️ Salve a imagem em: ./assets/images/${imageFile.name}`);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+addAttributeRow();
+refreshNetworksList();
+addPrimaryRoyalty();
+addSecondaryRoyalty();
+</script>
+</body>
+</html>

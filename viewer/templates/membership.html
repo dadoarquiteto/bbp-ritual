@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Membresia</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .benefit-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .benefit-item input { flex: 1; }
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Membresia</h1>
+  <p class="small">Registre uma associação, clube ou DAO membership no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="membershipForm">
+
+    <div class="card section">
+      <h2>Informações da Organização</h2>
+      <label>Organização / DAO / Clube *</label>
+      <input id="organization" placeholder="Ex: BBP DAO, Clube de Investidores" />
+      <label>Nome do Membro / Identificador</label>
+      <input id="memberName" placeholder="Ex: João Silva, membro_001" />
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição da associação"></textarea>
+      
+      <label>Logo / Emblema</label>
+      <div class="upload-area" onclick="document.getElementById('logo').click()">
+        🔷 Clique para selecionar logo
+      </div>
+      <input type="file" id="logo" accept="image/*" style="display: none;" onchange="handleLogoUpload(this)" />
+      <div id="logoPreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Nível e Benefícios</h2>
+      <div class="form-row">
+        <div style="flex:1"><label>Nível</label>
+          <select id="level">
+            <option value="basic">Basic</option>
+            <option value="premium">Premium</option>
+            <option value="vip">VIP</option>
+            <option value="founder">Founder</option>
+            <option value="lifetime">Lifetime</option>
+          </select>
+        </div>
+        <div style="flex:1"><label>Poder de Voto</label>
+          <input type="number" id="votingPower" min="0" value="1" placeholder="Ex: 100" />
+        </div>
+      </div>
+      
+      <label>Benefícios</label>
+      <div id="benefitsContainer"><div class="benefit-item"><input placeholder="Benefício (ex: Acesso a conteúdo exclusivo)" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addBenefit()">+ Adicionar benefício</button>
+    </div>
+
+    <div class="card section">
+      <h2>Validade</h2>
+      <div class="form-row">
+        <div style="flex:1"><label>Data de Início</label><input type="date" id="startDate" /></div>
+        <div style="flex:1"><label>Data de Expiração</label><input type="date" id="endDate" /></div>
+      </div>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="isLifetime"> Vitalícia (sem expiração)</label>
+        <label><input type="checkbox" id="isRenewable"> Renovável</label>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Taxas</h2>
+      <div class="form-row">
+        <div style="flex:1"><label>Taxa de Adesão</label><input type="number" id="fee" step="0.01" placeholder="Ex: 100" /></div>
+        <div style="flex:1"><label>Moeda</label>
+          <select id="feeCurrency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="BRL">BRL</option></select>
+        </div>
+      </div>
+      <label>Taxa Anual</label>
+      <input type="number" id="annualFee" step="0.01" placeholder="Ex: 50" />
+    </div>
+
+    <div class="card section">
+      <h2>Configurações</h2>
+      
+      <label>Endereço de pagamento (creator wallet)</label>
+      <input id="paymentAddress" placeholder="bc1... ou 1..." />
+
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="isTransferable"> Transferível</label>
+        <label><input type="checkbox" id="isActive" checked> Ativo</label>
+      </div>
+      
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color:#64748b;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section"><button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button></div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;"><div class="modal-overlay" onclick="closeAddNetworkModal(event)"><div class="modal-content"><h3>Adicionar representação em rede</h3><label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option></select><label>Tipo</label><select id="modalType"><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select><label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." /><div style="display:flex; gap:12px; margin-top:20px;"><button class="small" onclick="closeAddNetworkModal()">Cancelar</button><button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button></div></div></div></div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'membership') document.getElementById('membershipForm').classList.remove('hidden');
+
+let logoFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleLogoUpload(input) { const file = input.files[0]; if(file){ logoFile = file; document.getElementById('logoPreviewContainer').innerHTML = `<div class="file-item"><span>🔷 ${file.name}</span><button class="small danger" onclick="removeLogo()">×</button></div>`; } }
+function removeLogo() { logoFile = null; document.getElementById('logoPreviewContainer').innerHTML = ''; document.getElementById('logo').value = ''; }
+
+function addBenefit() { const container = document.getElementById('benefitsContainer'); const row = document.createElement('div'); row.className = 'benefit-item'; row.innerHTML = `<input placeholder="Benefício" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+
+document.getElementById('isLifetime').addEventListener('change', function(e) {
+  const endDateField = document.getElementById('endDate');
+  if (e.target.checked) { endDate.disabled = true; endDate.value = ''; }
+  else { endDate.disabled = false; }
+});
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  window.networks[network].push({ type, identifier });
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'membership';
+  const organization = document.getElementById('organization')?.value || "Organização";
+  const memberName = document.getElementById('memberName')?.value || "Membro";
+  const identifier = `${organization.toLowerCase().replace(/\s+/g, '_')}_${memberName.toLowerCase().replace(/\s+/g, '_')}`;
+  
+  const benefits = []; document.querySelectorAll('#benefitsContainer .benefit-item input').forEach(inp => { if(inp.value.trim()) benefits.push(inp.value.trim()); });
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:organization:${organization.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:member:${memberName.toLowerCase().replace(/\s+/g, '_')}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:level:${document.getElementById('level').value}`);
+  if(document.getElementById('votingPower').value) dnaAttributes.push(`BBP:attr:${namespace}:voting_power:${document.getElementById('votingPower').value}`);
+  benefits.forEach(b => dnaAttributes.push(`BBP:attr:${namespace}:benefit:${b.toLowerCase().replace(/\s+/g, '_')}`));
+  if(document.getElementById('startDate').value) dnaAttributes.push(`BBP:attr:${namespace}:start_date:${document.getElementById('startDate').value}`);
+  const isLifetime = document.getElementById('isLifetime').checked;
+  if(!isLifetime && document.getElementById('endDate').value) dnaAttributes.push(`BBP:attr:${namespace}:end_date:${document.getElementById('endDate').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:lifetime:${isLifetime}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:renewable:${document.getElementById('isRenewable').checked}`);
+  if(document.getElementById('fee').value) dnaAttributes.push(`BBP:attr:${namespace}:fee:${document.getElementById('fee').value}_${document.getElementById('feeCurrency').value}`);
+  if(document.getElementById('annualFee').value) dnaAttributes.push(`BBP:attr:${namespace}:annual_fee:${document.getElementById('annualFee').value}_${document.getElementById('feeCurrency').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:transferable:${document.getElementById('isTransferable').checked}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:active:${document.getElementById('isActive').checked}`);
+  
+  const assets = logoFile ? { logo: `./assets/images/${logoFile.name}` } : {};
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:membership:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "membership_card",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: `${organization} - ${memberName}`,
+      description: document.getElementById('description')?.value,
+      creator: root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "Membership"
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      organization,
+      member: memberName,
+      level: document.getElementById('level').value,
+      voting_power: parseInt(document.getElementById('votingPower').value) || 1,
+      benefits: benefits.length ? benefits : null,
+      start_date: document.getElementById('startDate').value,
+      end_date: (!isLifetime && document.getElementById('endDate').value) ? document.getElementById('endDate').value : null,
+      lifetime: isLifetime,
+      renewable: document.getElementById('isRenewable').checked,
+      fee: document.getElementById('fee').value ? { value: parseFloat(document.getElementById('fee').value), currency: document.getElementById('feeCurrency').value } : null,
+      annual_fee: document.getElementById('annualFee').value ? { value: parseFloat(document.getElementById('annualFee').value), currency: document.getElementById('feeCurrency').value } : null,
+      transferable: document.getElementById('isTransferable').checked,
+      active: document.getElementById('isActive').checked
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    capabilities: ["membership", document.getElementById('isTransferable').checked ? "transferable" : "soulbound"],
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const networksCount = Object.keys(window.networks).length;
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${organization} | ${document.getElementById('level').value} | ${benefits.length} benefícios</p>
+    <p>🌐 Redes adicionais: ${networksCount}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  if(logoFile) alert(`⚠️ Salve o logo em: ./assets/images/${logoFile.name}`);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+addBenefit();
+refreshNetworksList();
+</script>
+</body>
+</html>

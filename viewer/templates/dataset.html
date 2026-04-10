@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Dataset</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .attribute-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .attribute-item input:first-child { flex: 1; min-width: 150px; }
+  .attribute-item input:nth-child(2) { flex: 2; }
+  .schema-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .schema-item input:first-child { flex: 1; }
+  .schema-item input:nth-child(2) { width: 100px; }
+  .tag-item { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .tag-item input { flex: 1; }
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Dataset</h1>
+  <p class="small">Registre um conjunto de dados científicos, de treinamento ou analítico no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="datasetForm">
+
+    <div class="card section">
+      <h2>Informações Básicas</h2>
+      <label>Título *</label>
+      <input id="title" placeholder="Ex: Mars Rover Images 2025" />
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição detalhada do dataset"></textarea>
+      <label>Fonte / Autor</label>
+      <input id="source" placeholder="Ex: NASA JPL, Universidade de São Paulo" />
+      <label>Versão</label>
+      <input id="version" placeholder="Ex: 1.0, 2.1" value="1.0" />
+    </div>
+
+    <div class="card section">
+      <h2>Especificações Técnicas</h2>
+      <div class="form-row">
+        <div style="flex:1"><label>Tamanho (GB)</label><input type="number" id="sizeGb" step="0.01" placeholder="Ex: 1.5" /></div>
+        <div style="flex:1"><label>Número de Registros</label><input type="number" id="rowCount" placeholder="Ex: 15000" /></div>
+      </div>
+      <label>Formato</label>
+      <select id="format"><option value="csv">CSV</option><option value="json">JSON</option><option value="parquet">Parquet</option><option value="avro">Avro</option><option value="jpg">JPEG/Imagens</option><option value="png">PNG/Imagens</option><option value="txt">TXT</option></select>
+      
+      <label>Esquema / Colunas</label>
+      <div id="schemaContainer"><div class="schema-item"><input placeholder="Nome da coluna" /><input placeholder="Tipo" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addSchemaColumn()">+ Adicionar coluna</button>
+      
+      <label>Arquivo do Dataset</label>
+      <div class="upload-area" onclick="document.getElementById('datasetFile').click()">
+        📊 Clique para selecionar arquivo (CSV, JSON, ZIP)
+      </div>
+      <input type="file" id="datasetFile" accept=".csv,.json,.parquet,.zip" style="display: none;" onchange="handleFileUpload(this)" />
+      <div id="filePreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Licença e Uso</h2>
+      <label>Licença</label>
+      <select id="license">
+        <option value="mit">MIT</option><option value="apache">Apache 2.0</option><option value="gpl">GPL</option>
+        <option value="cc0">CC0 (Domínio Público)</option><option value="cc-by">CC BY</option><option value="cc-by-sa">CC BY-SA</option>
+        <option value="odbl">ODbL</option><option value="proprietary">Proprietário</option>
+      </select>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="isOpen"> Dataset Aberto</label>
+        <label><input type="checkbox" id="allowsCommercial"> Uso Comercial Permitido</label>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Tags e Categorização</h2>
+      <div id="tagsContainer"><div class="tag-item"><input placeholder="Tag (ex: machine-learning, climate)" /><button class="small danger" onclick="this.parentElement.remove()">×</button></div></div>
+      <button onclick="addTag()">+ Adicionar tag</button>
+    </div>
+
+    <div class="card section">
+      <h2>Atributos Personalizados</h2>
+      <div id="attributesContainer"></div>
+      <button onclick="addAttributeRow()">+ Adicionar atributo</button>
+    </div>
+
+    <div class="card section">
+      <h2>Links e redes sociais</h2>
+      <label>Website / Repositório</label><input id="website" placeholder="https://" />
+      <label>Documentação</label><input id="documentation" placeholder="https://" />
+      <label>GitHub</label><input id="github" placeholder="https://github.com/..." />
+      <label>Twitter</label><input id="twitter" placeholder="@dataset" />
+    </div>
+
+    <div class="card section">
+      <h2>Configurações</h2>
+      
+      <label>Endereço de pagamento (creator wallet)</label>
+      <input id="paymentAddress" placeholder="bc1... ou 1..." />
+
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color:#64748b;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section"><button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button></div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;"><div class="modal-overlay" onclick="closeAddNetworkModal(event)"><div class="modal-content"><h3>Adicionar representação em rede</h3><label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option></select><label>Tipo</label><select id="modalType"><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select><label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." /><div style="display:flex; gap:12px; margin-top:20px;"><button class="small" onclick="closeAddNetworkModal()">Cancelar</button><button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button></div></div></div></div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'dataset') document.getElementById('datasetForm').classList.remove('hidden');
+
+let datasetFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleFileUpload(input) { const file = input.files[0]; if(file){ datasetFile = file; document.getElementById('filePreviewContainer').innerHTML = `<div class="file-item"><span>📊 ${file.name}</span><button class="small danger" onclick="removeFile()">×</button></div>`; } }
+function removeFile() { datasetFile = null; document.getElementById('filePreviewContainer').innerHTML = ''; document.getElementById('datasetFile').value = ''; }
+
+function addSchemaColumn() { const container = document.getElementById('schemaContainer'); const row = document.createElement('div'); row.className = 'schema-item'; row.innerHTML = `<input placeholder="Nome da coluna" /><input placeholder="Tipo" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+function addTag() { const container = document.getElementById('tagsContainer'); const row = document.createElement('div'); row.className = 'tag-item'; row.innerHTML = `<input placeholder="Tag" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+function addAttributeRow() { const container = document.getElementById('attributesContainer'); const row = document.createElement('div'); row.className = 'attribute-item'; row.innerHTML = `<input placeholder="Atributo" /><input placeholder="Valor" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`; container.appendChild(row); }
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  window.networks[network].push({ type, identifier });
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'dataset';
+  const title = document.getElementById('title')?.value || "Dataset";
+  const identifier = title.toLowerCase().replace(/\s+/g, '_');
+  
+  const schema = []; document.querySelectorAll('#schemaContainer .schema-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) schema.push({ name: inputs[0].value.trim(), type: inputs[1].value.trim() }); });
+  const tags = []; document.querySelectorAll('#tagsContainer .tag-item input').forEach(inp => { if(inp.value.trim()) tags.push(inp.value.trim()); });
+  const customAttributes = {}; document.querySelectorAll('#attributesContainer .attribute-item').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) customAttributes[inputs[0].value.trim()] = inputs[1].value.trim(); });
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:title:${title.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('source').value) dnaAttributes.push(`BBP:attr:${namespace}:source:${document.getElementById('source').value.toLowerCase().replace(/\s+/g, '_')}`);
+  if(document.getElementById('version').value) dnaAttributes.push(`BBP:attr:${namespace}:version:${document.getElementById('version').value}`);
+  if(document.getElementById('sizeGb').value) dnaAttributes.push(`BBP:attr:${namespace}:size_gb:${document.getElementById('sizeGb').value}`);
+  if(document.getElementById('rowCount').value) dnaAttributes.push(`BBP:attr:${namespace}:row_count:${document.getElementById('rowCount').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:format:${document.getElementById('format').value}`);
+  schema.forEach((col,i) => dnaAttributes.push(`BBP:attr:${namespace}:column_${i+1}:${col.name}_${col.type}`));
+  dnaAttributes.push(`BBP:attr:${namespace}:license:${document.getElementById('license').value}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:open:${document.getElementById('isOpen').checked}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:commercial_allowed:${document.getElementById('allowsCommercial').checked}`);
+  tags.forEach(t => dnaAttributes.push(`BBP:attr:${namespace}:tag:${t.toLowerCase().replace(/\s+/g, '_')}`));
+  for (const [k,v] of Object.entries(customAttributes)) dnaAttributes.push(`BBP:attr:${namespace}:${k}:${v.toLowerCase().replace(/\s+/g, '_')}`);
+  
+  const assets = datasetFile ? { dataset: `./assets/datasets/${datasetFile.name}` } : {};
+  const social = { website: document.getElementById('website')?.value, documentation: document.getElementById('documentation')?.value, github: document.getElementById('github')?.value, twitter: document.getElementById('twitter')?.value };
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:${namespace}:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "dataset",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: title,
+      description: document.getElementById('description')?.value,
+      creator: document.getElementById('source').value || root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "Dataset"
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      title,
+      description: document.getElementById('description')?.value,
+      source: document.getElementById('source').value,
+      version: document.getElementById('version').value || "1.0",
+      size_gb: document.getElementById('sizeGb').value ? parseFloat(document.getElementById('sizeGb').value) : null,
+      row_count: document.getElementById('rowCount').value ? parseInt(document.getElementById('rowCount').value) : null,
+      format: document.getElementById('format').value,
+      schema: schema.length ? schema : null,
+      license: document.getElementById('license').value,
+      open: document.getElementById('isOpen').checked,
+      commercial_allowed: document.getElementById('allowsCommercial').checked,
+      tags: tags.length ? tags : null,
+      ...customAttributes
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    social,
+    capabilities: ["dataset", document.getElementById('isOpen').checked ? "open_data" : "restricted"],
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const networksCount = Object.keys(window.networks).length;
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${title} | ${document.getElementById('sizeGb').value ? document.getElementById('sizeGb').value + ' GB' : 'Tamanho não especificado'} | ${tags.length} tags</p>
+    <p>🌐 Redes adicionais: ${networksCount}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  if(datasetFile) alert(`⚠️ Salve o arquivo em: ./assets/datasets/${datasetFile.name}`);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+addSchemaColumn();
+addTag();
+refreshNetworksList();
+</script>
+</body>
+</html>

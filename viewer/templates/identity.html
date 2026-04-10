@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Identidade Digital</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  .dna-summary code { background: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  
+  .attribute-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .attribute-item input:first-child {
+    flex: 1;
+    min-width: 150px;
+  }
+  .attribute-item input:nth-child(2) {
+    flex: 2;
+  }
+  .upload-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-top: 8px;
+  }
+  .upload-area:hover {
+    border-color: #f7931a;
+  }
+  .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    margin-bottom: 4px;
+  }
+  .verification-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .verification-item select {
+    width: 150px;
+  }
+  .verification-item input {
+    flex: 1;
+  }
+  .social-links-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 8px 0;
+  }
+  .network-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+  .networks-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .networks-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+  }
+  .image-preview {
+    max-width: 150px;
+    max-height: 150px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    object-fit: cover;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Identidade Digital</h1>
+  <p class="small">Registre uma identidade digital verificável (perfil de usuário, organização, etc.) no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="identityForm">
+
+    <div class="card section">
+      <h2>Informações Básicas</h2>
+      
+      <label>Username *</label>
+      <input id="username" placeholder="Ex: satoshi, vitalik" />
+      
+      <label>Nome de exibição</label>
+      <input id="displayName" placeholder="Ex: Satoshi Nakamoto" />
+      
+      <label>Biografia</label>
+      <textarea rows="4" id="bio" placeholder="Conte um pouco sobre você ou sua organização"></textarea>
+      
+      <label>Avatar</label>
+      <div class="upload-area" onclick="document.getElementById('avatar').click()">
+        👤 Clique para selecionar avatar
+      </div>
+      <input type="file" id="avatar" accept="image/*" style="display: none;" onchange="handleAvatarUpload(this)" />
+      <div id="avatarPreviewContainer"></div>
+    </div>
+
+    <div class="card section">
+      <h2>Links Sociais</h2>
+      <div class="social-links-grid">
+        <div><label>Twitter</label><input id="twitter" placeholder="@username" /></div>
+        <div><label>GitHub</label><input id="github" placeholder="username" /></div>
+        <div><label>LinkedIn</label><input id="linkedin" placeholder="profile-url" /></div>
+        <div><label>Instagram</label><input id="instagram" placeholder="@username" /></div>
+        <div><label>Discord</label><input id="discord" placeholder="username#1234" /></div>
+        <div><label>Telegram</label><input id="telegram" placeholder="@username" /></div>
+        <div><label>Website</label><input id="website" placeholder="https://" /></div>
+        <div><label>Warpcast / Farcaster</label><input id="warpcast" placeholder="@username" /></div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Verificações</h2>
+      <p class="small">Adicione verificações de identidade (KYC, verificação de domínio, etc.)</p>
+      
+      <div id="verificationsContainer">
+        <div class="verification-item">
+          <select>
+            <option value="kyc">KYC (Know Your Customer)</option>
+            <option value="domain">Domínio verificado</option>
+            <option value="email">Email verificado</option>
+            <option value="phone">Telefone verificado</option>
+            <option value="notary">Reconhecimento de firma</option>
+            <option value="social">Rede social verificada</option>
+          </select>
+          <input type="text" placeholder="Detalhes / Referência" />
+          <button class="small danger" onclick="this.parentElement.remove()">×</button>
+        </div>
+      </div>
+      <button onclick="addVerification()" style="margin-top: 8px;">+ Adicionar verificação</button>
+    </div>
+
+    <div class="card section">
+      <h2>Atributos Personalizados</h2>
+      <p class="small">Adicione informações adicionais (ex: profissão, interesses, habilidades)</p>
+      <div id="attributesContainer"></div>
+      <button onclick="addAttributeRow()">+ Adicionar atributo</button>
+    </div>
+
+    <div class="card section">
+      <h2>Configurações de Privacidade</h2>
+      
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="isPublic" checked> Perfil público</label>
+        <label><input type="checkbox" id="isVerified"> Identidade verificada</label>
+        <label><input type="checkbox" id="isOrganization"> É uma organização</label>
+      </div>
+      
+      <div id="orgFields" class="hidden" style="margin-top: 16px;">
+        <label>Nome da Organização</label>
+        <input id="orgName" placeholder="Ex: Bitcoin Blueprint Protocol Foundation" />
+        <label>CNPJ / Registro (opcional)</label>
+        <input id="orgRegistration" placeholder="Ex: 12.345.678/0001-99" />
+      </div>
+      
+      <label>Nível de verificação</label>
+      <select id="verificationLevel">
+        <option value="none">Nenhum</option>
+        <option value="basic">Básico (email)</option>
+        <option value="kyc">KYC (documento)</option>
+        <option value="notary">Reconhecimento de firma</option>
+        <option value="institutional">Institucional</option>
+      </select>
+    </div>
+
+    <div class="card section">
+      <h2>Blockchain e Configurações</h2>
+      
+      <label>Endereço de pagamento (creator wallet)</label>
+      <input id="paymentAddress" placeholder="bc1... ou 1..." />
+
+      <label>Blockchain</label>
+      <select id="blockchain">
+        <option>Bitcoin (Ordinals)</option>
+        <option>Ethereum</option>
+        <option>Polygon</option>
+      </select>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <p class="small">Adicione onde este ativo também existe (ex: Ethereum, Polygon, etc.) para interoperabilidade.</p>
+        
+        <div id="networksList" class="networks-list">
+          <div style="color: #64748b; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; width: 100%;">Nenhuma rede adicional adicionada. Apenas Bitcoin será registrado por padrão.</div>
+        </div>
+        
+        <button onclick="showAddNetworkModal()" style="margin-top: 4px;">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Pagamento e Registro</h2>
+      <p>Ao clicar abaixo, será gerado o bbp_manifest.json com todos os dados da identidade digital.</p>
+      <button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;">
+  <div class="modal-overlay" onclick="closeAddNetworkModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 style="margin-top: 0;">Adicionar representação em rede</h3>
+      <label>Rede</label>
+      <select id="modalNetwork">
+        <option value="bitcoin">Bitcoin</option>
+        <option value="ethereum">Ethereum</option>
+        <option value="polygon">Polygon</option>
+        <option value="solana">Solana</option>
+        <option value="arbitrum">Arbitrum</option>
+        <option value="optimism">Optimism</option>
+        <option value="base">Base</option>
+        <option value="avalanche">Avalanche</option>
+        <option value="bsc">BNB Chain</option>
+      </select>
+      
+      <label>Tipo</label>
+      <select id="modalType">
+        <option value="ordinal">Ordinal (Bitcoin)</option>
+        <option value="inscription">Inscription (Bitcoin)</option>
+        <option value="erc721">ERC721 (Ethereum/Polygon)</option>
+        <option value="erc1155">ERC1155 (Ethereum/Polygon)</option>
+        <option value="erc20">ERC20 (Token Fungível)</option>
+        <option value="spl">SPL (Solana)</option>
+        <option value="runes">Runes (Bitcoin)</option>
+      </select>
+      
+      <label>Identificador (contrato/inscription)</label>
+      <input type="text" id="modalIdentifier" placeholder="Ex: 0xABC... ou inscription_123456" />
+      
+      <label>Token ID (opcional, para ERC721/1155)</label>
+      <input type="text" id="modalTokenId" placeholder="Ex: 123 ou #1" />
+      
+      <div style="display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;">
+        <button class="small" onclick="closeAddNetworkModal()">Cancelar</button>
+        <button class="small" style="background: #10b981;" onclick="addNetworkFromModal()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+const dnaDisplay = document.getElementById('rootDnaDisplay');
+dnaDisplay.textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+
+if (root.asset?.class === 'identity' || root.asset?.standard === 'identity') {
+  document.getElementById('identityForm').classList.remove('hidden');
+}
+
+let avatarFile = null;
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (file) {
+    avatarFile = file;
+    const container = document.getElementById('avatarPreviewContainer');
+    container.innerHTML = `<div class="file-item"><span>👤 ${file.name}</span><button class="small danger" onclick="removeAvatar()">×</button></div>`;
+  }
+}
+
+function removeAvatar() {
+  avatarFile = null;
+  document.getElementById('avatarPreviewContainer').innerHTML = '';
+  document.getElementById('avatar').value = '';
+}
+
+function addVerification() {
+  const container = document.getElementById('verificationsContainer');
+  const row = document.createElement('div');
+  row.className = 'verification-item';
+  row.innerHTML = `
+    <select>
+      <option value="kyc">KYC (Know Your Customer)</option>
+      <option value="domain">Domínio verificado</option>
+      <option value="email">Email verificado</option>
+      <option value="phone">Telefone verificado</option>
+      <option value="notary">Reconhecimento de firma</option>
+      <option value="social">Rede social verificada</option>
+    </select>
+    <input type="text" placeholder="Detalhes / Referência" />
+    <button class="small danger" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function addAttributeRow() {
+  const container = document.getElementById('attributesContainer');
+  const row = document.createElement('div');
+  row.className = 'attribute-item';
+  row.innerHTML = `
+    <input type="text" placeholder="Atributo (ex: profissão, interesses, habilidades)" />
+    <input type="text" placeholder="Valor" />
+    <button class="small danger" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+document.getElementById('isOrganization').addEventListener('change', function(e) {
+  const orgFields = document.getElementById('orgFields');
+  if (e.target.checked) {
+    orgFields.classList.remove('hidden');
+  } else {
+    orgFields.classList.add('hidden');
+  }
+});
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim(), tokenId = document.getElementById('modalTokenId').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  const data = { type, identifier };
+  if (tokenId) data.token_id = tokenId;
+  window.networks[network].push(data);
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color: #64748b; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; width: 100%;">Nenhuma rede adicional adicionada. Apenas Bitcoin será registrado por padrão.</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry, idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; let displayText = `${network.toUpperCase()}: ${entry.type}`; if (entry.identifier) displayText += ` - ${entry.identifier}`; if (entry.token_id) displayText += ` / ${entry.token_id}`; badge.innerHTML = `<span>${displayText}</span><button class="small" style="background: #ef4444; padding: 2px 8px; margin: 0;" onclick="removeNetwork('${network}', ${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) {
+    alert("Erro: DNA_IDENTITY não encontrado. Volte e crie o ativo raiz.");
+    return;
+  }
+  
+  const namespace = root.asset?.namespace || 'identity';
+  const username = document.getElementById('username')?.value || "usuario";
+  const identifier = username.toLowerCase().replace(/\s+/g, '_');
+  
+  const customAttributes = {};
+  const attrRows = document.querySelectorAll('#attributesContainer .attribute-item');
+  attrRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const key = inputs[0].value.trim();
+      const value = inputs[1].value.trim();
+      if (key && value) customAttributes[key] = value;
+    }
+  });
+  
+  const verifications = [];
+  const verifRows = document.querySelectorAll('#verificationsContainer .verification-item');
+  verifRows.forEach(row => {
+    const select = row.querySelector('select');
+    const input = row.querySelector('input');
+    const type = select?.value;
+    const details = input?.value.trim();
+    if (type && details) {
+      verifications.push({ type: type, details: details });
+    }
+  });
+  
+  const social = {
+    twitter: document.getElementById('twitter')?.value || null,
+    github: document.getElementById('github')?.value || null,
+    linkedin: document.getElementById('linkedin')?.value || null,
+    instagram: document.getElementById('instagram')?.value || null,
+    discord: document.getElementById('discord')?.value || null,
+    telegram: document.getElementById('telegram')?.value || null,
+    website: document.getElementById('website')?.value || null,
+    warpcast: document.getElementById('warpcast')?.value || null
+  };
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:username:${username.toLowerCase().replace(/\s+/g, '_')}`);
+  
+  const displayName = document.getElementById('displayName').value;
+  if (displayName) dnaAttributes.push(`BBP:attr:${namespace}:display_name:${displayName.toLowerCase().replace(/\s+/g, '_')}`);
+  
+  const bio = document.getElementById('bio').value;
+  if (bio) dnaAttributes.push(`BBP:attr:${namespace}:bio:${bio.substring(0, 200)}`);
+  
+  const isPublic = document.getElementById('isPublic').checked;
+  const isVerified = document.getElementById('isVerified').checked;
+  const isOrganization = document.getElementById('isOrganization').checked;
+  const verificationLevel = document.getElementById('verificationLevel').value;
+  
+  dnaAttributes.push(`BBP:attr:${namespace}:public:${isPublic}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:verified:${isVerified}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:organization:${isOrganization}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:verification_level:${verificationLevel}`);
+  
+  if (isOrganization) {
+    const orgName = document.getElementById('orgName').value;
+    if (orgName) dnaAttributes.push(`BBP:attr:${namespace}:org_name:${orgName.toLowerCase().replace(/\s+/g, '_')}`);
+    const orgRegistration = document.getElementById('orgRegistration').value;
+    if (orgRegistration) dnaAttributes.push(`BBP:attr:${namespace}:org_registration:${orgRegistration}`);
+  }
+  
+  for (const [key, value] of Object.entries(social)) {
+    if (value) dnaAttributes.push(`BBP:attr:${namespace}:${key}:${value}`);
+  }
+  
+  verifications.forEach((verif, idx) => {
+    dnaAttributes.push(`BBP:attr:${namespace}:verification_${idx + 1}:${verif.type}_${verif.details.toLowerCase().replace(/\s+/g, '_')}`);
+  });
+  
+  for (const [key, value] of Object.entries(customAttributes)) {
+    dnaAttributes.push(`BBP:attr:${namespace}:${key}:${value.toLowerCase().replace(/\s+/g, '_')}`);
+  }
+  
+  const assets = {};
+  if (avatarFile) assets.image = `./assets/images/${avatarFile.name}`;
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:identity:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "identity",
+    origin: {
+      network: "bitcoin",
+      protocol: "ordinals",
+      timestamp: new Date().toISOString()
+    },
+    collection: {
+      name: username,
+      description: bio || "",
+      creator: root.creator?.name || "",
+      creator_address: creatorAddress,
+      namespace: namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain')?.value || "Bitcoin (Ordinals)",
+      category: "Identity"
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      username: username,
+      display_name: displayName || null,
+      bio: bio || null,
+      public: isPublic,
+      verified: isVerified,
+      organization: isOrganization,
+      verification_level: verificationLevel,
+      ...(isOrganization && {
+        org_name: document.getElementById('orgName').value || null,
+        org_registration: document.getElementById('orgRegistration').value || null
+      }),
+      social: social,
+      verifications: verifications.length > 0 ? verifications : null,
+      ...customAttributes
+    },
+    dna_attributes: dnaAttributes,
+    assets: assets,
+    social: social,
+    capabilities: ["identity", "verifiable", isPublic ? "public" : "private"],
+    history: [{
+      event: "manifest_created",
+      timestamp: new Date().toISOString()
+    }]
+  };
+  
+  if (Object.keys(window.networks).length > 0) {
+    manifestBase.networks = {};
+    for (const [network, entries] of Object.entries(window.networks)) {
+      manifestBase.networks[network] = entries.length === 1 ? entries[0] : entries;
+    }
+  }
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const networksCount = Object.keys(window.networks).length;
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY (Bitcoin)</strong><br/>
+    <code>${currentUnsignedManifest.identity}</code></p>
+    
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/>
+    <code>${dnaAttributes.slice(0, 3).join('<br/>')}${dnaAttributes.length > 3 ? '<br/>...' : ''}</code></p>
+    
+    <p><strong>🔗 DNA_BINDING</strong><br/>
+    <code>${dnaBinding}</code></p>
+    
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p style="font-size:0.85rem;">✅ @${username} | ${isOrganization ? 'Organização' : 'Pessoa'} | ${verifications.length} verificações</p>
+    <p style="font-size:0.8rem; margin-top:8px;">📁 ${avatarFile ? '1 avatar' : '0 avatar'}</p>
+    <p style="font-size:0.8rem;">🌐 Redes adicionais: ${networksCount}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  
+  if (avatarFile) {
+    alert(`⚠️ IMPORTANTE: Salve o avatar em: ./assets/images/${avatarFile.name}\n\nApós salvar o arquivo, coloque o manifesto na pasta raiz e abra o viewer.`);
+  }
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+addVerification();
+refreshNetworksList();
+</script>
+</body>
+</html>

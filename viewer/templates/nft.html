@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Coleção NFT</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.danger { background: #ef4444; }
+  button.danger:hover { background: #dc2626; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .layer-item { display: flex; align-items: center; gap: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; flex-wrap: wrap; position: relative; }
+  .layer-name { font-weight: 600; flex: 1; }
+  .layer-count { color: #64748b; font-size: 0.9rem; }
+  .remove-btn { background: #ef4444; color: white; border: none; width: 36px; height: 36px; border-radius: 8px; font-size: 1.2rem; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .remove-btn:hover { background: #dc2626; }
+  .layer-optional {
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
+  .layer-optional label {
+    margin: 0;
+    font-weight: normal;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .layer-probability {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 0;
+  }
+  .layer-probability label {
+    white-space: nowrap;
+  }
+  .layer-probability input {
+    width: 100px;
+    margin: 0;
+  }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  .dna-summary code { background: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .trait-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+  .trait-row input:first-child { flex: 1; }
+  .trait-row input:nth-child(2) { flex: 2; }
+  .rarity-item { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .rarity-item input:first-child { flex: 1; }
+  .rarity-item input:nth-child(2) { width: 120px; }
+  .rarity-item button { background: #ef4444; color: white; border: none; width: 36px; height: 36px; border-radius: 8px; font-size: 1.2rem; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin: 0; }
+  .rarity-item button:hover { background: #dc2626; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  
+  .trait-rarity-panel {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    display: none;
+    position: relative;
+    width: 100%;
+  }
+  .trait-rarity-panel.visible {
+    display: block;
+  }
+  .trait-rarity-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    color: #334155;
+  }
+  .trait-rarity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .trait-rarity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+  }
+  .trait-rarity-item .trait-filename {
+    flex: 2;
+    font-family: monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+    min-width: 150px;
+  }
+  .trait-rarity-item .trait-code {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #64748b;
+    min-width: 100px;
+  }
+  .trait-rarity-item .rarity-checkboxes {
+    flex: 3;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .trait-rarity-item .rarity-checkboxes label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+  }
+  .trait-rarity-item .rarity-checkboxes input {
+    width: auto;
+    margin: 0;
+  }
+  .btn-edit-rarity {
+    background: #6b7280;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    margin: 0;
+    border-radius: 6px;
+  }
+  .btn-edit-rarity:hover {
+    background: #4b5563;
+  }
+  .close-rarity-btn {
+    background: #9ca3af;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    margin-top: 8px;
+    border-radius: 6px;
+  }
+  .close-rarity-btn:hover {
+    background: #6b7280;
+  }
+  
+  .unique-nfts-section {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 2px solid #e2e8f0;
+  }
+  .unique-nfts-section h3 {
+    margin: 0 0 12px 0;
+    color: #f59e0b;
+  }
+  .unique-nfts-section textarea {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: #334155;
+  }
+  .unique-nfts-section .helper-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 8px;
+  }
+  
+  .royalty-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalty-item input:first-child {
+    flex: 2;
+    font-family: monospace;
+  }
+  .royalty-item input:nth-child(2) {
+    width: 100px;
+  }
+  
+  .networks-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 8px 0;
+  }
+  .network-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+  .networks-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .networks-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+  }
+  .royalties-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalties-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Coleção NFT</h1>
+  <p class="small">Configure sua coleção NFT. A página gera o manifesto com royalties, camadas opcionais e traits estatísticos.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="nftCollection">
+    <!-- CONTEÚDO IDÊNTICO AO ANTERIOR - MANTIDO -->
+    <div class="card section">
+      <h2>Tabela 2 - Informações básicas</h2>
+      <label>Imagem de capa (opcional)</label>
+      <input type="file" accept="image/*" />
+      <label>Nome *</label>
+      <input id="nftName" placeholder="Ex: Mannequin" />
+      <label>Símbolo (opcional)</label>
+      <input id="symbol" placeholder="Ex: MANN" />
+      <label>Descrição (opcional)</label>
+      <textarea rows="4" id="nftDescription" placeholder="10.007 peças únicas geradas pelo Bitcoin Blueprint Protocol"></textarea>
+      <label>Artista / Criador</label>
+      <input id="artist" placeholder="Ex: Léo ou Studio XYZ" />
+    </div>
+
+    <div class="card section">
+      <h2>Tabela 3 - Links e redes sociais</h2>
+      <label>Website</label><input id="website" placeholder="https://" />
+      <label>Twitter</label><input id="twitter" placeholder="@mannequinbbp" />
+      <label>Discord</label><input id="discord" placeholder="https://discord.gg/..." />
+      <label>Instagram</label><input id="instagram" placeholder="@mannequinbbp" />
+    </div>
+
+    <div class="card section">
+      <h2>Tabela 4 - Configurações da coleção</h2>
+      <label>Blockchain</label>
+      <select id="blockchain">
+        <option>Bitcoin (Ordinals)</option>
+        <option>Ethereum</option>
+        <option>Polygon</option>
+      </select>
+      <label>Categoria</label>
+      <select id="category">
+        <option>Arte</option>
+        <option>Colecionáveis</option>
+        <option>Jogos</option>
+        <option>Fotografia</option>
+      </select>
+      <label>Tamanho da coleção (Supply)</label>
+      <input type="number" id="supply" value="10007" min="1" />
+      <div class="royalties-section">
+        <h4>💰 Royalties (múltiplos destinatários)</h4>
+        <p class="small">Defina os destinatários dos royalties em basis points (bps). 10000 bps = 100%.</p>
+        <div style="margin-bottom: 16px;">
+          <strong>Venda Primária (Mint)</strong>
+          <div id="primaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addPrimaryRoyalty()" style="margin-top: 4px;">+ Adicionar destinatário primário</button>
+        </div>
+        <div>
+          <strong>Venda Secundária (Resale)</strong>
+          <div id="secondaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addSecondaryRoyalty()">+ Adicionar destinatário secundário</button>
+        </div>
+        <div style="margin-top: 16px;">
+          <label>Payout mínimo (satoshis)</label>
+          <input type="number" id="minimumPayout" value="546" placeholder="546" />
+          <p class="small">Valores abaixo deste limite serão acumulados ou ignorados para evitar dust.</p>
+        </div>
+      </div>
+      <label>Endereço de pagamento (creator wallet)</label>
+      <input id="paymentAddress" placeholder="bc1... ou 1..." />
+      <label>Data de lançamento</label>
+      <input type="date" id="launchDate" />
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="explicitContent" onchange="toggleExclusive(this)"> Conteúdo explícito</label>
+        <label><input type="checkbox" id="revealLater" onchange="toggleExclusive(this)"> Coleção escondida (reveal later)</label>
+      </div>
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <p class="small">Adicione onde este ativo também existe (ex: Ethereum, Polygon, etc.) para interoperabilidade.</p>
+        <div id="networksList" class="networks-list">
+          <div style="color: #64748b; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; width: 100%;">Nenhuma rede adicional adicionada. Apenas Bitcoin será registrado por padrão.</div>
+        </div>
+        <button onclick="showAddNetworkModal()" style="margin-top: 4px;">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Tabela 5 - Camadas (Layers)</h2>
+      <p>Faça upload das imagens PNG para cada camada. A ordem define a sobreposição. Marque "Camada opcional" se nem todo NFT terá esta camada.</p>
+      <div id="layersContainer"></div>
+      <button onclick="addNewLayer()">+ Nova Camada</button>
+    </div>
+
+    <div class="card section">
+      <h2>Tabela 6 - Traits e raridades</h2>
+      <div id="traitsContainer"></div>
+      <button onclick="addTraitRow()">+ Adicionar trait</button>
+      <h3 style="margin:32px 0 16px">Distribuição de raridade</h3>
+      <div id="rarityContainer">
+        <div class="rarity-item">
+          <input type="text" placeholder="Nome da raridade" value="Common" />
+          <input type="number" placeholder="Quantidade" value="5000" />
+          <button onclick="removeRarityItem(this)">×</button>
+        </div>
+        <div class="rarity-item">
+          <input type="text" placeholder="Nome da raridade" value="Uncommon" />
+          <input type="number" placeholder="Quantidade" value="3000" />
+          <button onclick="removeRarityItem(this)">×</button>
+        </div>
+        <div class="rarity-item">
+          <input type="text" placeholder="Nome da raridade" value="Rare" />
+          <input type="number" placeholder="Quantidade" value="1200" />
+          <button onclick="removeRarityItem(this)">×</button>
+        </div>
+        <div class="rarity-item">
+          <input type="text" placeholder="Nome da raridade" value="Super_Rare" />
+          <input type="number" placeholder="Quantidade" value="800" />
+          <button onclick="removeRarityItem(this)">×</button>
+        </div>
+        <div class="rarity-item">
+          <input type="text" placeholder="Nome da raridade" value="Unique" />
+          <input type="number" placeholder="Quantidade" value="7" />
+          <button onclick="removeRarityItem(this)">×</button>
+        </div>
+      </div>
+      <button onclick="addRarityLevel()">+ Adicionar nível de raridade</button>
+      <div class="unique-nfts-section">
+        <h3>✨ NFTs Únicos Personalizados</h3>
+        <p class="small">Defina combinações fixas para NFTs específicos (ex: IDs 10001-10007). Estes substituem a geração automática.</p>
+        <label>Formato: <code>ID: camada/codigo, camada/codigo, ...</code></label>
+        <textarea id="uniqueNFTsInput" rows="8" placeholder="Ex:&#10;10001: background/bg_schematic_4, body/mannequin_body_blue_gray, bottoms/jeans_light_denim_4, sneakers/sneakers_hunter_green_2, special_elements/eye, tops/shirt_whisper_7"></textarea>
+        <div class="helper-text">
+          💡 Dica: O código deve ser exatamente o nome do arquivo sem extensão (ex: cold_cap_tangerine_1, bg_schematic_4, etc.)
+        </div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <h2>Tabela 7 - Pagamento e Registro</h2>
+      <p>Ao clicar abaixo, será gerado o bbp_manifest.json com todas as regras de geração, assinatura digital e royalties.</p>
+      <button class="green" onclick="generateManifest()">Gerar Coleção (bbp_manifest.json)</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+      <button onclick="downloadGenerator()">🐍 Baixar Gerador Python</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;">
+  <div class="modal-overlay" onclick="closeAddNetworkModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 style="margin-top: 0;">Adicionar representação em rede</h3>
+      <label>Rede</label>
+      <select id="modalNetwork">
+        <option value="bitcoin">Bitcoin</option>
+        <option value="ethereum">Ethereum</option>
+        <option value="polygon">Polygon</option>
+        <option value="solana">Solana</option>
+        <option value="arbitrum">Arbitrum</option>
+        <option value="optimism">Optimism</option>
+        <option value="base">Base</option>
+        <option value="avalanche">Avalanche</option>
+        <option value="bsc">BNB Chain</option>
+      </select>
+      <label>Tipo</label>
+      <select id="modalType">
+        <option value="ordinal">Ordinal (Bitcoin)</option>
+        <option value="inscription">Inscription (Bitcoin)</option>
+        <option value="erc721">ERC721 (Ethereum/Polygon)</option>
+        <option value="erc1155">ERC1155 (Ethereum/Polygon)</option>
+        <option value="erc20">ERC20 (Token Fungível)</option>
+        <option value="spl">SPL (Solana)</option>
+        <option value="runes">Runes (Bitcoin)</option>
+      </select>
+      <label>Identificador (contrato/inscription)</label>
+      <input type="text" id="modalIdentifier" placeholder="Ex: 0xABC... ou inscription_123456" />
+      <label>Token ID (opcional, para ERC721/1155)</label>
+      <input type="text" id="modalTokenId" placeholder="Ex: 123 ou #1" />
+      <div style="display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;">
+        <button class="small" onclick="closeAddNetworkModal()">Cancelar</button>
+        <button class="small" style="background: #10b981;" onclick="addNetworkFromModal()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+const dnaDisplay = document.getElementById('rootDnaDisplay');
+dnaDisplay.textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+
+let page1Supply = 10007;
+let page1PaymentAddress = null;
+let layerOptionalMap = {};
+let traitStats = {};
+
+if (root.creator?.address) {
+  page1PaymentAddress = root.creator.address;
+}
+if (root.config?.supply) {
+  page1Supply = root.config.supply;
+}
+
+if (root.asset?.standard === 'nft') {
+  document.getElementById('nftCollection').classList.remove('hidden');
+  if (document.getElementById('supply')) document.getElementById('supply').value = page1Supply;
+  if (document.getElementById('paymentAddress') && page1PaymentAddress) document.getElementById('paymentAddress').value = page1PaymentAddress;
+  initDefaultLayers();
+}
+
+window.traitRarityMap = {};
+window.customNFTs = {};
+window.networks = {};
+window.currentUnsignedManifest = null;
+window.currentSignedManifest = null;
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function getCodeFromFilename(filename) {
+  return filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
+}
+
+function getDisplayNameFromCode(code) {
+  return code
+    .replace(/^(bg_|mannequin_|shirt_|jeans_|pants_|shorts_|sneakers_|flipflop_|hat_|cold_cap_|tattoo_)/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/\d+$/, '')
+    .trim();
+}
+
+function getCurrentRarityOptions() {
+  const rarityItems = document.querySelectorAll('#rarityContainer .rarity-item input:first-child');
+  return Array.from(rarityItems).map(input => input.value.trim().toLowerCase().replace(/\s+/g, '_')).filter(r => r);
+}
+
+function refreshRarityPanel(layerName, files) {
+  const safeName = layerName.replace(/\s/g, '');
+  const listContainer = document.getElementById(`rarity-list-${safeName}`);
+  if (!listContainer) return;
+  
+  const rarityOptions = getCurrentRarityOptions();
+  const currentRarities = window.traitRarityMap[layerName] || {};
+  
+  listContainer.innerHTML = '';
+  files.forEach(file => {
+    const code = getCodeFromFilename(file);
+    const selectedRarities = currentRarities[code] || [];
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'trait-rarity-item';
+    
+    let checkboxesHtml = '<div class="rarity-checkboxes">';
+    rarityOptions.forEach(rarity => {
+      const isChecked = selectedRarities.includes(rarity);
+      checkboxesHtml += `
+        <label>
+          <input type="checkbox" data-layer="${layerName}" data-code="${code}" data-rarity="${rarity}" 
+                 ${isChecked ? 'checked' : ''} onchange="updateTraitRarity('${layerName}', '${code}', '${rarity}', this.checked)">
+          ${rarity.charAt(0).toUpperCase() + rarity.slice(1)}
+        </label>
+      `;
+    });
+    checkboxesHtml += '</div>';
+    
+    itemDiv.innerHTML = `
+      <span class="trait-filename">${file}</span>
+      <span class="trait-code">${code}</span>
+      ${checkboxesHtml}
+    `;
+    listContainer.appendChild(itemDiv);
+  });
+}
+
+function updateTraitRarity(layerName, code, rarity, isChecked) {
+  if (!window.traitRarityMap[layerName]) {
+    window.traitRarityMap[layerName] = {};
+  }
+  if (!window.traitRarityMap[layerName][code]) {
+    window.traitRarityMap[layerName][code] = [];
+  }
+  
+  if (isChecked) {
+    if (!window.traitRarityMap[layerName][code].includes(rarity)) {
+      window.traitRarityMap[layerName][code].push(rarity);
+    }
+  } else {
+    window.traitRarityMap[layerName][code] = window.traitRarityMap[layerName][code].filter(r => r !== rarity);
+    if (window.traitRarityMap[layerName][code].length === 0) {
+      delete window.traitRarityMap[layerName][code];
+    }
+  }
+}
+
+function openRarityPanel(layerName, btnElement) {
+  const safeName = layerName.replace(/\s/g, '');
+  const panel = document.getElementById(`rarity-panel-${safeName}`);
+  if (panel) {
+    document.querySelectorAll('.trait-rarity-panel.visible').forEach(p => {
+      if (p.id !== `rarity-panel-${safeName}`) p.classList.remove('visible');
+    });
+    
+    const isVisible = panel.classList.contains('visible');
+    panel.classList.toggle('visible');
+    
+    if (!isVisible && window.layerFiles && window.layerFiles[layerName]) {
+      refreshRarityPanel(layerName, window.layerFiles[layerName]);
+    }
+  }
+}
+
+function createRarityPanel(layerName, files) {
+  const safeName = layerName.replace(/\s/g, '');
+  const panelId = `rarity-panel-${safeName}`;
+  
+  if (document.getElementById(panelId)) return;
+  
+  const layerItem = Array.from(document.querySelectorAll('.layer-item')).find(el => el.querySelector('.layer-name')?.textContent === layerName);
+  if (!layerItem) return;
+  
+  const panelDiv = document.createElement('div');
+  panelDiv.id = panelId;
+  panelDiv.className = 'trait-rarity-panel';
+  panelDiv.innerHTML = `
+    <div class="trait-rarity-title">🎲 Definir raridade por trait (${layerName})</div>
+    <div class="trait-rarity-list" id="rarity-list-${safeName}"></div>
+    <button class="small close-rarity-btn" onclick="closeRarityPanel('${layerName}')">Fechar</button>
+  `;
+  layerItem.appendChild(panelDiv);
+  
+  refreshRarityPanel(layerName, files);
+}
+
+function closeRarityPanel(layerName) {
+  const safeName = layerName.replace(/\s/g, '');
+  const panel = document.getElementById(`rarity-panel-${safeName}`);
+  if (panel) {
+    panel.classList.remove('visible');
+  }
+}
+
+function updateLayerOptionalUI(layerName) {
+  const safeName = layerName.replace(/\s/g, '');
+  const probDiv = document.getElementById(`layer-prob-${safeName}`);
+  const checkbox = document.getElementById(`layer-opt-${safeName}`);
+  if (probDiv && checkbox) {
+    probDiv.style.display = checkbox.checked ? 'inline-flex' : 'none';
+  }
+}
+
+function addLayerCard(name) {
+  const lowerName = name.toLowerCase();
+  const container = document.getElementById('layersContainer');
+  const item = document.createElement('div');
+  item.className = 'layer-item';
+  const safeName = lowerName.replace(/\s/g, '');
+  item.innerHTML = `
+    <div class="layer-name">${lowerName}</div>
+    <div class="layer-count" id="count-${safeName}">0 arquivo(s)</div>
+    <div class="layer-optional">
+      <label>
+        <input type="checkbox" class="layer-optional-checkbox" id="layer-opt-${safeName}" data-layer="${lowerName}" onchange="updateLayerOptionalUI('${lowerName}')">
+        Camada opcional
+      </label>
+      <div class="layer-probability" id="layer-prob-${safeName}" style="display: none;">
+        <label>Probabilidade: 
+          <input type="range" min="0" max="100" value="30" class="layer-probability-slider" data-layer="${lowerName}" onchange="this.nextElementSibling.textContent = this.value">
+          <span class="layer-probability-value">30</span>%
+        </label>
+      </div>
+    </div>
+    <input type="file" accept=".png" multiple hidden onchange="updateLayerCount(this, '${lowerName}')">
+    <button onclick="this.previousElementSibling.click()">Carregar imagens</button>
+    <button class="btn-edit-rarity" onclick="openRarityPanel('${lowerName}', this)">🎲 Raridade</button>
+    <button class="remove-btn" onclick="this.closest('.layer-item').remove()">×</button>
+  `;
+  container.appendChild(item);
+  
+  if (!layerOptionalMap[lowerName]) {
+    layerOptionalMap[lowerName] = { optional: false, probability: 30 };
+  }
+  
+  const checkbox = document.getElementById(`layer-opt-${safeName}`);
+  if (checkbox) {
+    checkbox.addEventListener('change', function(e) {
+      layerOptionalMap[lowerName].optional = e.target.checked;
+      updateLayerOptionalUI(lowerName);
+    });
+  }
+  
+  const slider = item.querySelector('.layer-probability-slider');
+  if (slider) {
+    slider.addEventListener('change', function(e) {
+      layerOptionalMap[lowerName].probability = parseInt(e.target.value);
+    });
+  }
+}
+
+function initDefaultLayers() {
+  const defaults = ['background', 'body', 'tops', 'bottoms', 'headwear', 'sneakers', 'flip_flops', 'tattoo', 'special_elements', 'hair'];
+  defaults.forEach(name => addLayerCard(name));
+}
+
+function updateLayerCount(input, name) {
+  const lowerName = name.toLowerCase();
+  const count = input.files.length;
+  const safeName = lowerName.replace(/\s/g, '');
+  const countSpan = document.getElementById(`count-${safeName}`);
+  if (countSpan) countSpan.textContent = `${count} arquivo(s)`;
+  
+  if (!window.layerFiles) window.layerFiles = {};
+  window.layerFiles[lowerName] = Array.from(input.files).map(f => f.name);
+  
+  createRarityPanel(lowerName, window.layerFiles[lowerName]);
+}
+
+function addNewLayer() {
+  const container = document.getElementById('layersContainer');
+  
+  const tempItem = document.createElement('div');
+  tempItem.className = 'layer-item';
+  tempItem.style.background = '#fef9e3';
+  tempItem.style.border = '2px solid #f59e0b';
+  tempItem.innerHTML = `
+    <div class="layer-name" style="flex:1;">
+      <input type="text" id="newLayerNameInput" placeholder="Nome da camada (ex: accessories)" 
+             style="width: 100%; padding: 8px; border: 1px solid #f59e0b; border-radius: 6px; font-size: 0.9rem;">
+    </div>
+    <div class="layer-count">nova camada</div>
+    <button id="confirmNewLayerBtn" style="background: #10b981; padding: 6px 16px; border-radius: 8px;">✓ Confirmar</button>
+    <button id="cancelNewLayerBtn" style="background: #6b7280; padding: 6px 16px; border-radius: 8px;">✗ Cancelar</button>
+  `;
+  container.appendChild(tempItem);
+  
+  const input = document.getElementById('newLayerNameInput');
+  input.focus();
+  
+  document.getElementById('confirmNewLayerBtn').onclick = function() {
+    const layerName = input.value.trim().toLowerCase();
+    if (layerName) {
+      tempItem.remove();
+      addLayerCard(layerName);
+    } else {
+      input.style.borderColor = '#ef4444';
+      input.placeholder = 'Nome obrigatório!';
+    }
+  };
+  
+  document.getElementById('cancelNewLayerBtn').onclick = function() {
+    tempItem.remove();
+  };
+  
+  input.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      document.getElementById('confirmNewLayerBtn').click();
+    }
+  });
+}
+
+function toggleExclusive(el) {
+  const other = el.id === 'explicitContent' ? 'revealLater' : 'explicitContent';
+  if (document.getElementById(other)) {
+    document.getElementById(other).checked = false;
+  }
+}
+
+function addTraitRow() {
+  const container = document.getElementById('traitsContainer');
+  const row = document.createElement('div');
+  row.style.margin = '12px 0';
+  row.innerHTML = `
+    <input type="text" placeholder="Trait (ex: background)" style="width:45%" />
+    <input type="text" placeholder="Valores separados por vírgula" style="width:45%" />
+    <button onclick="this.parentElement.remove()" style="background:#ef4444;color:white;border:none;width:32px;height:32px;border-radius:8px;font-size:1.2rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function removeRarityItem(btn) {
+  btn.parentElement.remove();
+}
+
+function addRarityLevel() {
+  const container = document.getElementById('rarityContainer');
+  const item = document.createElement('div');
+  item.className = 'rarity-item';
+  item.style.display = 'flex';
+  item.style.gap = '16px';
+  item.style.alignItems = 'center';
+  item.style.marginBottom = '12px';
+  item.innerHTML = `
+    <input type="text" placeholder="Nome da raridade (ex: Legendary)" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+    <input type="number" placeholder="Quantidade" value="0" style="width:120px; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+    <button onclick="removeRarityItem(this)" style="background:#ef4444; color:white; border:none; width:36px; height:36px; border-radius:8px; font-size:1.2rem; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; margin:0;">×</button>
+  `;
+  container.appendChild(item);
+}
+
+function parseUniqueNFTs() {
+  const textarea = document.getElementById('uniqueNFTsInput');
+  const text = textarea.value.trim();
+  const uniqueNFTs = {};
+  
+  if (!text) return uniqueNFTs;
+  
+  const lines = text.split('\n');
+  const namespace = root.asset?.namespace || document.getElementById('nftName')?.value?.toLowerCase().replace(/\s+/g, '_') || 'colecao';
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === '') continue;
+    
+    const colonIndex = trimmedLine.indexOf(':');
+    if (colonIndex === -1) continue;
+    
+    const nftId = trimmedLine.substring(0, colonIndex).trim();
+    const traitsPart = trimmedLine.substring(colonIndex + 1).trim();
+    
+    if (!nftId || !traitsPart) continue;
+    
+    const traitItems = traitsPart.split(',').map(t => t.trim()).filter(t => t);
+    const dnaAttributes = [];
+    
+    for (const item of traitItems) {
+      const slashIndex = item.indexOf('/');
+      if (slashIndex === -1) continue;
+      
+      const layer = item.substring(0, slashIndex).trim().toLowerCase();
+      const code = item.substring(slashIndex + 1).trim();
+      
+      if (layer && code) {
+        dnaAttributes.push(`BBP:attr:${namespace}:${layer}:${code}`);
+      }
+    }
+    
+    if (dnaAttributes.length > 0) {
+      uniqueNFTs[nftId] = { dna_attributes: dnaAttributes };
+    }
+  }
+  
+  return uniqueNFTs;
+}
+
+function generateUniqueCombinations(layerOrder, layerFilesMap, traitRarityMap, rarityDistribution, supply, namespace, uniqueNFTs, optionalLayers) {
+  const nfts = {};
+  const usedCombinations = new Set();
+  
+  // Primeiro, adiciona os NFTs únicos personalizados
+  for (const [nftId, nftData] of Object.entries(uniqueNFTs)) {
+    nfts[nftId] = nftData;
+    const comboKey = nftData.dna_attributes.sort().join('|');
+    usedCombinations.add(comboKey);
+  }
+  
+  // Prepara os códigos disponíveis por camada e raridade
+  const availableCodesByLayerAndRarity = {};
+  for (const layerName of layerOrder) {
+    availableCodesByLayerAndRarity[layerName] = {};
+    const codes = layerFilesMap[layerName] || [];
+    for (const item of codes) {
+      const rarities = traitRarityMap[layerName]?.[item.code] || [];
+      for (const rarity of rarities) {
+        if (!availableCodesByLayerAndRarity[layerName][rarity]) {
+          availableCodesByLayerAndRarity[layerName][rarity] = [];
+        }
+        availableCodesByLayerAndRarity[layerName][rarity].push(item.code);
+      }
+    }
+  }
+  
+  // Inicializa traitStats
+  traitStats = {};
+  for (const layerName of layerOrder) {
+    const codes = layerFilesMap[layerName] || [];
+    for (const item of codes) {
+      const key = `${layerName}:${item.code}`;
+      traitStats[key] = { count: 0, percentage: 0, display_name: getDisplayNameFromCode(item.code) };
+    }
+  }
+  
+  // Contabiliza traits dos NFTs únicos
+  for (const [nftId, nftData] of Object.entries(uniqueNFTs)) {
+    for (const attr of nftData.dna_attributes) {
+      const parsed = extractLayerAndCode(attr);
+      if (parsed) {
+        const key = `${parsed.layer}:${parsed.code}`;
+        if (traitStats[key]) {
+          traitStats[key].count++;
+        }
+      }
+    }
+  }
+  
+  // Gera NFTs automáticos
+  for (const [rarityName, range] of Object.entries(rarityDistribution)) {
+    const startId = parseInt(range.start);
+    const endId = parseInt(range.end);
+    
+    for (let nftNumber = startId; nftNumber <= endId; nftNumber++) {
+      if (uniqueNFTs[nftNumber.toString()]) continue;
+      
+      let found = false;
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      while (!found && attempts < maxAttempts) {
+        const dnaAttributes = [];
+        
+        for (const layerName of layerOrder) {
+          const optional = optionalLayers[layerName]?.optional || false;
+          const probability = optionalLayers[layerName]?.probability || 30;
+          
+          if (optional && Math.random() * 100 > probability) {
+            continue;
+          }
+          
+          const codes = availableCodesByLayerAndRarity[layerName]?.[rarityName] || [];
+          if (codes.length === 0) {
+            continue;
+          }
+          const randomIndex = Math.floor(Math.random() * codes.length);
+          const selectedCode = codes[randomIndex];
+          dnaAttributes.push(`BBP:attr:${namespace}:${layerName}:${selectedCode}`);
+          
+          const key = `${layerName}:${selectedCode}`;
+          if (traitStats[key]) {
+            traitStats[key].count++;
+          }
+        }
+        
+        if (dnaAttributes.length === 0) {
+          attempts++;
+          continue;
+        }
+        
+        const comboKey = dnaAttributes.sort().join('|');
+        
+        if (!usedCombinations.has(comboKey)) {
+          usedCombinations.add(comboKey);
+          nfts[`${nftNumber}`] = { dna_attributes: dnaAttributes };
+          found = true;
+        }
+        
+        attempts++;
+      }
+    }
+  }
+  
+  // Calcula porcentagens
+  const totalNfts = Object.keys(nfts).length;
+  for (const key in traitStats) {
+    traitStats[key].percentage = parseFloat((traitStats[key].count / totalNfts * 100).toFixed(2));
+  }
+  
+  return nfts;
+}
+
+function extractLayerAndCode(dnaAttribute) {
+  const parts = dnaAttribute.split(':');
+  if (parts.length >= 5) return { layer: parts[3], code: parts[4] };
+  return null;
+}
+
+function addPrimaryRoyalty() {
+  const container = document.getElementById('primaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `
+    <input type="text" placeholder="Endereço Bitcoin" />
+    <input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" />
+    <button class="small danger" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function addSecondaryRoyalty() {
+  const container = document.getElementById('secondaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `
+    <input type="text" placeholder="Endereço Bitcoin" />
+    <input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" />
+    <button class="small danger" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function getRoyaltiesFromUI() {
+  const onPrimary = [];
+  const primaryRows = document.querySelectorAll('#primaryRoyaltiesContainer .royalty-item');
+  primaryRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) {
+        onPrimary.push({ address, bps });
+      }
+    }
+  });
+  
+  const onSecondary = [];
+  const secondaryRows = document.querySelectorAll('#secondaryRoyaltiesContainer .royalty-item');
+  secondaryRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const address = inputs[0].value.trim();
+      const bps = parseInt(inputs[1].value);
+      if (address && bps > 0) {
+        onSecondary.push({ address, bps });
+      }
+    }
+  });
+  
+  return { onPrimary, onSecondary };
+}
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim(), tokenId = document.getElementById('modalTokenId').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  const data = { type, identifier };
+  if (tokenId) data.token_id = tokenId;
+  window.networks[network].push(data);
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b; padding:12px; text-align:center;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) {
+    alert("Erro: DNA_IDENTITY não encontrado. Volte e crie o ativo raiz.");
+    return;
+  }
+  
+  const collectionName = document.getElementById('nftName')?.value || "Minha Coleção";
+  const supply = parseInt(document.getElementById('supply')?.value) || page1Supply;
+  const namespace = root.asset?.namespace || collectionName.toLowerCase().replace(/\s+/g, '_');
+  
+  const resolverMap = {};
+  const layerOrder = [];
+  const layerFilesMap = {};
+  
+  if (window.layerFiles) {
+    for (const [layerName, files] of Object.entries(window.layerFiles)) {
+      if (files && files.length > 0) {
+        const lowerLayerName = layerName.toLowerCase();
+        const sortedFiles = [...files].sort();
+        resolverMap[lowerLayerName] = {};
+        layerFilesMap[lowerLayerName] = [];
+        
+        sortedFiles.forEach((file) => {
+          const code = getCodeFromFilename(file);
+          resolverMap[lowerLayerName][code] = file;
+          layerFilesMap[lowerLayerName].push({ code: code, file: file });
+        });
+        
+        layerOrder.push(lowerLayerName);
+      }
+    }
+  }
+  
+  const optionalLayers = {};
+  for (const [layerName, config] of Object.entries(layerOptionalMap)) {
+    if (config.optional) {
+      optionalLayers[layerName] = { optional: true, probability: config.probability };
+    }
+  }
+  
+  const rarityDistribution = {};
+  let currentStart = 1;
+  const rarityItems = document.querySelectorAll('#rarityContainer .rarity-item');
+  rarityItems.forEach(item => {
+    const inputs = item.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const name = inputs[0].value.trim().toLowerCase().replace(/\s+/g, '_');
+      const quantity = parseInt(inputs[1].value);
+      if (name && quantity > 0) {
+        const end = currentStart + quantity - 1;
+        rarityDistribution[name] = { start: currentStart, end: end };
+        currentStart = end + 1;
+      }
+    }
+  });
+  
+  const genericTraits = [];
+  const traitRows = document.querySelectorAll('#traitsContainer > div');
+  traitRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length >= 2) {
+      const traitName = inputs[0].value.trim();
+      const traitValues = inputs[1].value.split(',').map(v => v.trim());
+      if (traitName && traitValues.length) {
+        traitValues.forEach(value => {
+          if (value) genericTraits.push(`BBP:attr:${namespace}:${traitName}:${value.toLowerCase().replace(/\s+/g, '_')}`);
+        });
+      }
+    }
+  });
+  
+  const social = {
+    website: document.getElementById('website')?.value || null,
+    twitter: document.getElementById('twitter')?.value || null,
+    discord: document.getElementById('discord')?.value || null,
+    instagram: document.getElementById('instagram')?.value || null
+  };
+  
+  const uniqueNFTs = parseUniqueNFTs();
+  const nfts = generateUniqueCombinations(layerOrder, layerFilesMap, window.traitRarityMap, rarityDistribution, supply, namespace, uniqueNFTs, optionalLayers);
+  
+  const traitOccurrences = {};
+  for (const [key, data] of Object.entries(traitStats)) {
+    traitOccurrences[key] = data.percentage;
+  }
+  
+  const { onPrimary, onSecondary } = getRoyaltiesFromUI();
+  const minimumPayout = parseInt(document.getElementById('minimumPayout').value) || 546;
+  const creatorAddress = document.getElementById('paymentAddress')?.value || page1PaymentAddress;
+  
+  const dnaBindingTemplate = `BBP:bind:bbp:${namespace}:{id}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: root.asset?.standard || "nft",
+    origin: {
+      network: "bitcoin",
+      protocol: "ordinals",
+      timestamp: new Date().toISOString()
+    },
+    collection: {
+      name: collectionName,
+      description: document.getElementById('nftDescription')?.value || "",
+      symbol: document.getElementById('symbol')?.value || null,
+      creator: document.getElementById('artist')?.value || root.creator?.name || "",
+      creator_address: creatorAddress,
+      namespace: namespace,
+      supply: supply,
+      explicit_content: document.getElementById('explicitContent')?.checked || false,
+      reveal_later: document.getElementById('revealLater')?.checked || false,
+      launch_date: document.getElementById('launchDate')?.value || null,
+      blockchain: document.getElementById('blockchain')?.value || "Bitcoin (Ordinals)",
+      category: document.getElementById('category')?.value || "Arte"
+    },
+    royalties: {
+      on_primary: onPrimary,
+      on_secondary: onSecondary
+    },
+    payout_rules: {
+      precision: 10000,
+      minimum_payout_sats: minimumPayout
+    },
+    dna_binding_template: dnaBindingTemplate,
+    resolver_map: resolverMap,
+    nfts: nfts,
+    unique_nfts: uniqueNFTs,
+    layer_order: layerOrder,
+    optional_layers: optionalLayers,
+    rarity_distribution: rarityDistribution,
+    rarity_by_trait: window.traitRarityMap,
+    trait_occurrences: traitOccurrences,
+    trait_stats: traitStats,
+    generic_traits: genericTraits.length > 0 ? genericTraits : null,
+    social: social,
+    capabilities: ["tradeable", "collectible"],
+    history: [{
+      event: "manifest_created",
+      timestamp: new Date().toISOString()
+    }]
+  };
+  
+  if (Object.keys(window.networks).length > 0) {
+    manifestBase.networks = {};
+    for (const [network, entries] of Object.entries(window.networks)) {
+      manifestBase.networks[network] = entries.length === 1 ? entries[0] : entries;
+    }
+  }
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const uniqueNFTCount = Object.keys(uniqueNFTs).length;
+  const networksCount = Object.keys(window.networks).length;
+  const optionalCount = Object.keys(optionalLayers).length;
+  
+  let traitStatsPreview = '';
+  const sampleTraits = Object.entries(traitStats).slice(0, 5);
+  if (sampleTraits.length > 0) {
+    traitStatsPreview = sampleTraits.map(([key, data]) => {
+      const [layer, code] = key.split(':');
+      return `${layer}: ${data.display_name} (${data.percentage}%)`;
+    }).join('<br/>');
+    if (Object.keys(traitStats).length > 5) traitStatsPreview += '<br/>...';
+  } else {
+    traitStatsPreview = 'Nenhum trait calculado';
+  }
+  
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY (Bitcoin)</strong><br/>
+    <code>${currentUnsignedManifest.identity}</code></p>
+    
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/>
+    <code>BBP:attr:${namespace}:layer:code</code><br/>
+    Exemplo: ${currentUnsignedManifest.nfts?.["1"]?.dna_attributes?.[0] || "BBP:attr:colecao:background:bg_mustard"}</p>
+    
+    <p><strong>🔗 DNA_BINDING</strong><br/>
+    <code>${dnaBindingTemplate.replace('{id}', '1')}</code><br/>
+    (para NFT #1, use "1" ou "#1" no viewer)</p>
+    
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <p><strong>💰 Royalties Primários:</strong> ${onPrimary.length} destinatários</p>
+    <p><strong>💰 Royalties Secundários:</strong> ${onSecondary.length} destinatários</p>
+    <p><strong>💵 Payout mínimo:</strong> ${minimumPayout} sats</p>
+    <p><strong>🎲 Camadas opcionais:</strong> ${optionalCount} camada(s) configurada(s)</p>
+    
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p style="font-size:0.85rem;">✅ ${layerOrder.length} camadas | ${Object.keys(rarityDistribution).length} níveis de raridade | ${genericTraits.length} traits genéricos | ${supply} NFTs gerados</p>
+    <p style="font-size:0.8rem;">🎲 Raridade por trait configurada para ${Object.keys(window.traitRarityMap).length} camadas</p>
+    <p style="font-size:0.8rem;">✨ NFTs únicos personalizados: ${uniqueNFTCount}</p>
+    <p style="font-size:0.8rem;">📊 Traits com porcentagens: ${Object.keys(traitStats).length} variações</p>
+    <p style="font-size:0.8rem;">🌐 Redes adicionais: ${networksCount}</p>
+    <details style="font-size:0.75rem; margin-top:8px;">
+      <summary>📊 Exemplo de traits calculados</summary>
+      <div style="margin-top:8px; padding:8px; background:#2a2a2a; border-radius:6px;">
+        ${traitStatsPreview}
+      </div>
+    </details>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+}
+
+function downloadGenerator() {
+  const stub = `#!/usr/bin/env python3
+"""
+BBP NFT Generator
+Leia o bbp_manifest.json e gere os NFTs baseado nas regras
+"""
+
+import json
+import os
+from PIL import Image
+
+def load_manifest(path):
+    with open(path, 'r') as f:
+        return json.load(f)
+
+def generate_nfts(manifest, layers_path, output_path):
+    print(f"🎨 Gerando {manifest['collection']['supply']} NFTs...")
+    print(f"📁 DNA_IDENTITY: {manifest['identity']}")
+    print(f"📊 Camadas: {len(manifest['layer_order'])}")
+    if manifest.get('optional_layers'):
+        print(f"🎲 Camadas opcionais: {len(manifest['optional_layers'])}")
+    
+    # TODO: Implementar lógica completa de geração
+    print("✅ Gerador BBP - Em desenvolvimento")
+    
+if __name__ == "__main__":
+    manifest = load_manifest("bbp_manifest.json")
+    generate_nfts(manifest, "./layers", "./output")
+`;
+  const blob = new Blob([stub], {type: "text/plain"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bbp-nft-generator.py';
+  a.click();
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+if (document.getElementById('layersContainer').children.length === 0) {
+    initDefaultLayers();
+}
+</script>
+</body>
+</html>

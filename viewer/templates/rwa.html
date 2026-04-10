@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BBP - Criar Ativo do Mundo Real (RWA)</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; color: #0f172a; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  h1, h2 { margin: 0 0 16px; }
+  .small { color: #64748b; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+  input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+  button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 8px 0; font-weight: 500; transition: background 0.2s; }
+  button:hover { background: #2563eb; }
+  button.green { background: #10b981; width: 100%; padding: 16px; font-size: 1.1rem; }
+  button.green:hover { background: #059669; }
+  button.small { background: #6b7280; padding: 6px 12px; font-size: 0.8rem; margin: 0; border-radius: 6px; }
+  button.small:hover { background: #4b5563; }
+  button.warning { background: #f59e0b; color: #000; }
+  button.warning:hover { background: #d97706; }
+  .section { margin: 32px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .dna-root { background: #0f172a; color: #94a3b8; padding: 12px 20px; border-radius: 12px; font-family: monospace; font-size: 1rem; word-break: break-all; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .dna-root strong { color: white; margin-right: 16px; white-space: nowrap; }
+  .hidden { display: none; }
+  #manifestOutput { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 16px; font-size: 12px; }
+  .dna-summary { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  .dna-summary h3 { margin-top: 0; color: #60a5fa; }
+  
+  .checkbox-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+  .attribute-item { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .attribute-item input:first-child { flex: 1; min-width: 150px; }
+  .attribute-item input:nth-child(2) { flex: 2; }
+  .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-top: 8px; }
+  .upload-area:hover { border-color: #f7931a; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f1f5f9; border-radius: 6px; margin-bottom: 4px; }
+  .image-thumb { position: relative; width: 100px; height: 100px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: inline-block; margin: 4px; }
+  .image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .image-thumb button { position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
+  .images-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .rwa-fields { margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .document-item { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .document-item input:first-child { flex: 1; }
+  
+  .royalty-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalty-item input:first-child {
+    flex: 2;
+    font-family: monospace;
+  }
+  .royalty-item input:nth-child(2) {
+    width: 100px;
+  }
+  .royalties-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .royalties-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .payout-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .payout-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #334155;
+  }
+  .button-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .sign-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 12px;
+  }
+  .sign-status.signed {
+    background: #10b981;
+    color: white;
+  }
+  .sign-status.unsigned {
+    background: #6b7280;
+    color: white;
+  }
+  
+  .networks-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px 0; }
+  .network-badge { display: inline-flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-family: monospace; }
+  .networks-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Criar Ativo do Mundo Real (RWA)</h1>
+  <p class="small">Registre um ativo físico (imóvel, veículo, obra de arte, etc.) no BBP.</p>
+
+  <div class="dna-root">
+    <strong>DNA do Bitcoin:</strong>
+    <span id="rootDnaDisplay"></span>
+  </div>
+
+  <div id="rwaForm">
+
+    <div class="card section">
+      <h2>Informações básicas</h2>
+      
+      <label>Tipo de Ativo *</label>
+      <select id="assetType" onchange="updateRWATypeFields()">
+        <option value="property">🏠 Imóvel</option>
+        <option value="vehicle">🚗 Veículo</option>
+        <option value="art">🎨 Obra de Arte</option>
+        <option value="collectible">🃏 Item Colecionável Físico</option>
+        <option value="custom">📦 Personalizado</option>
+      </select>
+      
+      <label>Nome / Identificação *</label>
+      <input id="assetName" placeholder="Ex: Apartamento 204, Fusca 1976, Monalisa" />
+      
+      <label>Descrição</label>
+      <textarea rows="3" id="description" placeholder="Descrição detalhada do ativo"></textarea>
+      
+      <label>Imagens do ativo</label>
+      <div class="upload-area" onclick="document.getElementById('assetImages').click()">
+        📸 Clique para selecionar imagens
+      </div>
+      <input type="file" id="assetImages" accept="image/*" multiple style="display: none;" onchange="handleImagesUpload(this)" />
+      <div id="imagesPreview" class="images-grid"></div>
+    </div>
+
+    <!-- Campos para Imóvel -->
+    <div id="propertyFields" class="rwa-fields hidden">
+      <h3 style="margin-top: 0;">🏠 Especificações do Imóvel</h3>
+      <label>Localização</label>
+      <input id="propertyLocation" placeholder="Ex: Rio de Janeiro, RJ - Brasil" />
+      <label>Área (m²)</label>
+      <input type="number" id="propertyArea" step="0.01" placeholder="Ex: 150" />
+      <div class="form-row">
+        <div style="flex:1"><label>Quartos</label><input type="number" id="propertyBedrooms" placeholder="Ex: 3" /></div>
+        <div style="flex:1"><label>Banheiros</label><input type="number" id="propertyBathrooms" placeholder="Ex: 2" /></div>
+        <div style="flex:1"><label>Vagas</label><input type="number" id="propertyParking" placeholder="Ex: 2" /></div>
+      </div>
+      <label>Ano de construção</label>
+      <input type="number" id="propertyYear" placeholder="Ex: 2020" />
+      <label>Matrícula / Registro</label>
+      <input id="propertyRegistry" placeholder="Ex: RG-12345-2020" />
+    </div>
+
+    <!-- Campos para Veículo -->
+    <div id="vehicleFields" class="rwa-fields hidden">
+      <h3 style="margin-top: 0;">🚗 Especificações do Veículo</h3>
+      <label>Marca</label><input id="vehicleBrand" placeholder="Ex: Volkswagen" />
+      <label>Modelo</label><input id="vehicleModel" placeholder="Ex: Fusca" />
+      <label>Ano</label><input type="number" id="vehicleYear" placeholder="Ex: 1976" />
+      <label>Placa (anonimizada)</label><input id="vehiclePlate" placeholder="Ex: ABC-1234" />
+      <label>Chassi (hash)</label><input id="vehicleVin" placeholder="Ex: 9BWZZZ377VT004251" />
+      <label>Quilometragem</label><input type="number" id="vehicleMileage" placeholder="Ex: 50000" />
+    </div>
+
+    <!-- Campos para Obra de Arte -->
+    <div id="artFields" class="rwa-fields hidden">
+      <h3 style="margin-top: 0;">🎨 Especificações da Obra de Arte</h3>
+      <label>Artista</label><input id="artArtist" placeholder="Ex: Leonardo da Vinci" />
+      <label>Ano de criação</label><input type="number" id="artYear" placeholder="Ex: 1503" />
+      <label>Técnica / Meio</label><input id="artMedium" placeholder="Ex: Óleo sobre tela" />
+      <label>Dimensões</label><input id="artDimensions" placeholder="Ex: 77 x 53 cm" />
+      <label>Procedência</label><textarea id="artProvenance" rows="2" placeholder="Histórico de proprietários"></textarea>
+    </div>
+
+    <!-- Campos para Colecionável Físico -->
+    <div id="collectibleFields" class="rwa-fields hidden">
+      <h3 style="margin-top: 0;">🃏 Especificações do Colecionável Físico</h3>
+      <label>Item</label><input id="collectibleItem" placeholder="Ex: Carta Rara, Action Figure" />
+      <label>Edição / Número</label><input id="collectibleEdition" placeholder="Ex: 1/100, Limited Edition" />
+      <label>Certificação</label><input id="collectibleCertification" placeholder="Ex: PSA, Beckett, CGC" />
+      <label>Estado de conservação</label><select id="collectibleCondition"><option value="mint">Mint</option><option value="near_mint">Near Mint</option><option value="excellent">Excellent</option><option value="good">Good</option><option value="fair">Fair</option></select>
+    </div>
+
+    <!-- Campos para Personalizado -->
+    <div id="customFields" class="rwa-fields hidden">
+      <h3 style="margin-top: 0;">📦 Atributos Personalizados</h3>
+      <p class="small">Adicione atributos específicos para seu ativo</p>
+      <div id="customAttributesContainer"></div>
+      <button onclick="addCustomAttribute()" style="margin-top: 8px;">+ Adicionar atributo</button>
+    </div>
+
+    <div class="card section">
+      <h2>Documentação Legal</h2>
+      <p class="small">Adicione documentos comprobatórios (escrituras, notas fiscais, certificados)</p>
+      <div id="documentsContainer">
+        <div class="document-item">
+          <input type="text" placeholder="Tipo do documento (ex: Escritura, Nota Fiscal)" />
+          <div class="upload-area" style="display: inline-block; padding: 8px 16px; width: auto;" onclick="this.parentElement.querySelector('input[type=file]').click()">📄 Selecionar arquivo</div>
+          <input type="file" accept=".pdf,.jpg,.png" style="display: none;" onchange="handleDocumentFile(this)" />
+          <span class="doc-filename" style="font-size:0.7rem; color:#64748b;"></span>
+          <button class="small danger" onclick="this.parentElement.remove()">×</button>
+        </div>
+      </div>
+      <button onclick="addDocument()" style="margin-top: 8px;">+ Adicionar documento</button>
+    </div>
+
+    <div class="card section">
+      <h2>Valoração e Custódia</h2>
+      <div style="display: flex; gap: 12px;">
+        <input type="number" id="valuationValue" step="0.01" placeholder="Valor" style="flex:2" />
+        <select id="valuationCurrency" style="flex:1"><option value="USD">USD</option><option value="EUR">EUR</option><option value="BRL">BRL</option></select>
+      </div>
+      <label>Data da avaliação</label><input type="date" id="valuationDate" />
+      <label>Avaliador / Empresa</label><input id="appraiser" placeholder="Ex: Certificado Appraisers Inc" />
+      <label>Custodiante</label><input id="custodian" placeholder="Ex: 0x... ou Nome da empresa" />
+    </div>
+
+    <div class="card section">
+      <h2>Links e redes sociais</h2>
+      <label>Website</label><input id="website" placeholder="https://" />
+      <label>Twitter</label><input id="twitter" placeholder="@rwa_asset" />
+      <label>Instagram</label><input id="instagram" placeholder="@rwa_asset" />
+    </div>
+
+    <div class="card section">
+      <h2>Configurações adicionais</h2>
+      
+      <!-- Checkbox para royalties opcionais -->
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="enableRoyalties"> 💰 Este ativo gera royalties (ex: obra de arte física)</label>
+      </div>
+      
+      <!-- Seção de royalties (oculta por padrão) -->
+      <div id="royaltiesSection" class="royalties-section hidden">
+        <h4>💰 Royalties (múltiplos destinatários)</h4>
+        <p class="small">Defina os destinatários dos royalties em basis points (bps). 10000 bps = 100%.</p>
+        
+        <div style="margin-bottom: 16px;">
+          <strong>Venda Primária (Mint)</strong>
+          <div id="primaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addPrimaryRoyalty()" style="margin-top: 4px;">+ Adicionar destinatário primário</button>
+        </div>
+
+        <div>
+          <strong>Venda Secundária (Resale)</strong>
+          <div id="secondaryRoyaltiesContainer">
+            <div class="royalty-item">
+              <input type="text" placeholder="Endereço Bitcoin" value="bc1q..." />
+              <input type="number" placeholder="bps (ex: 500 = 5%)" value="500" min="0" max="10000" step="10" />
+              <button class="small danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+          </div>
+          <button onclick="addSecondaryRoyalty()">+ Adicionar destinatário secundário</button>
+        </div>
+      </div>
+      
+      <!-- Seção de payout rules (sempre visível para RWA) -->
+      <div class="payout-section">
+        <h4>💰 Regras de Pagamento</h4>
+        <label>Endereço de pagamento (creator wallet)</label>
+        <input id="paymentAddress" placeholder="bc1... ou 1..." />
+        
+        <div style="margin-top: 16px;">
+          <label>Payout mínimo (satoshis)</label>
+          <input type="number" id="minimumPayout" value="546" placeholder="546" />
+          <p class="small">Valores abaixo deste limite serão acumulados ou ignorados para evitar dust.</p>
+        </div>
+      </div>
+
+      <label>Blockchain</label><select id="blockchain"><option>Bitcoin (Ordinals)</option><option>Ethereum</option><option>Polygon</option></select>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="verified"> Verificado por terceiros</label>
+        <label><input type="checkbox" id="transferable" checked> Transferível</label>
+      </div>
+
+      <div class="networks-section">
+        <h4>🌐 Representações em outras redes</h4>
+        <div id="networksList" class="networks-list"><div style="color: #64748b; padding: 12px; text-align: center;">Nenhuma rede adicional</div></div>
+        <button onclick="showAddNetworkModal()">+ Adicionar rede</button>
+      </div>
+    </div>
+
+    <div class="card section">
+      <button class="green" onclick="generateManifest()">Gerar Manifesto (bbp_manifest.json)</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>Manifest Gerado</h2>
+    <div id="dnaSummary" class="dna-summary"></div>
+    <pre id="manifestOutput"></pre>
+    <div class="button-group">
+      <button id="signManifestBtn" class="warning" style="display: none;">✍️ Assinar Manifesto com Carteira</button>
+      <button onclick="downloadManifest()" id="downloadBtn">⬇️ Baixar bbp_manifest.json</button>
+    </div>
+    <div id="signStatus" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="addNetworkModal" style="display: none;">
+  <div class="modal-overlay" onclick="closeAddNetworkModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3>Adicionar representação em rede</h3>
+      <label>Rede</label><select id="modalNetwork"><option value="bitcoin">Bitcoin</option><option value="ethereum">Ethereum</option><option value="polygon">Polygon</option><option value="solana">Solana</option></select>
+      <label>Tipo</label><select id="modalType"><option value="ordinal">Ordinal</option><option value="erc721">ERC721</option><option value="erc1155">ERC1155</option></select>
+      <label>Identificador</label><input id="modalIdentifier" placeholder="Ex: 0xABC..." />
+      <label>Token ID</label><input id="modalTokenId" placeholder="Ex: 123" />
+      <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+        <button class="small" onclick="closeAddNetworkModal()">Cancelar</button>
+        <button class="small" style="background:#10b981;" onclick="addNetworkFromModal()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DETECÇÃO UNIVERSAL DE CARTEIRA ====================
+function getBitcoinProvider() {
+  if (window.unisat) return window.unisat;
+  if (window.xverse) return window.xverse;
+  if (window.btc) return window.btc;
+  if (window.leather) return window.leather;
+  if (window.hiro) return window.hiro;
+  if (window.bitcoinProvider) return window.bitcoinProvider;
+  return null;
+}
+// ========================================================================
+
+const root = JSON.parse(localStorage.getItem('bbpRootAsset') || '{}');
+document.getElementById('rootDnaDisplay').textContent = root.dna?.identity || 'Nenhum DNA raiz encontrado';
+if (root.asset?.class === 'rwa') document.getElementById('rwaForm').classList.remove('hidden');
+
+let imagesData = [];
+let documentsData = [];
+let currentUnsignedManifest = null;
+let currentSignedManifest = null;
+window.networks = {};
+
+async function calculateContractHash(manifestObject) {
+  const jsonString = JSON.stringify(manifestObject, null, 2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(jsonString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+async function signManifest() {
+  if (!currentUnsignedManifest) {
+    alert('Nenhum manifesto para assinar. Gere o manifesto primeiro.');
+    return;
+  }
+  
+  const provider = getBitcoinProvider();
+  if (!provider) {
+    alert('Nenhuma carteira Bitcoin detectada. Instale Unisat, Xverse ou Leather.');
+    return;
+  }
+  
+  try {
+    const accounts = await provider.requestAccounts();
+    const pubkey = await provider.getPublicKey();
+    const messageToSign = currentUnsignedManifest.contract_hash;
+    const signature = await provider.signMessage(messageToSign);
+    
+    currentSignedManifest = {
+      ...currentUnsignedManifest,
+      creator_pubkey: pubkey,
+      signature: signature,
+      signed_at: new Date().toISOString()
+    };
+    
+    document.getElementById('manifestOutput').textContent = JSON.stringify(currentSignedManifest, null, 2);
+    document.getElementById('signManifestBtn').style.display = 'none';
+    document.getElementById('signStatus').innerHTML = '<span class="sign-status signed">✓ Manifesto assinado com sucesso!</span>';
+    
+    const summaryDiv = document.getElementById('dnaSummary');
+    const hashPreview = currentSignedManifest.contract_hash.substring(0, 32);
+    summaryDiv.innerHTML = summaryDiv.innerHTML.replace(
+      /<p><strong>🔐 Assinatura:<\/strong>.*?<\/p>/,
+      `<p><strong>🔐 Assinatura:</strong> ✓ Assinado | Pubkey: ${pubkey.substring(0, 16)}...<br/><strong>📦 Contract Hash:</strong> <code>${hashPreview}...</code></p>`
+    );
+    
+    alert('Manifesto assinado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao assinar:', error);
+    alert('Erro ao assinar: ' + (error.message || 'Erro desconhecido'));
+  }
+}
+
+function handleImagesUpload(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => { imagesData.push(file); });
+  refreshImagesPreview();
+}
+
+function refreshImagesPreview() {
+  const container = document.getElementById('imagesPreview');
+  container.innerHTML = imagesData.map((img, idx) => `
+    <div class="image-thumb">
+      <img src="${URL.createObjectURL(img)}" />
+      <button onclick="removeImage(${idx})">×</button>
+    </div>
+  `).join('');
+}
+
+function removeImage(idx) { imagesData.splice(idx,1); refreshImagesPreview(); }
+
+function handleDocumentFile(input) {
+  const file = input.files[0];
+  if (file) {
+    const parent = input.closest('.document-item');
+    const filenameSpan = parent.querySelector('.doc-filename');
+    if (filenameSpan) filenameSpan.textContent = file.name;
+    parent._file = file;
+  }
+}
+
+function addDocument() {
+  const container = document.getElementById('documentsContainer');
+  const row = document.createElement('div');
+  row.className = 'document-item';
+  row.innerHTML = `
+    <input type="text" placeholder="Tipo do documento" />
+    <div class="upload-area" style="display: inline-block; padding: 8px 16px; width: auto;" onclick="this.parentElement.querySelector('input[type=file]').click()">📄 Selecionar</div>
+    <input type="file" accept=".pdf,.jpg,.png" style="display: none;" onchange="handleDocumentFile(this)" />
+    <span class="doc-filename" style="font-size:0.7rem; color:#64748b;"></span>
+    <button class="small danger" onclick="this.parentElement.remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function updateRWATypeFields() {
+  const type = document.getElementById('assetType').value;
+  document.getElementById('propertyFields').classList.add('hidden');
+  document.getElementById('vehicleFields').classList.add('hidden');
+  document.getElementById('artFields').classList.add('hidden');
+  document.getElementById('collectibleFields').classList.add('hidden');
+  document.getElementById('customFields').classList.add('hidden');
+  if (type === 'property') document.getElementById('propertyFields').classList.remove('hidden');
+  else if (type === 'vehicle') document.getElementById('vehicleFields').classList.remove('hidden');
+  else if (type === 'art') document.getElementById('artFields').classList.remove('hidden');
+  else if (type === 'collectible') document.getElementById('collectibleFields').classList.remove('hidden');
+  else if (type === 'custom') document.getElementById('customFields').classList.remove('hidden');
+}
+
+function addCustomAttribute() {
+  const container = document.getElementById('customAttributesContainer');
+  const row = document.createElement('div');
+  row.className = 'attribute-item';
+  row.innerHTML = `<input placeholder="Atributo" /><input placeholder="Valor" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function addPrimaryRoyalty() {
+  const container = document.getElementById('primaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function addSecondaryRoyalty() {
+  const container = document.getElementById('secondaryRoyaltiesContainer');
+  const row = document.createElement('div');
+  row.className = 'royalty-item';
+  row.innerHTML = `<input type="text" placeholder="Endereço Bitcoin" /><input type="number" placeholder="bps" value="0" min="0" max="10000" step="10" /><button class="small danger" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(row);
+}
+
+function getRoyaltiesFromUI() {
+  const onPrimary = [];
+  const onSecondary = [];
+  if (document.getElementById('enableRoyalties').checked) {
+    document.querySelectorAll('#primaryRoyaltiesContainer .royalty-item').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      if (inputs.length >= 2) {
+        const address = inputs[0].value.trim();
+        const bps = parseInt(inputs[1].value);
+        if (address && bps > 0) onPrimary.push({ address, bps });
+      }
+    });
+    document.querySelectorAll('#secondaryRoyaltiesContainer .royalty-item').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      if (inputs.length >= 2) {
+        const address = inputs[0].value.trim();
+        const bps = parseInt(inputs[1].value);
+        if (address && bps > 0) onSecondary.push({ address, bps });
+      }
+    });
+  }
+  return { onPrimary, onSecondary };
+}
+
+// Toggle royalties section
+document.getElementById('enableRoyalties').addEventListener('change', function(e) {
+  const royaltiesSection = document.getElementById('royaltiesSection');
+  if (e.target.checked) {
+    royaltiesSection.classList.remove('hidden');
+  } else {
+    royaltiesSection.classList.add('hidden');
+  }
+});
+
+function showAddNetworkModal() { document.getElementById('addNetworkModal').style.display = 'flex'; }
+function closeAddNetworkModal(event) { if (event && event.target !== event.currentTarget && event.target.className !== 'modal-overlay') return; document.getElementById('addNetworkModal').style.display = 'none'; }
+function addNetworkFromModal() {
+  const network = document.getElementById('modalNetwork').value, type = document.getElementById('modalType').value, identifier = document.getElementById('modalIdentifier').value.trim(), tokenId = document.getElementById('modalTokenId').value.trim();
+  if (!identifier) { alert('Informe o identificador'); return; }
+  if (!window.networks[network]) window.networks[network] = [];
+  const data = { type, identifier };
+  if (tokenId) data.token_id = tokenId;
+  window.networks[network].push(data);
+  refreshNetworksList(); closeAddNetworkModal();
+}
+function removeNetwork(network, idx) { window.networks[network].splice(idx,1); if (window.networks[network].length===0) delete window.networks[network]; refreshNetworksList(); }
+function refreshNetworksList() {
+  const container = document.getElementById('networksList'); container.innerHTML = '';
+  if (Object.keys(window.networks).length===0) { container.innerHTML = '<div style="color:#64748b;">Nenhuma rede adicional</div>'; return; }
+  for (const [network, entries] of Object.entries(window.networks)) entries.forEach((entry,idx) => { const badge = document.createElement('div'); badge.className = 'network-badge'; badge.innerHTML = `<span>${network.toUpperCase()}: ${entry.type} - ${entry.identifier}</span><button class="small" style="background:#ef4444;" onclick="removeNetwork('${network}',${idx})">×</button>`; container.appendChild(badge); });
+}
+
+async function generateManifest() {
+  if (!root.dna?.identity) { alert("Erro: DNA_IDENTITY não encontrado"); return; }
+  const namespace = root.asset?.namespace || 'rwa';
+  const assetName = document.getElementById('assetName')?.value || "Ativo";
+  const identifier = assetName.toLowerCase().replace(/\s+/g, '_');
+  const assetType = document.getElementById('assetType').value;
+  
+  const documents = [];
+  document.querySelectorAll('#documentsContainer .document-item').forEach(row => {
+    const typeInput = row.querySelector('input[type="text"]');
+    const file = row._file;
+    if (typeInput?.value.trim() && file) documents.push({ type: typeInput.value.trim(), filename: file.name });
+  });
+  
+  const rwaAttributes = {};
+  if (assetType === 'property') {
+    rwaAttributes.location = document.getElementById('propertyLocation').value;
+    rwaAttributes.area_m2 = document.getElementById('propertyArea').value;
+    rwaAttributes.bedrooms = document.getElementById('propertyBedrooms').value;
+    rwaAttributes.bathrooms = document.getElementById('propertyBathrooms').value;
+    rwaAttributes.parking_spots = document.getElementById('propertyParking').value;
+    rwaAttributes.construction_year = document.getElementById('propertyYear').value;
+    rwaAttributes.registry = document.getElementById('propertyRegistry').value;
+  } else if (assetType === 'vehicle') {
+    rwaAttributes.brand = document.getElementById('vehicleBrand').value;
+    rwaAttributes.model = document.getElementById('vehicleModel').value;
+    rwaAttributes.year = document.getElementById('vehicleYear').value;
+    rwaAttributes.plate = document.getElementById('vehiclePlate').value;
+    rwaAttributes.vin = document.getElementById('vehicleVin').value;
+    rwaAttributes.mileage = document.getElementById('vehicleMileage').value;
+  } else if (assetType === 'art') {
+    rwaAttributes.artist = document.getElementById('artArtist').value;
+    rwaAttributes.year = document.getElementById('artYear').value;
+    rwaAttributes.medium = document.getElementById('artMedium').value;
+    rwaAttributes.dimensions = document.getElementById('artDimensions').value;
+    rwaAttributes.provenance = document.getElementById('artProvenance').value;
+  } else if (assetType === 'collectible') {
+    rwaAttributes.item = document.getElementById('collectibleItem').value;
+    rwaAttributes.edition = document.getElementById('collectibleEdition').value;
+    rwaAttributes.certification = document.getElementById('collectibleCertification').value;
+    rwaAttributes.condition = document.getElementById('collectibleCondition').value;
+  } else if (assetType === 'custom') {
+    document.querySelectorAll('#customAttributesContainer .attribute-item').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      if (inputs.length>=2 && inputs[0].value.trim() && inputs[1].value.trim()) rwaAttributes[inputs[0].value.trim()] = inputs[1].value.trim();
+    });
+  }
+  
+  const dnaAttributes = [];
+  dnaAttributes.push(`BBP:attr:${namespace}:type:${assetType}`);
+  dnaAttributes.push(`BBP:attr:${namespace}:name:${assetName.toLowerCase().replace(/\s+/g, '_')}`);
+  const valuationValue = document.getElementById('valuationValue').value;
+  if (valuationValue) dnaAttributes.push(`BBP:attr:${namespace}:valuation:${valuationValue}_${document.getElementById('valuationCurrency').value}`);
+  if (document.getElementById('custodian').value) dnaAttributes.push(`BBP:attr:${namespace}:custodian:${document.getElementById('custodian').value}`);
+  for (const [k,v] of Object.entries(rwaAttributes)) if (v) dnaAttributes.push(`BBP:attr:${namespace}:${k}:${v.toString().toLowerCase().replace(/\s+/g, '_')}`);
+  
+  const assets = {
+    images: imagesData.map(img => `./assets/images/${img.name}`),
+    documents: documents.map(doc => `./assets/documents/${doc.filename}`)
+  };
+  
+  const social = { website: document.getElementById('website')?.value, twitter: document.getElementById('twitter')?.value, instagram: document.getElementById('instagram')?.value };
+  
+  const creatorAddress = document.getElementById('paymentAddress')?.value || root.creator?.address;
+  const { onPrimary, onSecondary } = getRoyaltiesFromUI();
+  const minimumPayout = parseInt(document.getElementById('minimumPayout').value) || 546;
+  const enableRoyalties = document.getElementById('enableRoyalties').checked;
+  
+  // DNA_BINDING
+  const dnaBinding = `BBP:bind:bbp:${namespace}:${identifier}`;
+  
+  const manifestBase = {
+    bbp_version: "1.2",
+    identity: root.dna?.identity,
+    standard: "rwa",
+    origin: { network: "bitcoin", protocol: "ordinals", timestamp: new Date().toISOString() },
+    collection: {
+      name: assetName,
+      description: document.getElementById('description')?.value,
+      creator: root.creator?.name,
+      creator_address: creatorAddress,
+      namespace,
+      identifier: identifier,
+      supply: 1,
+      blockchain: document.getElementById('blockchain').value,
+      category: "RWA"
+    },
+    payout_rules: {
+      precision: 10000,
+      minimum_payout_sats: minimumPayout
+    },
+    dna_binding: dnaBinding,
+    attributes: {
+      asset_type: assetType,
+      name: assetName,
+      valuation: valuationValue ? { value: parseFloat(valuationValue), currency: document.getElementById('valuationCurrency').value } : null,
+      valuation_date: document.getElementById('valuationDate').value,
+      appraiser: document.getElementById('appraiser').value,
+      custodian: document.getElementById('custodian').value,
+      verified: document.getElementById('verified').checked,
+      transferable: document.getElementById('transferable').checked,
+      ...rwaAttributes
+    },
+    dna_attributes: dnaAttributes,
+    assets,
+    documents,
+    social,
+    capabilities: ["rwa", "real_world_asset"],
+    history: [{ event: "manifest_created", timestamp: new Date().toISOString() }]
+  };
+  
+  // Adiciona royalties apenas se habilitado
+  if (enableRoyalties && (onPrimary.length > 0 || onSecondary.length > 0)) {
+    manifestBase.royalties = {
+      on_primary: onPrimary,
+      on_secondary: onSecondary
+    };
+  }
+  
+  if (Object.keys(window.networks).length > 0) manifestBase.networks = window.networks;
+  
+  const contractHashValue = await calculateContractHash(manifestBase);
+  
+  currentUnsignedManifest = {
+    ...manifestBase,
+    contract_hash: contractHashValue
+  };
+  
+  currentSignedManifest = null;
+  
+  document.getElementById('manifestOutput').textContent = JSON.stringify(currentUnsignedManifest, null, 2);
+  document.getElementById('signManifestBtn').style.display = 'inline-block';
+  document.getElementById('signStatus').innerHTML = '<span class="sign-status unsigned">✗ Não assinado. Clique em "Assinar Manifesto" para validar.</span>';
+  
+  const networksCount = Object.keys(window.networks).length;
+  document.getElementById('dnaSummary').innerHTML = `
+    <h3>🧬 Os Três DNAs do BBP</h3>
+    <p><strong>📌 DNA_IDENTITY</strong><br/><code>${currentUnsignedManifest.identity}</code></p>
+    <p><strong>🏷️ DNA_ATTRIBUTES</strong><br/><code>${dnaAttributes.slice(0,3).join('<br/>')}${dnaAttributes.length>3?'<br/>...':''}</code></p>
+    <p><strong>🔗 DNA_BINDING</strong><br/><code>${dnaBinding}</code></p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p><strong>🔐 Assinatura:</strong> <span style="color:#f59e0b;">✗ Pendente</span> - Assine com sua carteira Bitcoin</p>
+    <p><strong>📦 Contract Hash:</strong> <code>${contractHashValue.substring(0, 32)}...</code></p>
+    <p><strong>💰 Royalties:</strong> ${enableRoyalties ? (onPrimary.length + onSecondary.length > 0 ? 'Ativado' : 'Ativado (sem destinatários)') : 'Desativado'}</p>
+    <p><strong>💵 Payout mínimo:</strong> ${minimumPayout} sats</p>
+    <hr style="border-color:#334155; margin:16px 0;" />
+    <p>✅ ${assetType.toUpperCase()} | ${imagesData.length} imagens | ${documents.length} documentos</p>
+    <p>🌐 Redes adicionais: ${networksCount}</p>
+  `;
+  
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function downloadManifest() {
+  const manifestToDownload = currentSignedManifest || currentUnsignedManifest;
+  if (!manifestToDownload) return alert("Gere o manifesto primeiro");
+  const fileName = currentSignedManifest ? 'bbp_manifest_signed.json' : 'bbp_manifest.json';
+  const blob = new Blob([JSON.stringify(manifestToDownload, null, 2)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  
+  if (!currentSignedManifest) {
+    alert('⚠️ Este manifesto NÃO está assinado. Para validade legal, clique em "Assinar Manifesto com Carteira" antes de publicar.');
+  } else {
+    alert('✅ Manifesto assinado baixado! Agora você pode enviá-lo para o Arweave.');
+  }
+  
+  let msg = "⚠️ Salve os arquivos:\n";
+  if (imagesData.length) msg += `- Imagens: ./assets/images/\n`;
+  if (documentsData.length || document.querySelectorAll('#documentsContainer .document-item').length) msg += `- Documentos: ./assets/documents/\n`;
+  if (imagesData.length || documentsData.length) alert(msg);
+}
+
+document.getElementById('signManifestBtn').addEventListener('click', signManifest);
+
+updateRWATypeFields();
+addDocument();
+refreshNetworksList();
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{
+  "bbp_version": "1.2",
+  "identity": "BBP:id:commodity:santa_rita:lote_2026",
+  "standard": "commodity",
+  "origin": {
+    "network": "bitcoin",
+    "protocol": "ordinals",
+    "timestamp": "2026-03-27T17:48:07.896Z"
+  },
+  "collection": {
+    "name": "Lote 001/2026 - Bourbon Amarelo",
+    "description": "Café especial Bourbon Amarelo, safra 2026, pontuação 86+",
+    "creator": "BBP Agro",
+    "creator_address": "tb1pj0qx3l2rstg0nemw475h4devn5rxrp4awgphlz9fydrx5tm83y9qw5layr",
+    "namespace": "santa_rita",
+    "identifier": "lote_001/2026_-_bourbon_amarelo",
+    "supply": 1,
+    "explicit_content": false,
+    "blockchain": "Bitcoin (Ordinals)",
+    "category": "Commodity"
+  },
+  "payout_rules": {
+    "precision": 10000,
+    "minimum_payout_sats": 546
+  },
+  "dna_binding": "BBP:bind:bbp:santa_rita:lote_001/2026_-_bourbon_amarelo",
+  "attributes": {
+    "commodity_type": "coffee",
+    "lot": "Lote 001/2026 - Bourbon Amarelo",
+    "quantity": 1000,
+    "unit": "bag",
+    "certifications": [
+      "Orgânico",
+      "Fair Trade"
+    ],
+    "species": "arabica",
+    "variety": "Bourbon Amarelo",
+    "origin": "Minas Gerais, Brasil",
+    "process": "natural",
+    "altitude": "1150",
+    "score": "86.5"
+  },
+  "dna_attributes": [
+    "BBP:attr:santa_rita:type:coffee",
+    "BBP:attr:santa_rita:lot:lote_001/2026_-_bourbon_amarelo",
+    "BBP:attr:santa_rita:quantity:1000",
+    "BBP:attr:santa_rita:unit:bag",
+    "BBP:attr:santa_rita:species:arabica",
+    "BBP:attr:santa_rita:variety:bourbon_amarelo",
+    "BBP:attr:santa_rita:origin:minas_gerais,_brasil",
+    "BBP:attr:santa_rita:process:natural",
+    "BBP:attr:santa_rita:altitude:1150",
+    "BBP:attr:santa_rita:score:86.5",
+    "BBP:attr:santa_rita:certification:orgânico",
+    "BBP:attr:santa_rita:certification:fair_trade"
+  ],
+  "assets": {
+    "image": "./assets/images/coffee_beans.png",
+    "documents": [
+      "./assets/documents/certificado_organic.pdf",
+      "./assets/documents/laudo_qualidade.pdf"
+    ]
+  },
+  "social": {
+    "website": "www.santarita.com.br",
+    "twitter": "@santarita",
+    "instagram": "@santarita"
+  },
+  "capabilities": [
+    "tradeable",
+    "commodity"
+  ],
+  "history": [
+    {
+      "event": "manifest_created",
+      "timestamp": "2026-03-27T17:48:07.897Z"
+    }
+  ],
+  "contract_hash": "fbf1cd2d54cd7d1e790809a87ad8c36f982f148925c0ee67776e8dda47a2b88f",
+  "creator_pubkey": "022afb7ffff3f12bdf971a2cdb81ca5ed63ce0ee070b818116e3ab991a23ca9e1b",
+  "signature": "IGr0P3ySqCSZdW227a/vbyJWhfN0ZDE8bzZ48M55iJ3uJEZr9zLlCZUo6ha5wY+rnxPBqbUA8CKJYyt6ZrfZMv8=",
+  "signed_at": "2026-03-27T17:48:44.597Z"
+}

@@ -580,39 +580,12 @@ function showRitualOverlay() {
   overlayShown = true;
   isMoving = false;
   
-  const countdownTimer = document.getElementById('countdownTimer');
-  if (countdownTimer) {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    
-    const targetTime = tomorrow.getTime();
-    
-    function updateOverlayCountdown() {
-      const now = new Date().getTime();
-      const distance = targetTime - now;
-      
-      if (distance < 0) {
-        countdownTimer.textContent = "00:00:00";
-        return;
-      }
-      
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      
-      countdownTimer.textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  // Aguarda 4 segundos para o participante contemplar o final da cena
+  setTimeout(() => {
+    if (overlay) {
+      overlay.style.display = 'flex';
     }
-    
-    updateOverlayCountdown();
-    setInterval(updateOverlayCountdown, 1000);
-  }
-  
-  if (overlay) {
-    overlay.style.display = 'flex';
-  }
+  }, 4000);
 }
 
 // ==================================================
